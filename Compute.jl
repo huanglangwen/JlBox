@@ -25,25 +25,26 @@ const Cfactor= 2.55e+10 #ppb-to-molecules/cc
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
-                   stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_eqns*num_reactants
+                   stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
                    rate_values::Array{Float64,1},#num_eqns
                    dydt::Array{Float64,1}#num_reactants
                    )
-    lossgain_mtx=spzeros(num_eqns,num_reactants)
+    lossgain_mtx=spzeros(num_reactants,num_eqns)
     for eqn_ind in 1:num_eqns
         prod=rate_values[eqn_ind]
-        reactant_inds=findn(stoich_mtx[eqn_ind,:])
+        reactant_inds=findn(stoich_mtx[:,eqn_ind])
         for reactant_ind in reactant_inds
-            stoich=stoich_mtx[eqn_ind,reactant_ind]
+            stoich=stoich_mtx[reactant_ind,eqn_ind]
             if stoich>0
                 prod*=reactants[reactant_ind]^stoich
             end
         end
         #lossgain_mtx[eqn_ind,:]=stoich_mtx[eqn_ind,:]*prod
         for reactant_ind in reactant_inds
-            lossgain_mtx[eqn_ind,reactant_ind]=stoich_mtx[eqn_ind,reactant_ind]*prod
+            lossgain_mtx[reactant_ind,eqn_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
         end
     end
+    lossgain_mtx=transpose(lossgain_mtx)#num_eqns*num_reactants
     for reactant_ind in 1:num_reactants
         dydt[reactant_ind]=sum(nonzeros(lossgain_mtx[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
     end #*reactants[reactant_ind]=>wrong!!!
@@ -102,15 +103,15 @@ function run_simulation()
     return sol,reactants2ind
 end
 
-#@time sol,reactants2ind=run_simulation()
-Profile.init(n = 10^7, delay = 5.)
-@profile run_simulation()
-open("prof.txt", "w") do s
-    Profile.print(IOContext(s, :displaysize => (1000, 500)))
-end
+@time sol,reactants2ind=run_simulation()
+#Profile.init(n = 10^7, delay = 5.)
+#@profile run_simulation()
+#open("prof.txt", "w") do s
+#    Profile.print(IOContext(s, :displaysize => (1000, 500)))
+#end
 #using ProfileView
 #ProfileView.view()
-Profile.clear()
-#using Plots
-#plot(log10.(sol[reactants2ind["APINENE"],:]))
-#plot!(log10.(sol[reactants2ind["PINONIC"],:]))
+#Profile.clear()
+using Plots
+plot(log10.(sol[reactants2ind["APINENE"],:]))
+plot!(log10.(sol[reactants2ind["PINONIC"],:]))

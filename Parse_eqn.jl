@@ -59,10 +59,10 @@ function parse_reactants(file::String)#,RO2_names::Array{String,1}
 
     RO2_inds=[reactants2ind[i] for i in RO2_names if haskey(reactants_dict,i)]
 
-    stoich_mtx=spzeros(num_eqns,num_reactants)
+    stoich_mtx=spzeros(num_reactants,num_eqns)
     for i in reactants_inds
         for (eqn_ind,stoich) in reactants_dict[ind2reactants[i]]
-            stoich_mtx[eqn_ind,i]=stoich
+            stoich_mtx[i,eqn_ind]=stoich
         end
     end
     dropzeros!(stoich_mtx)
