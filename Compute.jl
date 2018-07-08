@@ -3,7 +3,7 @@ using Parse:parse_reactants,gen_evaluate_rates,constant_folding!,extract_constan
 using DifferentialEquations
 
 #global start_time
-const file="MCM_APINENE.eqn.txt"
+const file="MCM_test.eqn.txt"#"MCM_APINENE.eqn.txt"
 const temp=288.15 # Kelvin
 const RH=0.5 # RH/100% [0 - 0.99]
 #Define a start time 
@@ -60,16 +60,10 @@ function dydt!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
     return dy
 end
 
-
-function mkplots(sol,reactants2ind)
-    plot(sol,vars=(0,reactants2ind["APINENE"]),yscale = :log10)
-    plot!(sol,vars=(0,reactants2ind["PINONIC"]),yscale = :log10)
-end
-
 function run_simulation()
     println("Parsing Reactants")
     stoich_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
-    reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm 
+    reactants_initial_dict=Dict(["O3"=>18.0,"BUT1ENE"=>30.0])#ppm 
     reactants_initial=zeros(Float64,num_reactants)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
     for (k,v) in reactants_initial_dict
@@ -91,12 +85,11 @@ function run_simulation()
                              #rate_values::Array{Float64,1},J::Array{Float64,1})
     println("Solving ODE")
     prob = ODEProblem{false}(dydt!,reactants_initial,tspan,(dy,rate_values,J,stoich_mtx,RO2_inds,num_eqns,num_reactants))
-    sol = solve(prob,CVODE_BDF(),reltol=1e-6,abstol=1.0e-3,
+    sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
                 max_order = 5,
-                linearsolver=:GMRES,#:Dense
                 max_convergence_failures = 1000,
                 progress=true
                 )
@@ -113,5 +106,5 @@ end
 #ProfileView.view()
 #Profile.clear()
 using Plots
-plot(log10.(sol[reactants2ind["APINENE"],:]))
-plot!(log10.(sol[reactants2ind["PINONIC"],:]))
+plot(log10.(sol[reactants2ind["BUT1ENE"],:]))
+plot!(log10.(sol[reactants2ind["C2H5O2"],:]))
