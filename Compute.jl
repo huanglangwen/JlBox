@@ -1,27 +1,7 @@
-include("JlBoxModule.jl")
-using Parse:parse_reactants,gen_evaluate_rates,constant_folding!,extract_constants!
+#include("JlBoxModule.jl")
+using Parse:parse_reactants,gen_evaluate_rates
+using Optimize:constant_folding!,extract_constants!
 using DifferentialEquations
-
-#global start_time
-const file="MCM_test.eqn.txt"#"MCM_APINENE.eqn.txt"
-const temp=288.15 # Kelvin
-const RH=0.5 # RH/100% [0 - 0.99]
-#Define a start time 
-const hour_of_day=12.0 # 24 hr format
-const start_time=hour_of_day*60*60 # seconds, used as t0 in solver
-const simulation_time= 7200.0 # seconds
-const batch_step=100.0 # seconds
-#2)Generate constants used in rate of reaction calculations
-#Convert RH to concentration of water vapour molecules [this will change when in Parcel model mode]
-const temp_celsius=temp-273.15
-# Saturation VP of water vapour, to get concentration of H20
-const Psat=610.78*exp((temp_celsius/(temp_celsius+238.3))*17.2694)
-const Pw=RH*Psat
-const Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
-#Convert from kg to molecules/cc
-const H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23
-const tspan=(0,simulation_time)
-const Cfactor= 2.55e+10 #ppb-to-molecules/cc
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
@@ -63,7 +43,6 @@ end
 function run_simulation()
     println("Parsing Reactants")
     stoich_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
-    reactants_initial_dict=Dict(["O3"=>18.0,"BUT1ENE"=>30.0])#ppm 
     reactants_initial=zeros(Float64,num_reactants)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
     for (k,v) in reactants_initial_dict
@@ -72,7 +51,6 @@ function run_simulation()
     println("Generating evaluate_rates()")
     evaluate_rates_expr=gen_evaluate_rates(file)
     println("Done Generation")
-    constantdict=Dict([(:temp,temp),(:H2O,H2O)])
     rate_values=zeros(Float64,num_eqns)
     J=zeros(Float64,62)
     dy=zeros(Float64,num_reactants)
@@ -95,16 +73,3 @@ function run_simulation()
                 )
     return sol,reactants2ind
 end
-
-@time sol,reactants2ind=run_simulation()
-#Profile.init(n = 10^7, delay = 5.)
-#@profile run_simulation()
-#open("prof.txt", "w") do s
-#    Profile.print(IOContext(s, :displaysize => (1000, 500)))
-#end
-#using ProfileView
-#ProfileView.view()
-#Profile.clear()
-using Plots
-plot(log10.(sol[reactants2ind["BUT1ENE"],:]))
-plot!(log10.(sol[reactants2ind["C2H5O2"],:]))
