@@ -519,14 +519,6 @@ function evaluate_rates!(ttime::Float64,RO2::Float64,H2O::Float64,temp::Float64,
     J[56]=4.365E-05*cosx^(1.089)*exp(-1.0*0.323*secx) 
     J[57]=3.363E-06*cosx^(1.296)*exp(-1.0*0.322*secx) 
     J[61]=7.537E-04*cosx^(0.499)*exp(-1.0*0.266*secx) 
-    #TEMP=temp 
-
-    # Creating numpy array to hold results of expressions taken from .eqn file  
-    #f.write('    rate_values=numpy.zeros(%s)\n' %(len(rate_dict.keys()))) 
-    # Now cycle through the rate_dict dictionary and print to file
-    #for key in rate_dict.keys():
-    #    f.write('    rate_values[%s] =%s \n' %(key,rate_dict[key]))        
-    #f.write('\n') 
     
     $rate_expr
     return rate_values

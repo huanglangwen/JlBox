@@ -24,7 +24,7 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
                 prod*=reactants[reactant_ind]^stoich
             end
         end
-        #lossgain_mtx[:,eqn_ind]=stoich_mtx[:,eqn_ind]*prod
+        #lossgain_mtx[:,eqn_ind]=stoich_mtx[:,eqn_ind]*prod #!!!!! HUGE PERFORMANCE COST
         #for reactant_ind in reactant_inds
         for i in 1:num_stoichs
             reactant_ind=indvec[i]
