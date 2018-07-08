@@ -1,5 +1,5 @@
 #include("JlBoxModule.jl")
-using Parse:parse_reactants,gen_evaluate_rates
+using Parse_eqn:parse_reactants,gen_evaluate_rates
 using Optimize:constant_folding!,extract_constants!
 using DifferentialEquations
 using StaticArrays

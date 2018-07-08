@@ -3,7 +3,7 @@ export constant_folding!,extract_constants!
 include("Optimize.jl")
 end
 
-module Parse
+module Parse_eqn
 export parse_reactants,gen_evaluate_rates
 include("Parse_eqn.jl")
 end
