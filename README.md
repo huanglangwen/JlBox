@@ -13,6 +13,7 @@ Compared to PyBox(numba), more optimizations are (going to be) added:
 - [x] caching rate_values, loss_gain matrix when solving ODE
 - [ ] optimize bandwidth of jacobian to use banded linear solver
 - [ ] add autodiff for jacobian
+- [ ] parallel version of rate_values, loss_gain and jacobian
 
 Dependency:
 - DifferentialEquations.jl
