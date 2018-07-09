@@ -1,6 +1,6 @@
 # JlBox
 
-This is a rewrite version of [#PyBox].
+This is a rewrite version of [PyBox].
 
 Currently only gas process implemented.
 
@@ -20,4 +20,4 @@ Dependency:
 - StaticArrays.jl
 Install them using `include("InstallPackages.jl")`.
 
-[#PyBox]: https://github.com/loftytopping/PyBox
+[PyBox]: https://github.com/loftytopping/PyBox
