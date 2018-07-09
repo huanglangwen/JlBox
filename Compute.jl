@@ -1,6 +1,6 @@
 #include("JlBoxModule.jl")
 using Parse_eqn:parse_reactants,gen_evaluate_rates
-using Optimize:constant_folding!,extract_constants!
+using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_stoich_list
 using DifferentialEquations
 using StaticArrays
 
@@ -38,35 +38,14 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     return dydt
 end
 
-function mk_stoich_list(num_reactants::Int,num_eqns::Int,
-                        stoich_mtx::SparseMatrixCSC{Float64,Int64}#num_reactants*num_eqns
-                       )::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1}
-                        #Array{Tuple{Num_(reac+prod),List_stoich,List_ind}}
-    stoich_list=Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1}()
-    for eqn_ind in 1:num_eqns
-        indlist=zeros(Int64,16)
-        stoichlist=zeros(Int8,15)
-        reactant_inds=findn(stoich_mtx[:,eqn_ind])
-        num_stoichs=length(reactant_inds)
-        assert(num_stoichs<=15)#or it would break the static Array
-        for i in 1:num_stoichs
-            indlist[i]=reactant_inds[i]
-            stoichlist[i]=stoich_mtx[reactant_inds[i],eqn_ind]
-        end
-        indvec=SVector{16,Int64}(indlist)
-        stoichvec=SVector{15,Int8}(stoichlist)
-        push!(stoich_list,(num_stoichs,stoichvec,indvec))
-    end
-    assert(length(stoich_list)==num_eqns)
-    return stoich_list
-end
-
 function dydt!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
     dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants=p
+    #dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants=p
     time_of_day_seconds=start_time+t
     RO2=sum(reactants[RO2_inds])
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,rate_values,dy)
+    #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
     return dy
 end
 
@@ -81,19 +60,35 @@ function run_simulation()
     end
     println("Generating evaluate_rates()")
     evaluate_rates_expr=gen_evaluate_rates(file)
+    #println("Generating loss_gain_static()")
+    #loss_gain_expr=generate_loss_gain(num_reactants,num_eqns,stoich_mtx)
     println("Done Generation")
     rate_values=zeros(Float64,num_eqns)
+    rate_prods=zeros(Float64,num_eqns)
     J=zeros(Float64,62)
     dy=zeros(Float64,num_reactants)
     println("Performing constant folding")
     constant_folding!(evaluate_rates_expr,constantdict,rate_values);
     extract_constants!(evaluate_rates_expr);
-    println("Evaluating evaluate_rates codes")
+    println("Evaluating evaluate_rates&loss_gain codes")
+    #open("generated_code.jl", "w") do f
+    #    write(f,repr(evaluate_rates_expr.args[2]))
+    #    write(f,"\n")
+    #    write(f,repr(loss_gain_expr.args[2]))
+    #end
+    #include("generated_code.jl") #FATAL ERROR: ... AT ENDS OF VERY LONG LINES
     eval(evaluate_rates_expr)#function evaluate_rates!(ttime::Float64,
                              #RO2::Float64,H2O::Float64,temp::Float64,
                              #rate_values::Array{Float64,1},J::Array{Float64,1})
+    #eval(loss_gain_expr)#function loss_gain_static!(num_reactants::Int,num_eqns::Int,
+                                  #reactants::Array{Float64,1},#num_reactants
+                                  #rate_values::Array{Float64,1},#num_eqns
+                                  #rate_prods::Array{Float64,1},#num_eqns k*[A]^a*[B]^b
+                                  #dydt::Array{Float64,1})#num_reactants
     println("Solving ODE")
-    prob = ODEProblem{false}(dydt!,reactants_initial,tspan,(dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants))
+    prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
+                            #(dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants))
+                            (dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants))
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size

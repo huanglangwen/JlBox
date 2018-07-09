@@ -1,5 +1,5 @@
 module Optimize
-export constant_folding!,extract_constants!
+export constant_folding!,extract_constants!,generate_loss_gain,mk_stoich_list
 include("Optimize.jl")
 end
 
