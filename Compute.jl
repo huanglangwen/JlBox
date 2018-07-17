@@ -3,6 +3,7 @@ using Parse_eqn:parse_reactants,gen_evaluate_rates
 using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_stoich_list
 using DifferentialEquations
 using StaticArrays
+using CUSPARSE
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
@@ -38,6 +39,18 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     return dydt
 end
 
+function loss_gain_gpu!(num_reactants::Int,num_eqns::Int,
+                        reactants::Array{Float64,1},#num_reactants
+                        stoich_mtx_gpu::CudaSparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
+                        #stoich_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns
+                        rate_values::Array{Float64,1},#num_eqns
+                        dydt::Array{Float64,1}#num_reactants
+                        )
+    reactants_gpu=CudaArray(log10.(reactants))
+    rate_values_gpu=CudaArray(rate_values)
+
+end
+
 function dydt!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
     dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants=p
     #dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants=p
@@ -53,6 +66,8 @@ function run_simulation()
     println("Parsing Reactants")
     stoich_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     stoich_list=mk_stoich_list(num_reactants,num_eqns,stoich_mtx)
+    stoich_mtx_gpu=CudaSparseMatrixCSC(stoich_mtx)
+
     reactants_initial=zeros(Float64,num_reactants)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
     for (k,v) in reactants_initial_dict
