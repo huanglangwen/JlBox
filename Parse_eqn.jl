@@ -64,7 +64,7 @@ function parse_reactants(file::String)#,RO2_names::Array{String,1}
     stoich_mtx=spzeros(num_reactants,num_eqns)
     for i in reactants_inds
         for (eqn_ind,stoich) in reactants_dict[ind2reactants[i]]
-            stoich_mtx[i,eqn_ind]=stoich
+            stoich_mtx[i,eqn_ind]+=stoich#FOR DUPLICATED REACTANTS A+A->B+B
         end
     end
     dropzeros!(stoich_mtx)
