@@ -3,9 +3,9 @@ using Parse_eqn:parse_reactants,gen_evaluate_rates
 using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_stoich_list
 using DifferentialEquations
 using StaticArrays
-using CUSPARSE
-using CUDAdrv
-using CUDArt
+#using CUSPARSE
+#using CUDAdrv
+#using CUDArt
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
@@ -41,53 +41,53 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     return dydt
 end
 
-function loss_gain_gpu(num_reactants::Int,num_eqns::Int,
-                        reactants::Array{Float64,1},#num_reactants
-                        stoich_mtx_gpu::CUSPARSE.CudaSparseMatrixCSR{Float64},#num_eqns*num_reactants
-                        #stoich_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns
-                        rate_values::Array{Float64,1},#num_eqns
-                        #dydt::Array{Float64,1}#num_reactants
-                        )::Array{Float64,1}
-    log10_reactants_gpu=CudaArray(log10.(reactants))
-    log10_rate_values_gpu=CudaArray(log10.(rate_values))
-    CUSPARSE.mv!('N',1.0,stoich_mtx_gpu,log10_reactants_gpu,1.0,log10_rate_values_gpu,'O')
-    #log10_rate_values_gpu = 1 ∗ <NON Transpose> ( stoich_mtx_gpu ) ∗ log10_reactants_gpu + 1 ∗ log10_rate_values_gpu
-    rate_values_prod=exp10.(CUSPARSE.to_host(log10_rate_values_gpu))
-    rate_values_prod_gpu=CudaArray(rate_values_prod)
-    dydt_gpu=CudaArray(zeros(num_reactants))
-    CUSPARSE.mv!('T',-1.0,stoich_mtx_gpu,rate_values_prod_gpu,0.0,dydt_gpu,'O')
-    dydt=CUSPARSE.to_host(dydt_gpu)
-    return dydt
-end
+#function loss_gain_gpu(num_reactants::Int,num_eqns::Int,
+#                        reactants::Array{Float64,1},#num_reactants
+#                        stoich_mtx_gpu::CUSPARSE.CudaSparseMatrixCSR{Float64},#num_eqns*num_reactants
+#                        #stoich_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns
+#                        rate_values::Array{Float64,1},#num_eqns
+#                        #dydt::Array{Float64,1}#num_reactants
+#                        )::Array{Float64,1}
+#    log10_reactants_gpu=CudaArray(log10.(reactants))
+#    log10_rate_values_gpu=CudaArray(log10.(rate_values))
+#    CUSPARSE.mv!('N',1.0,stoich_mtx_gpu,log10_reactants_gpu,1.0,log10_rate_values_gpu,'O')
+#    #log10_rate_values_gpu = 1 ∗ <NON Transpose> ( stoich_mtx_gpu ) ∗ log10_reactants_gpu + 1 ∗ log10_rate_values_gpu
+#    rate_values_prod=exp10.(CUSPARSE.to_host(log10_rate_values_gpu))
+#    rate_values_prod_gpu=CudaArray(rate_values_prod)
+#    dydt_gpu=CudaArray(zeros(num_reactants))
+#    CUSPARSE.mv!('T',-1.0,stoich_mtx_gpu,rate_values_prod_gpu,0.0,dydt_gpu,'O')
+#    dydt=CUSPARSE.to_host(dydt_gpu)
+#    return dydt
+#end
 
-function dydt_gpu!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
-    dy,rate_values,J,stoich_mtx,stoich_list,stoich_mtx_gpu,RO2_inds,num_eqns,num_reactants=p
-    time_of_day_seconds=start_time+t
-    RO2=sum(reactants[RO2_inds])
-    evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
-    gpu_flag=true
-    for i in reactants
-        if abs(i)<1e-30
-            gpu_flag=false
-            break
-        end
-    end
-    if gpu_flag
-        for i in rate_values
-            if abs(i)<1e-30
-                gpu_flag=false
-            end
-        end
-    end
-    if gpu_flag
-        println("Using GPU!")
-        dy=loss_gain_gpu(num_reactants,num_eqns,reactants,stoich_mtx_gpu,rate_values)
-    else
-        #println("Using CPU!")
-        loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,rate_values,dy)
-    end
-    return dy
-end
+#function dydt_gpu!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
+#    dy,rate_values,J,stoich_mtx,stoich_list,stoich_mtx_gpu,RO2_inds,num_eqns,num_reactants=p
+#    time_of_day_seconds=start_time+t
+#    RO2=sum(reactants[RO2_inds])
+#    evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
+#    gpu_flag=true
+#    for i in reactants
+#        if abs(i)<1e-30
+#            gpu_flag=false
+#            break
+#        end
+#    end
+#    if gpu_flag
+#        for i in rate_values
+#            if abs(i)<1e-30
+#                gpu_flag=false
+#            end
+#        end
+#    end
+#    if gpu_flag
+#        println("Using GPU!")
+#        dy=loss_gain_gpu(num_reactants,num_eqns,reactants,stoich_mtx_gpu,rate_values)
+#    else
+#        #println("Using CPU!")
+#        loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,rate_values,dy)
+#    end
+#    return dy
+#end
 
 function dydt!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
     dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants=p
@@ -108,7 +108,7 @@ function run_simulation()
     println("Parsing Reactants")
     stoich_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     stoich_list=mk_stoich_list(num_reactants,num_eqns,stoich_mtx)
-    stoich_mtx_gpu=CudaSparseMatrixCSR(transpose(stoich_mtx))
+    #stoich_mtx_gpu=CudaSparseMatrixCSR(transpose(stoich_mtx))
 
     reactants_initial=zeros(Float64,num_reactants)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
@@ -143,8 +143,8 @@ function run_simulation()
                                   #rate_prods::Array{Float64,1},#num_eqns k*[A]^a*[B]^b
                                   #dydt::Array{Float64,1})#num_reactants
     println("Solving ODE")
-    prob = ODEProblem{false}(dydt_gpu!,reactants_initial,tspan,
-                             (dy,rate_values,J,stoich_mtx,stoich_list,stoich_mtx_gpu,RO2_inds,num_eqns,num_reactants)
+    prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
+                             (dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants)
                             #(dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants))
                             #(dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants)
                             )
