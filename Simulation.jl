@@ -1,5 +1,5 @@
 include("JlBoxModule.jl")
-using Compute:run_simulation
+using .Compute:run_simulation
 
 #Profile.init(n = 10^7, delay = 5.)
 @time sol,reactants2ind=run_simulation()

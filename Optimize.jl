@@ -1,25 +1,29 @@
 
 using StaticArrays
+using SparseArrays
 function mk_stoich_list(num_reactants::Int,num_eqns::Int,
                         stoich_mtx::SparseMatrixCSC{Float64,Int64}#num_reactants*num_eqns
                        )::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1}
                         #Array{Tuple{Num_(reac+prod),List_stoich,List_ind}}
     stoich_list=Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1}()
+    stoich_mtx_rows = rowvals(stoich_mtx)
     for eqn_ind in 1:num_eqns
         indlist=zeros(Int64,16)
         stoichlist=zeros(Int8,15)
-        reactant_inds=findn(stoich_mtx[:,eqn_ind])
+        #reactant_inds=findn(stoich_mtx[:,eqn_ind])
+        reactant_inds=[ stoich_mtx_rows[i] for i=nzrange(stoich_mtx,eqn_ind)]
         num_stoichs=length(reactant_inds)
-        assert(num_stoichs<=15)#or it would break the static Array
+        @assert num_stoichs<=15 "Do not use static array"#or it would break the static Array
+        #for i in 1:num_stoichs
         for i in 1:num_stoichs
             indlist[i]=reactant_inds[i]
-            stoichlist[i]=stoich_mtx[reactant_inds[i],eqn_ind]
+            stoichlist[num_stoichs]=stoich_mtx[reactant_inds[i],eqn_ind]
         end
         indvec=SVector{16,Int64}(indlist)
         stoichvec=SVector{15,Int8}(stoichlist)
         push!(stoich_list,(num_stoichs,stoichvec,indvec))
     end
-    assert(length(stoich_list)==num_eqns)
+    @assert length(stoich_list)==num_eqns "length(stoich_list)!=num_eqns"
     return stoich_list
 end
 
@@ -91,6 +95,9 @@ function constant_folding!(fun_expr::Expr,constant_list::Dict,rate_values::Array
     ops=fun_expr.args[2].args[2].args
     for i in 1:length(ops)
         op=ops[i]
+        if typeof(op)==LineNumberNode
+            continue#v1.0 LineNumberNode has no head
+        end
         if op.head==:(=)
             expr=try_eval(op)
             if typeof(expr.args[2])<:Number
@@ -102,6 +109,9 @@ function constant_folding!(fun_expr::Expr,constant_list::Dict,rate_values::Array
             rate_val_ops=op.args
             for j in 1:length(rate_val_ops)
                 r_op=rate_val_ops[j]
+                if typeof(r_op)==LineNumberNode
+                    continue#v1.0 LineNumberNode has no head
+                end
                 if r_op.head==:(=)
                     expr=try_eval(r_op)
                     if typeof(expr.args[2])<:Number
@@ -119,8 +129,11 @@ end
 function extract_constants!(fun_expr::Expr)::Expr
     ops=fun_expr.args[2].args[2].args
     for op in ops
+        if typeof(op)==LineNumberNode
+            continue#v1.0 LineNumberNode has no head
+        end
         if op.head==:block
-            filter!(l->!(typeof(l.args[2])<:Number),op.args)
+            filter!(l->!(typeof(l.args[2])<:Number),[opi for opi in op.args if typeof(opi)!=LineNumberNode])
         end
     end
     return fun_expr

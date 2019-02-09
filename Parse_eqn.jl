@@ -1,3 +1,5 @@
+using SparseArrays
+
 RO2_names=split(readline("RO2.csv"),",")
 
 function stoich_str2int(stoich::String)::Int
@@ -54,7 +56,9 @@ function parse_reactants(file::String)#,RO2_names::Array{String,1}
     end
 
     num_reactants=length(reactants_dict)
-    assert(num_reactants==reactant_step)
+    if num_reactants!=reactant_step 
+        throw("num_reactants!=reactant_step")
+    end
     #reactants_list=[ for i in 1:num_reactants]
     reactants_inds=1:num_reactants
     #reactants2ind=Dict(reactants_list[i]=>i for i in reactants_inds)
@@ -79,14 +83,15 @@ function gen_evaluate_rates(file)
             line_parts=split(strip(line)[1:end-1],":")
             spd=strip(line_parts[2])
             #replacing 123.456D-12 to 123.456E-12
+            # v0.6 to v1.0 replace(raw_str,regexp,dest) to replace(raw_str,regexp=>dest)
             num_regexp=r"([0-9]*\.?[0-9]+)D([\+\-]?[0-9]+)"
-            spd_exprs=replace(spd,num_regexp,s"\1E\2")
-            spd_exprs=replace(spd_exprs,"TEMP","temp")
-            spd_exprs=replace(spd_exprs,"EXP","exp")
-            spd_exprs=replace(spd_exprs,"**","^")
-            spd_exprs=replace(spd_exprs,r"J\(([0-9]+)\)",s"J[\1]")
+            spd_exprs=replace(spd,num_regexp=>s"\1E\2")
+            spd_exprs=replace(spd_exprs,"TEMP"=>"temp")
+            spd_exprs=replace(spd_exprs,"EXP"=>"exp")
+            spd_exprs=replace(spd_exprs,"**"=>"^")
+            spd_exprs=replace(spd_exprs,r"J\(([0-9]+)\)"=>s"J[\1]")
             #println(spd_expr)
-            spd_expr=parse(spd_exprs)
+            spd_expr=Meta.parse(spd_exprs)#v0.6 to v1.0 parse(str)=>expr to Meta.parse(str)=>expr
             ind = parse(Int,match(r"\{([0-9]+)\.\}",line,1).captures[1])
             push!(rate_expr.args,:(rate_values[$ind]=$spd_expr))
         end

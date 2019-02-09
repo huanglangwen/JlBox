@@ -1,8 +1,10 @@
 #include("JlBoxModule.jl")
-using Parse_eqn:parse_reactants,gen_evaluate_rates
-using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_stoich_list
+using ..Parse_eqn:parse_reactants,gen_evaluate_rates
+using ..Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_stoich_list
 using DifferentialEquations
 using StaticArrays
+using SparseArrays
+using Printf
 #using CUSPARSE
 #using CUDAdrv
 #using CUDArt
