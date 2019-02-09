@@ -150,13 +150,13 @@ function run_simulation()
                             #(dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants))
                             #(dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants)
                             )
-    sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
+    sol = solve(prob,Rosenbrock32(),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
                 max_order = 5,
                 max_convergence_failures = 1000,
-                progress=true
+                #progress=false #Juno Progressbar
                 )
     return sol,reactants2ind
 end
