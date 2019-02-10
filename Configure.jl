@@ -1,11 +1,11 @@
 #global start_time
 const file="MCM_APINENE.eqn.txt"#"MCM_test.eqn.txt"
-const temp=288.15 # Kelvin
+const temp=298.15 # Kelvin
 const RH=0.5 # RH/100% [0 - 0.99]
 #Define a start time 
 const hour_of_day=12.0 # 24 hr format
 const start_time=hour_of_day*60*60 # seconds, used as t0 in solver
-const simulation_time= 7200.0 # seconds
+const simulation_time= 10800.0 # seconds
 const batch_step=100.0 # seconds
 #2)Generate constants used in rate of reaction calculations
 #Convert RH to concentration of water vapour molecules [this will change when in Parcel model mode]
