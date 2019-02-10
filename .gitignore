@@ -1,4 +1,5 @@
 loss_gain_warntype.txt
 prof.txt
 testpybox.txt
+*.csv
 generated*
