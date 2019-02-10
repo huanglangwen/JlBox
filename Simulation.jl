@@ -8,7 +8,7 @@ num_reactants=length(reactants2ind)
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[ind2reactants[ind] for ind in 1:num_reactants]
 df=DataFrame(transpose(sol))
-names!(df,reactants)
+names!(df,[Symbol(reac) for reac in reactants])
 writetable("results.csv",df)
 df
 #@profile run_simulation()

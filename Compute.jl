@@ -7,7 +7,8 @@ using StaticArrays
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
                    stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
-                   reactants_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns
+                   stoich_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, both reac and prod
+                   reactants_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, only reac
                    rate_values::Array{Float64,1},#num_eqns
                    dydt::Array{Float64,1}#num_reactants
                    )
@@ -16,6 +17,7 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
         prod=rate_values[eqn_ind]
         #reactant_inds=findn(stoich_mtx[:,eqn_ind])
         num_stoichs,stoichvec,indvec=reactants_list[eqn_ind]
+        _,_,stoich_indvec=stoich_list[eqn_ind]
         for i in 1:num_stoichs
             reactant_ind=indvec[i]
             stoich=stoichvec[i]
@@ -28,7 +30,7 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
         #lossgain_mtx[:,eqn_ind]=stoich_mtx[:,eqn_ind]*prod #!!!!! HUGE PERFORMANCE COST
         #for reactant_ind in reactant_inds
         for i in 1:num_stoichs
-            reactant_ind=indvec[i]
+            reactant_ind=stoich_indvec[i]
             lossgain_mtx[reactant_ind,eqn_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
         end
     end
@@ -54,6 +56,7 @@ function run_simulation()
     println("Parsing Reactants")
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
+    stoich_list=mk_reactants_list(num_reactants,num_eqns,stoich_mtx)
 
     reactants_initial=zeros(Float64,num_reactants)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
@@ -89,7 +92,7 @@ function run_simulation()
                                   #dydt::Array{Float64,1})#num_reactants
     println("Solving ODE")
     prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
-                            (dy,rate_values,J,stoich_mtx,reactants_list,RO2_inds,num_eqns,num_reactants)
+                            (dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)
                             )
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
