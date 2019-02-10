@@ -7,7 +7,7 @@ using DataFrames
 num_reactants=length(reactants2ind)
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[ind2reactants[ind] for ind in 1:num_reactants]
-df=DataFrame(transpose(sol),name=reactants)
+df=DataFrame(transpose(sol),names=reactants)
 writetable("results.csv",df)
 #@profile run_simulation()
 #open("prof.txt", "w") do s
