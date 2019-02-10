@@ -100,7 +100,7 @@ function gen_evaluate_rates(file)
     return quote
 
 
-function evaluate_rates!(ttime::Float64,RO2::Float64,H2O::Float64,temp::Float64,rate_values::Array{Float64,1},J::Array{Float64,1})
+function evaluate_rates!(ttime,RO2::Float64,H2O::Float64,temp::Float64,rate_values::Array{Float64,1},J::Array{Float64,1})
     # ttime: seconds
     # RO2: sum of RO2s
     # Now cycle through all of the mcm_constants_dict values.
@@ -377,7 +377,7 @@ function evaluate_rates!(ttime::Float64,RO2::Float64,H2O::Float64,temp::Float64,
     theta = acos(cos(lha)*cos(dec)*cos(lat)+sin(dec)*sin(lat)) 
     sinld = sin(lat)*sin(dec) 
     cosld = cos(lat)*cos(dec) 
-    cosx = (cos(lha)*cosld)+sinld 
+    cosx = (cos(lha)*cosld)+sinld #REALLY WEIRD
     cosx = cos(theta) 
     secx = 1.0E+0/(cosx+1.0E-30) 
 

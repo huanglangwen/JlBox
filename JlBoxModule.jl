@@ -9,7 +9,7 @@ include("Parse_eqn.jl")
 end
 
 module Compute
-export run_simulation
+export generate_codes,loss_gain!
 include("Configure.jl")
 include("Compute.jl")
 end
