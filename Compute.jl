@@ -16,9 +16,9 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     for eqn_ind in 1:num_eqns
         prod=rate_values[eqn_ind]
         #reactant_inds=findn(stoich_mtx[:,eqn_ind])
-        num_stoichs,stoichvec,indvec=reactants_list[eqn_ind]
-        _,_,stoich_indvec=stoich_list[eqn_ind]
-        for i in 1:num_stoichs
+        num_reacs,stoichvec,indvec=reactants_list[eqn_ind]
+        num_stoichs,_,stoich_indvec=stoich_list[eqn_ind]
+        for i in 1:num_reacs
             reactant_ind=indvec[i]
             stoich=stoichvec[i]
             #stoich=stoich_mtx[reactant_ind,eqn_ind]
