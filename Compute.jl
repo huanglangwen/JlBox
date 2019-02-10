@@ -1,6 +1,6 @@
 #include("JlBoxModule.jl")
 using Parse_eqn:parse_reactants,gen_evaluate_rates
-using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_stoich_list
+using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reactants_list
 using DifferentialEquations
 using StaticArrays
 
