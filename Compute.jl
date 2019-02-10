@@ -53,7 +53,6 @@ function run_simulation()
     println("Parsing Reactants")
     stoich_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     stoich_list=mk_stoich_list(num_reactants,num_eqns,stoich_mtx)
-    stoich_mtx_gpu=CudaSparseMatrixCSR(transpose(stoich_mtx))
 
     reactants_initial=zeros(Float64,num_reactants)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
