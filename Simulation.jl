@@ -11,6 +11,6 @@ using Compute:run_simulation
 #using ProfileView
 #ProfileView.view()
 #Profile.clear()
-using Plots
-plot(log10.(sol[reactants2ind["BUT1ENE"],:]))
-plot!(log10.(sol[reactants2ind["C2H5O2"],:]))
+#using Plots
+#plot(log10.(sol[reactants2ind["BUT1ENE"],:]))
+#plot!(log10.(sol[reactants2ind["C2H5O2"],:]))
