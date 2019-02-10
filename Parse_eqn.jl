@@ -62,13 +62,17 @@ function parse_reactants(file::String)#,RO2_names::Array{String,1}
     RO2_inds=[reactants2ind[i] for i in RO2_names if haskey(reactants_dict,i)]
 
     stoich_mtx=spzeros(num_reactants,num_eqns)
+    reactants_mtx=spzeros(num_reactants,num_eqns)
     for i in reactants_inds
         for (eqn_ind,stoich) in reactants_dict[ind2reactants[i]]
             stoich_mtx[i,eqn_ind]+=stoich#FOR DUPLICATED REACTANTS A+A->B+B
+            if stoich>0
+                reactants_mtx[i,eqn_ind]+=stoich #FOR CATALYSE A+B->A+C
+            end
         end
     end
     dropzeros!(stoich_mtx)
-    return (stoich_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind)
+    return (stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind)
 end
 
 function gen_evaluate_rates(file)
