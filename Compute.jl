@@ -93,7 +93,7 @@ end
 #    return dy
 #end
 
-dydt_expr=quote function dydt!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
+dydt_expr=quote function dydt!(reactants,p,t)#::Array{Float64,1}
     @printf("t=%e\n",t)
     dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants=p
     #dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants=p

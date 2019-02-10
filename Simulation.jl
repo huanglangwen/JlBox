@@ -1,6 +1,7 @@
 include("JlBoxModule.jl")
 using .Compute:generate_codes,loss_gain!,tspan,batch_step,simulation_time,start_time,H2O,temp
 using DifferentialEquations
+using ForwardDiff
 using Printf
 
 println("Generating Codes")
@@ -8,7 +9,13 @@ reactants2ind,reactants_initial,dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds
 include("generated_code.jl")
 println("Solving ODE")
 
-prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
+function dydt_jac!(J,reactants,p,t)
+    ForwardDiff.jacobian!(J,x->dydt!(x,p,t),reactants)
+    nothing
+end
+
+dydtf=ODEFunction(dydt!;jac=dydt_jac!)
+prob = ODEProblem{false}(dydtf,reactants_initial,tspan,
                          (dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants)
                         #(dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants))
                         #(dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants)
@@ -18,7 +25,7 @@ sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,#
             dt=1.0e-6, #Initial step-size
             dtmax=100.0,
             max_order = 5,
-            max_convergence_failures = 50,#1000
+            max_convergence_failures = 1000,#1000
             #progress=false #Juno Progressbar
             )
 
