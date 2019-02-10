@@ -42,12 +42,12 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
 end
 
 function dydt!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
-    dy,rate_values,J,stoich_mtx,stoich_list,RO2_inds,num_eqns,num_reactants=p
+    dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=p
     #dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants=p
     time_of_day_seconds=start_time+t
     RO2=sum(reactants[RO2_inds])
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
-    loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,rate_values,dy)
+    loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dy)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
     return dy
 end
