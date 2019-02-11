@@ -1,5 +1,5 @@
 FROM ubuntu:18.04
-MAINTAINER Langwen Huang (huanglangwen@outlook.com)
+#MAINTAINER Langwen Huang (huanglangwen@outlook.com)
 #forked from https://github.com/loftytopping/PyBox/blob/master/Dockerfile
 
 RUN apt-get update 
@@ -18,7 +18,8 @@ RUN apt-get install -y build-essential \
     libfontconfig1 \
     libxrender1 \
     xauth \
-    git
+    git \
+    tmux
 
 RUN mkdir -p /Code
 RUN mkdir -p /Code/julia
