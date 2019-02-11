@@ -1,3 +1,4 @@
+#Direct Interpreted from https://github.com/loftytopping/PyBox/blob/master/Aerosol/Property_calculation.py
 using PyCall
 unshift!(PyVector(pyimport("sys")["path"]),"../UManSysProp_public")
 @pyimport umansysprop.boiling_points as boiling_points
@@ -10,3 +11,14 @@ unshift!(PyVector(pyimport("sys")["path"]),"../UManSysProp_public")
 @pyimport umansysprop.forms as forms #need forms.CoreAbundanceField (class)
 CoreAbundanceField=forms.CoreAbundanceField
 
+function readSMILESdict()
+
+end
+
+function SMILES2Pybel(smi_str)
+
+end
+
+function compoudProperty(compound_str)
+
+end
