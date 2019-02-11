@@ -7,5 +7,6 @@ unshift!(PyVector(pyimport("sys")["path"]),"../UManSysProp_public")
 @pyimport umansysprop.partition_models as partition_models
 @pyimport umansysprop.groups as groups
 @pyimport umansysprop.activity_coefficient_models_dev as aiomfac
-@pyimport umansysprop.forms.CoreAbundanceField as CoreAbundanceField
+@pyimport umansysprop.forms as forms #need forms.CoreAbundanceField (class)
+CoreAbundanceField=forms.CoreAbundanceField
 
