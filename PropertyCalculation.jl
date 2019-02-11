@@ -17,10 +17,13 @@ function readSMILESdict()
     mcmdoc=parse_file("MCM.xml")
     spnode=find_element(root(mcmdoc),"species_defs")
     for species in child_nodes(spnode)
-        name=attribute(species,"species_name")
-        if has_children(name)
-            SMILES=content(species)
-            species2SMILESdict[name,SMILES]
+        if is_elementnode(species)
+            sp_element=XMLElement(species)
+            name=attribute(sp_element,"species_name")
+            if has_children(name)
+                SMILES=content(sp_element)
+                species2SMILESdict[name,SMILES]
+            end
         end
     end
     return species2SMILESdict
