@@ -31,7 +31,7 @@ function readSMILESdict()
 end
 
 function SMILES2Pybel(smi_str)
-    return pybel.readstring('smi',smi_str)
+    return pybel.readstring("smi",smi_str)
 end
 
 function compoudProperty(compound_str)
