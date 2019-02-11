@@ -37,6 +37,7 @@ RUN julia --eval 'Pkg.add("StaticArrays")'
 RUN julia --eval 'Pkg.add("DataFrames")'
 RUN julia --eval 'Pkg.add("CSV")'
 RUN julia --eval 'Pkg.add("Conda");using Conda;Conda.update()'
+RUN julia --eval 'Pkg.add("PyCall")'
 
 WORKDIR /Code/Git_repos
 RUN git clone https://github.com/loftytopping/PyBox.git
