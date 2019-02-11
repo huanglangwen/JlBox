@@ -11,6 +11,7 @@ unshift!(PyVector(pyimport("sys")["path"]),"../UManSysProp_public")
 @pyimport umansysprop.activity_coefficient_models_dev as aiomfac
 @pyimport umansysprop.forms as forms #need forms.CoreAbundanceField (class)
 CoreAbundanceField=forms.CoreAbundanceField
+@pyimport pybel
 
 function readSMILESdict()
     species2SMILESdict=Dict{String,String}()
@@ -30,7 +31,7 @@ function readSMILESdict()
 end
 
 function SMILES2Pybel(smi_str)
-    nothing
+    return pybel.readstring('smi',smi_str)
 end
 
 function compoudProperty(compound_str)
