@@ -17,6 +17,7 @@ RUN apt-get install -y build-essential \
     libfreetype6-dev \
     libfontconfig1 \
     libxrender1 \
+    libxml2 \
     xauth \
     git \
     tmux
@@ -41,6 +42,7 @@ RUN julia --eval 'Pkg.add("CSV")'
 RUN julia --eval 'Pkg.add("Conda");using Conda;Conda.update()'
 RUN julia --eval 'Pkg.add("PyCall")'
 RUN julia --eval 'Pkg.build("PyCall")'
+RUN julia --eval 'Pkg.build("LightXML")'
 RUN conda config --append channels conda-forge
 RUN conda install -c openbabel -y openbabel 
 RUN conda install -y flask flask-wtf xlsxwriter
