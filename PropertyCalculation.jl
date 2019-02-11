@@ -15,7 +15,7 @@ CoreAbundanceField=forms.CoreAbundanceField
 function readSMILESdict()
     species2SMILESdict=Dict{String,String}()
     mcmdoc=parse_file("MCM.xml")
-    root=find_element(mcmdoc,"species_defs")
+    root=find_element(root(mcmdoc),"species_defs")
     for species in child_nodes(root)
         name=attribute(species,"species_name")
         if has_children(name)
