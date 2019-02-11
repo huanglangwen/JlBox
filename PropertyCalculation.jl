@@ -38,7 +38,7 @@ function compoundProperty(compound_str,temperature,methodfuncs,species2SMILESdic
     boiling_point,vapour_pressure,critical_property,liquid_density=[methodfuncs[i] for i in ["bp","vp","critical","density"]]
     pybelobj=SMILES2Pybel(species2SMILESdict[compound_str])
     b1=boiling_points.nannoolal(pybelobj)
-    density=liquid_density(pybelobj, temperature, critical_property(pybelobj, b1))*1.0E3
+    density=liquid_density(pybelobj, temperature, pycall(critical_property,PyObject,pybelobj, b1))*1.0E3
     mw=pybelobj[:molwt]
     groups_dict=groups.composition(pybelobj)
     o_c=groups_dict["O"]/groups_dict["C"]
