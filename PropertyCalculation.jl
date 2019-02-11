@@ -34,7 +34,7 @@ function SMILES2Pybel(smi_str)
     return pybel.readstring("smi",smi_str)
 end
 
-function compoudProperty(compound_str,temperature,methodfuncs,species2SMILESdict)
+function compoundProperty(compound_str,temperature,methodfuncs,species2SMILESdict)
     boiling_point,vapour_pressure,critical_property,liquid_density=[methodfuncs[i] for i in ["bp","vp","critical","density"]]
     pybelobj=SMILES2Pybel(species2SMILESdict[compound_str])
     b1=boiling_points.nannoolal(pybelobj)
