@@ -25,16 +25,17 @@ RUN mkdir -p /Code/julia
 RUN mkdir -p /Code/Git_repos
 
 WORKDIR /Code/julia
-RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.0-linux-x86_64.tar.gz
-RUN tar xf julia-1.1.0-linux-x86_64.tar.gz
+RUN wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz
+RUN tar xf julia-0.6.4-linux-x86_64.tar.gz
 RUN mv julia-9d11f62bcb julia-0.6.4
-RUN echo "export PATH=/Code/julia/julia-0.6.4/bin:/root/.julia/v0.6/Conda/deps/usr/bin:$PATH" >> ~/.bashrc
-RUN source ~/.bashrc
-RUN julia --eval Pkg.add("DifferentialEquations")
-RUN julia --eval Pkg.add("StaticArrays")
-RUN julia --eval Pkg.add("DataFrames")
-RUN julia --eval Pkg.add("CSV")
-RUN julia --eval Pkg.add("Conda");using Conda;Conda.update()
+RUN echo "export PATH=/Code/julia/julia-0.6.4/bin:/root/.julia/v0.6/Conda/deps/usr/bin:$PATH" >> /root/.bashrc
+ENV PATH="/Code/julia/julia-0.6.4/bin:/root/.julia/v0.6/Conda/deps/usr/bin:${PATH}"
+#RUN source /root/.bashrc
+RUN julia --eval 'Pkg.add("DifferentialEquations")'
+RUN julia --eval 'Pkg.add("StaticArrays")'
+RUN julia --eval 'Pkg.add("DataFrames")'
+RUN julia --eval 'Pkg.add("CSV")'
+RUN julia --eval 'Pkg.add("Conda");using Conda;Conda.update()'
 
 WORKDIR /Code/Git_repos
 RUN git clone https://github.com/loftytopping/PyBox.git
