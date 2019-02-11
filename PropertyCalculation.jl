@@ -20,7 +20,7 @@ function readSMILESdict()
         if is_elementnode(species)
             sp_element=XMLElement(species)
             name=attribute(sp_element,"species_name")
-            if has_children(name)
+            if has_children(sp_element)
                 SMILES=content(sp_element)
                 species2SMILESdict[name,SMILES]
             end
