@@ -44,9 +44,6 @@ function compoundProperty(pybelobj::PyObject,temperature::Integer,methodfuncs::D
     h_c=groups_dict["H"]/groups_dict["C"]
     b=boiling_point(pybelobj)
     sat_vp=vapour_pressure(pybelobj, temperature,b)
-    if !(typeof(density)<:Real)
-        println("Catched a complex density: ",density,", ",b1)
-    end
     return density,mw,o_c,h_c,sat_vp
 end
 
@@ -99,7 +96,10 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
             pybelobj=SMILES2Pybel(species2SMILESdict[species_name])
             density,mw,o_c,h_c,sat_vp=compoundProperty(pybelobj,temperature,methodfuncs)
             if !(typeof(density)<:Real)
-                println(species_name,", ",density)
+                b1=boiling_points.nannoolal(pybelobj)
+                cpt=critical_property(pybelobj, b1)[1]#temperature
+                println(species_ind,", ",species_name,", ",species2SMILESdict[species_name],", ",density)
+                println(temperature,", ",cpt,", ",b1)
                 density=real(density)
             end
             y_density_array[species_ind]=density
