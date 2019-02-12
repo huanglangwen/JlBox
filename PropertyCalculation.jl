@@ -46,6 +46,7 @@ function compoundProperty(pybelobj::PyObject,temperature::Integer,methodfuncs::D
     sat_vp=vapour_pressure(pybelobj, temperature,b)
     if !(typeof(density)<:Real)
         println("Catched a complex density: ",density,", ",b1)
+        return real(density),mw,o_c,h_c,sat_vp
     end
     return density,mw,o_c,h_c,sat_vp
 end
