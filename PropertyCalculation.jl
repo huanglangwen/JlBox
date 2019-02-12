@@ -34,9 +34,8 @@ function SMILES2Pybel(smi_str)
     return pybel.readstring("smi",smi_str)
 end
 
-function compoundProperty(compound_str,temperature,methodfuncs,species2SMILESdict)
+function compoundProperty(pybelobj::PyObject,temperature::Integer,methodfuncs::Dict)
     boiling_point,vapour_pressure,critical_property,liquid_density=[methodfuncs[i] for i in ["bp","vp","critical","density"]]
-    pybelobj=SMILES2Pybel(species2SMILESdict[compound_str])
     b1=boiling_points.nannoolal(pybelobj)
     density=liquid_density(pybelobj, temperature, pycall(critical_property,PyObject,pybelobj, b1))*1.0E3
     mw=pybelobj[:molwt]
@@ -77,5 +76,42 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
         "vp"=>vapour_pressure,
         "critical"=>critical_property,
         "density"=>liquid_density
+    )
+    y_density_array=zeros(Float64,num_species)+1000
+    y_mw=zeros(Float64,num_species)+200
+    o_cs=zeros(Float64,num_species)
+    h_cs=zeros(Float64,num_species)
+    sat_vps=zeros(Float64,num_species)+100
+    ignore_index_mask=zeros(Bool,num_species)#All falses
+    Delta_H=zeros(Float64,num_species)#Ignored
+    Latent_heat_gas=zeros(Float64,num_species)#Ignored
+
+    println("Reading SMILES definitions")
+    species2SMILESdict=readSMILESdict()
+
+    println("Calculating component properties using UManSysProp")
+    for species_ind in 1:num_species
+        species_name=species_names[species_ind]
+        if haskey(species2SMILESdict,species_name)
+            pybelobj=SMILES2Pybel(species2SMILESdict[species_name])
+            density,mw,o_c,h_c,sat_vp=compoundProperty(species_name,temperature,methodfuncs,species2SMILESdict)
+            y_density_array[species_ind]=density
+            y_mw[species_ind]=mw
+            o_cs[species_ind]=o_c
+            h_cs[species_ind]=h_c
+            sat_vps[species_ind]=sat_vp
+        else
+            ignore_index_mask[species_ind]=true
+        end
+    end
+    return_dict=Dict(
+        "y_density_array"=>y_density_array,
+        "y_mw"=>y_mw,
+        "o_c"=>o_cs,
+        "h_c"=>h_cs,
+        "sat_vp"=>sat_vps,
+        "Delta_H"=>Delta_H,
+        "Latent_heat_gas"=>Latent_heat_gas,
+        "ignore_index_mask"=>ignore_index_mask
     )
 end
