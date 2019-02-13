@@ -98,8 +98,8 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
             if !(typeof(density)<:Real)
                 b1=boiling_points.nannoolal(pybelobj)
                 cpt=critical_property(pybelobj, b1)[1]#temperature
-                println(species_ind,", ",species_name,", ",species2SMILESdict[species_name],", ",density)
-                println(temperature,", ",cpt,", ",b1)
+                print(species_ind,", ",species_name,", ",species2SMILESdict[species_name],", ",density)
+                println(", ",temperature,", ",cpt,", ",b1)
                 density=real(density)
             end
             y_density_array[species_ind]=density
