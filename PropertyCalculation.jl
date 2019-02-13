@@ -98,8 +98,8 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
             if !(typeof(density)<:Real)
                 b1=boiling_points.nannoolal(pybelobj)
                 cpt=critical_property(pybelobj, b1)[1]#temperature
-                println(species_ind,", ",species_name,", ",species2SMILESdict[species_name],", ",density)
-                println(temperature,", ",cpt,", ",b1)
+                print(species_ind,", ",species_name,", ",species2SMILESdict[species_name],", ",density)
+                println(", ",temperature,", ",cpt,", ",b1)
                 density=real(density)
             end
             y_density_array[species_ind]=density
@@ -127,4 +127,13 @@ function Pure_component2(num_species::Integer,y_mw::Array{Float64,1},R_gas::Real
     alpha_d_org=zeros(Float64,num_species)+0.1
     DStar_org=1.9E0*(y_mw.^(-2.0E0/3.0E0))
     mean_them_vel=sqrt((8.0E0*R_gas*temp)/(pi*y_mw*1.0E-3))
+    gamma_gas=((3.0E0*DStar_org)/(mean_them_vel*1.0E2))*1.0E-2
+
+    return_dict=Dict(
+        "alpha_d_org"=>alpha_d_org,
+        "DStar_org"=>DStar_org,
+        "mean_them_vel"=>mean_them_vel,
+        "gamma_gas"=>gamma_gas
+    )
+    return return_dict
 end
