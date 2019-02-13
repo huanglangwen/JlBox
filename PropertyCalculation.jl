@@ -122,3 +122,9 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
         "ignore_index_mask"=>ignore_index_mask
     )
 end
+
+function Pure_component2(num_species::Integer,y_mw::Array{Float64,1},R_gas::Real,temperature::Real)
+    alpha_d_org=zeros(Float64,num_species)+0.1
+    DStar_org=1.9E0*(y_mw.^(-2.0E0/3.0E0))
+    mean_them_vel=sqrt((8.0E0*R_gas*temp)/(pi*y_mw*1.0E-3))
+end
