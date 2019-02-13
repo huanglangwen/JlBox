@@ -60,3 +60,4 @@ RUN git clone git://github.com/JuliaEditorSupport/julia-vim.git
 WORKDIR /root/julia-vim
 RUN mkdir -p /root/.vim
 RUN cp -R * /root/.vim
+RUN echo "set nowrap\nset number\nset tabstop=4\nset shiftwidth=4\nset softtabstop=4\nset expandtab\nset smarttab" >> /root/.vimrc
