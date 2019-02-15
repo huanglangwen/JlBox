@@ -7,16 +7,16 @@ function Partition(y)
         total_moles=sum(temp_array)
         y_mole_fractions=temp_array/total_moles
 
-        mass_array=temp_array/NA*mw_array
+        mass_array=temp_array.*mw_array/NA
         
-        total_SOA_mass_array(size_step)=sum(mass_array)
-        aw_array(size_step)=temp_array(num_species_condensed)/total_moles
+        total_SOA_mass_array[size_step]=sum(mass_array)
+        #aw_array[size_step]=temp_array[num_species_condensed]/total_moles
         total_mass=sum(mass_array)
         mass_fractions_array=mass_array/total_mass
 
         density=1.0/(sum(mass_fractions_array/density_array))
 
-        size_array(size_step)=((3.0*((total_mass*1.0E3)/(N_perbin[size_step]*1.0E6)))/(4.0*pi*density))^(1.0/3.0)
+        size_array[size_step]=((3.0*((total_mass*1.0E3)/(N_perbin[size_step]*1.0E6)))/(4.0*pi*density))^(1.0/3.0)
 
         Kn=gamma_gas/size_array[size_step]
         Inverse_Kn=1.0/Kn
