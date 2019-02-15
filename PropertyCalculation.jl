@@ -101,6 +101,7 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
                 #print(species_ind,", ",species_name,", ",species2SMILESdict[species_name],", ",density)
                 #println(", ",temperature,", ",cpt,", ",b1)
                 density=real(density)
+                ignore_index_mask[species_ind]=true
             end
             y_density_array[species_ind]=density
             y_mw[species_ind]=mw
