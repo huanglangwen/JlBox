@@ -71,11 +71,9 @@ function prepare_gas()
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
     stoich_list=mk_reactants_list(num_reactants,num_eqns,stoich_mtx)
 
-    reactants_initial=zeros(Float64,num_reactants)
+    
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
-    for (k,v) in reactants_initial_dict
-        reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
-    end
+
     println("Generating evaluate_rates()")
     evaluate_rates_expr=gen_evaluate_rates(file)
     println("Done Generation")
@@ -92,7 +90,7 @@ function prepare_gas()
     param_dict=Dict("dydt"=>dydt,"rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
                     "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
-    return param_dict
+    return param_dict,reactants2ind
 end
 
 function run_simulation_aerosol()
@@ -101,7 +99,12 @@ end
 
 
 function run_simulation_gas()
-    param_dict=prepare_gas()
+    param_dict,reactants2ind=prepare_gas()
+    num_reactants=param_dict["num_reactants"]
+    reactants_initial=zeros(Float64,num_reactants)
+    for (k,v) in reactants_initial_dict
+        reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
+    end
     prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
                             param_dict,
                             #(dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)
