@@ -98,7 +98,6 @@ function prepare_aerosol()
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
-    methods=
 end
 
 function run_simulation_aerosol()
