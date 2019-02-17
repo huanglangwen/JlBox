@@ -106,7 +106,11 @@ end
 
 
 function run_simulation_gas()
-    param_dict,reactants2ind=prepare_gas(file)
+    open("Configure_gas.jl") do f
+        s=read(f,String)
+        eval(Meta.parse(s))
+    end
+    param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)
     for (k,v) in reactants_initial_dict
