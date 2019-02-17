@@ -93,12 +93,21 @@ function prepare_gas()
     return param_dict,reactants2ind
 end
 
+function prepare_aerosol()
+    param_dict,reactants2ind=prepare_gas()
+    num_reactants=param_dict["num_reactants"]
+    ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
+    species_names=[ind2reactants[ind] for ind=1:num_reactants]
+    methods=
+end
+
 function run_simulation_aerosol()
     nothing
 end
 
 
 function run_simulation_gas()
+    include("Configure_gas.jl")
     param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)

@@ -10,6 +10,5 @@ end
 
 module Compute
 export run_simulation
-include("Configure.jl")
 include("Compute.jl")
 end
