@@ -82,7 +82,8 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
     o_cs=zeros(Float64,num_species)
     h_cs=zeros(Float64,num_species)
     sat_vps=zeros(Float64,num_species)+100
-    ignore_index_mask=zeros(Bool,num_species)#All falses
+    #ignore_index_mask=zeros(Bool,num_species)#All falses
+    include_inds::Array{Integer,1}=[]
     Delta_H=zeros(Float64,num_species)#Ignored
     Latent_heat_gas=zeros(Float64,num_species)#Ignored
 
@@ -96,20 +97,13 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
             pybelobj=SMILES2Pybel(species2SMILESdict[species_name])
             density,mw,o_c,h_c,sat_vp=compoundProperty(pybelobj,temperature,methodfuncs)
             if !(typeof(density)<:Real)
-                #b1=boiling_points.nannoolal(pybelobj)
-                #cpt=critical_property(pybelobj, b1)[1]#temperature
-                #print(species_ind,", ",species_name,", ",species2SMILESdict[species_name],", ",density)
-                #println(", ",temperature,", ",cpt,", ",b1)
-                density=real(density)
-                ignore_index_mask[species_ind]=true
+                push!(include_inds,species_ind)
+                y_density_array[species_ind]=density
+                y_mw[species_ind]=mw
+                o_cs[species_ind]=o_c
+                h_cs[species_ind]=h_c
+                sat_vps[species_ind]=sat_vp
             end
-            y_density_array[species_ind]=density
-            y_mw[species_ind]=mw
-            o_cs[species_ind]=o_c
-            h_cs[species_ind]=h_c
-            sat_vps[species_ind]=sat_vp
-        else
-            ignore_index_mask[species_ind]=true
         end
     end
     return_dict=Dict(
@@ -120,7 +114,8 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
         "sat_vp"=>sat_vps,
         "Delta_H"=>Delta_H,
         "Latent_heat_gas"=>Latent_heat_gas,
-        "ignore_index_mask"=>ignore_index_mask
+        "include_inds"=>include_inds
+        #"ignore_index_mask"=>ignore_index_mask
     )
 end
 
