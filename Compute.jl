@@ -62,9 +62,10 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
     dy_dt_gas=dydt!(y_gas,p,t)
     C_g_i_t=y[include_inds]
+
 end
 
-function run_simulation()
+function prepare_gas()
     println("Parsing Reactants")
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
@@ -77,8 +78,6 @@ function run_simulation()
     end
     println("Generating evaluate_rates()")
     evaluate_rates_expr=gen_evaluate_rates(file)
-    #println("Generating loss_gain_static()")
-    #loss_gain_expr=generate_loss_gain(num_reactants,num_eqns,stoich_mtx)
     println("Done Generation")
     rate_values=zeros(Float64,num_eqns)
     rate_prods=zeros(Float64,num_eqns)
@@ -88,24 +87,21 @@ function run_simulation()
     constant_folding!(evaluate_rates_expr,constantdict,rate_values);
     extract_constants!(evaluate_rates_expr);
     println("Evaluating evaluate_rates&loss_gain codes")
-    #open("generated_code.jl", "w") do f
-    #    write(f,repr(evaluate_rates_expr.args[2]))
-    #    write(f,"\n")
-    #    write(f,repr(loss_gain_expr.args[2]))
-    #end
-    #include("generated_code.jl") #FATAL ERROR: ... AT ENDS OF VERY LONG LINES
-    eval(evaluate_rates_expr)#function evaluate_rates!(ttime::Float64,
-                             #RO2::Float64,H2O::Float64,temp::Float64,
-                             #rate_values::Array{Float64,1},J::Array{Float64,1})
-    #eval(loss_gain_expr)#function loss_gain_static!(num_reactants::Int,num_eqns::Int,
-                                  #reactants::Array{Float64,1},#num_reactants
-                                  #rate_values::Array{Float64,1},#num_eqns
-                                  #rate_prods::Array{Float64,1},#num_eqns k*[A]^a*[B]^b
-                                  #dydt::Array{Float64,1})#num_reactants
+    eval(evaluate_rates_expr)
     println("Solving ODE")
     param_dict=Dict("dydt"=>dydt,"rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
                     "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
+    return param_dict
+end
+
+function run_simulation_aerosol()
+    nothing
+end
+
+
+function run_simulation_gas()
+    param_dict=prepare_gas()
     prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
                             param_dict,
                             #(dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)

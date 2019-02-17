@@ -1,10 +1,10 @@
 include("JlBoxModule.jl")
-using Compute:run_simulation
+using Compute:run_simulation_gas
 using DataFrames
 using CSV
 
 #Profile.init(n = 10^7, delay = 5.)
-@time sol,reactants2ind=run_simulation()
+@time sol,reactants2ind=run_simulation_gas()
 num_reactants=length(reactants2ind)
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[ind2reactants[ind] for ind in 1:num_reactants]
