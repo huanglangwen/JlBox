@@ -41,15 +41,24 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     return dydt
 end
 
-function dydt!(reactants::Array{Float64,1},p,t)::Array{Float64,1}
-    dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=p
+function dydt!(reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
+    #dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=p
+    dydt,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
+        [p[ind] for ind in 
+            ["dydt","rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
+             "num_eqns","num_reactants"]
+        ]
     #dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants=p
     time_of_day_seconds=start_time+t
     RO2=sum(reactants[RO2_inds])
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
-    loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dy)
+    loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
-    return dy
+    return dydt
+end
+
+function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
+    nothing 
 end
 
 function run_simulation()
@@ -71,7 +80,7 @@ function run_simulation()
     rate_values=zeros(Float64,num_eqns)
     rate_prods=zeros(Float64,num_eqns)
     J=zeros(Float64,62)
-    dy=zeros(Float64,num_reactants)
+    dydt=zeros(Float64,num_reactants)
     println("Performing constant folding")
     constant_folding!(evaluate_rates_expr,constantdict,rate_values);
     extract_constants!(evaluate_rates_expr);
@@ -91,8 +100,12 @@ function run_simulation()
                                   #rate_prods::Array{Float64,1},#num_eqns k*[A]^a*[B]^b
                                   #dydt::Array{Float64,1})#num_reactants
     println("Solving ODE")
+    param_dict=Dict("dydt"=>dydt,"rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,
+                    "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
+                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
     prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
-                            (dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)
+                            param_dict,
+                            #(dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)
                             )
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
@@ -100,7 +113,7 @@ function run_simulation()
                 dtmax=100.0,
                 max_order = 5,
                 max_convergence_failures = 1000,
-                progress=true
+                #progress=true
                 )
     return sol,reactants2ind
 end

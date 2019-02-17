@@ -1,5 +1,9 @@
-
-function Partition(y)
+function Partition!(y,dy_dt,dy_dt_gas_matrix,
+                    num_bins,num_species,num_species_condensed,
+                    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+                    NA,sigma,R_gas,Model_temp,include_inds)
+    size_array=zeros(Float64,num_bins)
+    total_SOA_mass_array=zeros(Float64,num_bins)
     for size_step=1:num_bins
         start_ind=num_species+1+((size_step-1)*num_species_condensed)
         stop_ind=num_species+(size_step*num_species_condensed)
@@ -37,9 +41,12 @@ function Partition(y)
         dm_dt=k_i_m_t.*(C_g_i_t-Cstar_i_m_t)
 
         #ASSIGN dy_dt_gas_matrix
+        for ind=1:length(include_inds)
+            dy_dt_gas_matrix[include_inds[i]]=dm_dt[i]
+        end
 
         dy_dt[start_ind:stop_ind]=dm_dt
     end
-    dy_dt(1:num_species)=dy_dt(1:num_species)-sum(dy_dt_gas_matrix,2)
+    dy_dt[1:num_species]=dy_dt[1:num_species]-sum(dy_dt_gas_matrix,2)
     total_SOA_mass=sum(total_SOA_mass_array)*1.0E12
 end
