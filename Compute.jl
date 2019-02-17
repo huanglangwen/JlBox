@@ -107,8 +107,9 @@ end
 
 function run_simulation_gas()
     open("Configure_gas.jl") do f
-        s=read(f,String)
-        eval(Meta.parse(s))
+        for s in readlines(f)
+            eval(Meta.parse(s))
+        end
     end
     param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
