@@ -65,7 +65,7 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
 
 end
 
-function prepare_gas()
+function prepare_gas(file)
     println("Parsing Reactants")
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
@@ -107,7 +107,7 @@ end
 
 function run_simulation_gas()
     include("Configure_gas.jl")
-    param_dict,reactants2ind=prepare_gas()
+    param_dict,reactants2ind=prepare_gas(file)
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)
     for (k,v) in reactants_initial_dict
