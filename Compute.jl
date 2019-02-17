@@ -65,7 +65,7 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
 
 end
 
-function prepare_gas(file)
+function prepare_gas()
     println("Parsing Reactants")
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
