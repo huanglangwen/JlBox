@@ -106,7 +106,6 @@ end
 
 
 function run_simulation_gas()
-    include("Configure_gas.jl")
     param_dict,reactants2ind=prepare_gas(file)
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)
