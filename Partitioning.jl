@@ -1,12 +1,12 @@
 function Partition!(y,dy_dt,dy_dt_gas_matrix,
-                    num_bins,num_species,num_species_condensed,
+                    num_bins,num_reactants,num_reactants_condensed,
                     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
                     NA,sigma,R_gas,Model_temp,include_inds)
     size_array=zeros(Float64,num_bins)
     total_SOA_mass_array=zeros(Float64,num_bins)
     for size_step=1:num_bins
-        start_ind=num_species+1+((size_step-1)*num_species_condensed)
-        stop_ind=num_species+(size_step*num_species_condensed)
+        start_ind=num_reactants+1+((size_step-1)*num_reactants_condensed)
+        stop_ind=num_reactants+(size_step*num_reactants_condensed)
         temp_array=y[start_ind:stop_ind]
         total_moles=sum(temp_array)
         y_mole_fractions=temp_array/total_moles
@@ -14,7 +14,7 @@ function Partition!(y,dy_dt,dy_dt_gas_matrix,
         mass_array=temp_array.*mw_array/NA
         
         total_SOA_mass_array[size_step]=sum(mass_array)
-        #aw_array[size_step]=temp_array[num_species_condensed]/total_moles
+        #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
         total_mass=sum(mass_array)
         mass_fractions_array=mass_array/total_mass
 
@@ -47,6 +47,6 @@ function Partition!(y,dy_dt,dy_dt_gas_matrix,
 
         dy_dt[start_ind:stop_ind]=dm_dt
     end
-    dy_dt[1:num_species]=dy_dt[1:num_species]-sum(dy_dt_gas_matrix,2)
+    dy_dt[1:num_reactants]=dy_dt[1:num_reactants]-sum(dy_dt_gas_matrix,2)
     total_SOA_mass=sum(total_SOA_mass_array)*1.0E12
 end
