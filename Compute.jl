@@ -1,6 +1,7 @@
 #include("JlBoxModule.jl")
 using Parse_eqn:parse_reactants,gen_evaluate_rates
 using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reactants_list
+using PropertyCalculation:Pure_component1,Pure_component2
 using DifferentialEquations
 using StaticArrays
 
@@ -98,6 +99,23 @@ function prepare_aerosol()
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
+    pc1_dict=Pure_component1(num_reactants,species_names,temp,property_methods)
+    include_inds=pc1_dict["include_inds"]
+    num_species_condensed=length(num_species_condensed)
+    y_mw=pc1_dict["y_mw"]
+    pc2_dict=Pure_component2(num_species_condensed,y_mw,R_gas,temp)
+    merge!(param_dict,pc1_dict,pc2_dict)
+    return param_dict
+end
+
+function read_configure(filename)
+    open(filename) do f
+        for s in readlines(f)
+            if (length(s)>2)&(s[1]!='#')
+                eval(Meta.parse(s))#eval runs in Module scope while include runs in global scope
+            end
+        end
+    end
 end
 
 function run_simulation_aerosol()
@@ -106,11 +124,7 @@ end
 
 
 function run_simulation_gas()
-    open("Configure_gas.jl") do f
-        for s in readlines(f)
-            eval(Meta.parse(s))
-        end
-    end
+    read_configure("Configure_gas.jl")
     param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)

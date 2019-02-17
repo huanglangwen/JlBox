@@ -12,3 +12,8 @@ module Compute
 export run_simulation
 include("Compute.jl")
 end
+
+module PropertyCalculation
+export Pure_component1,Pure_component2
+include("PropertyCalculation.jl")
+end
