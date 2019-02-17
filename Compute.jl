@@ -58,7 +58,9 @@ function dydt!(reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
 end
 
 function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
-    nothing 
+    num_reactants=p["num_reactants"]
+    y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
+    dy_dt_gas=dydt!(y_gas,p,t)
 end
 
 function run_simulation()
