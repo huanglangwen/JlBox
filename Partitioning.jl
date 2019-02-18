@@ -19,7 +19,7 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
         density_array[1:num_reactants_condensed]=density_input[1:num_reactants_condensed]
         density_array[num_reactants_condensed+1]=core_density_array[size_step]
         
-        total_SOA_mass_array[size_step]=sum(mass_array)
+        total_SOA_mass_array[size_step]=sum(mass_array[1:end-1])
         #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
         total_mass=sum(mass_array)
         mass_fractions_array=mass_array./total_mass

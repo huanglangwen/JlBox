@@ -75,7 +75,7 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
         NA,sigma,R_gas,temp)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
-    if citer%10==0
+    if citer%300==0
         @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %f\n",citer,t,total_SOA_mass)
     end
     return dy_dt
@@ -125,7 +125,7 @@ function prepare_aerosol()
     param_dict["N_perbin"]=N_perbin
     
     println("Calculating Dry Core Properties")
-    y_core=(4.0/3.0)*pi*((xs*1.0e-6)^3.0) #4/3*pi*radius^3
+    y_core=(4.0/3.0)*pi*((xs*1.0e-6).^3.0) #4/3*pi*radius^3
     y_core=y_core.*core_density_array #mass per particle [kg]
     y_core=y_core./(core_mw*1.0e-3) #moles per particle, changing mw from g/mol to kg/mol
     y_core=y_core*NA #molecules per particle
