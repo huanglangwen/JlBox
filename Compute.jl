@@ -117,6 +117,7 @@ function prepare_aerosol()
     println("Calculating Partitioning Properties")
     pc1_dict=Pure_component1(num_reactants,species_names,vp_cutoff,temp,property_methods)
     include_inds=pc1_dict["include_inds"]
+    println("include inds:",include_inds-1)
     num_reactants_condensed=length(include_inds)
     y_mw=pc1_dict["y_mw"]
     pc2_dict=Pure_component2(num_reactants_condensed,y_mw,R_gas,temp)
