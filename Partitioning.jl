@@ -49,4 +49,5 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
     end
     dy_dt[1:num_reactants]=dy_dt[1:num_reactants]-sum(dy_dt_gas_matrix,2)
     total_SOA_mass=sum(total_SOA_mass_array)*1.0E12
+    return dy_dt,total_SOA_mass
 end

@@ -67,14 +67,14 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
     dy_dt=dydt!(y_gas,p,t)
     C_g_i_t=y[include_inds]
-    Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
+    dy_dt,total_SOA_mass=Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
         num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         NA,sigma,R_gas,temp)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%10==0
-        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+        @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %f\n",citer,t,total_SOA_mass)
     end
     return dy_dt
 end
@@ -151,7 +151,7 @@ function run_simulation_aerosol()
     end
     println("Solving ODE")
     prob = ODEProblem{false}(dydt_aerosol!,y_init,tspan,param_dict)
-    sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1.0e-2,
+    sol = solve(prob,CVODE_BDF(linear_solver=:GMRES),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
