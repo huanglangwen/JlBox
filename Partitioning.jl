@@ -29,7 +29,7 @@ function Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
         Correction_part3=1.0+(Correction_part1+Correction_part2).*Kn
         Correction=1.0/Correction_part3
 
-        kelvin_factor=exp((4.0*mw_array*1.0E-3*sigma)/(R_gas*Model_temp*size_array[size_step]*2.0*density))
+        kelvin_factor=exp.((4.0*mw_array*1.0E-3*sigma)/(R_gas*Model_temp*size_array[size_step]*2.0*density))
         
         Pressure_eq=kelvin_factor.*y_mole_fractions.*Psat*101325.0
 

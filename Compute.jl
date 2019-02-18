@@ -59,7 +59,8 @@ function dydt!(reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
 end
 
 function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
-    num_reactants=p["num_reactants"]
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    include_inds=p["include_inds"]
     y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
     dy_dt_gas=dydt!(y_gas,p,t)
     C_g_i_t=y[include_inds]
@@ -71,8 +72,6 @@ function prepare_gas()
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
     stoich_list=mk_reactants_list(num_reactants,num_eqns,stoich_mtx)
-
-    
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
 
     println("Generating evaluate_rates()")
@@ -99,16 +98,19 @@ function prepare_aerosol()
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
+    println("Calculating Partitioning Properties")
     pc1_dict=Pure_component1(num_reactants,species_names,temp,property_methods)
     include_inds=pc1_dict["include_inds"]
-    num_species_condensed=length(num_species_condensed)
+    num_reactants_condensed=length(include_inds)
     y_mw=pc1_dict["y_mw"]
-    pc2_dict=Pure_component2(num_species_condensed,y_mw,R_gas,temp)
+    pc2_dict=Pure_component2(num_reactants_condensed,y_mw,R_gas,temp)
     merge!(param_dict,pc1_dict,pc2_dict)
+    param_dict["num_reactants_condensed"]=num_reactants_condensed
     return param_dict
 end
 
-function read_configure(filename)
+function read_configure!(filename::String)
+    @printf("Reading Config file %s\n",filename)
     open(filename) do f
         for s in readlines(f)
             if (length(s)>2)&(s[1]!='#')
@@ -119,12 +121,14 @@ function read_configure(filename)
 end
 
 function run_simulation_aerosol()
-    nothing
+    read_configure!("Configure_aerosol.jl")
+    param_dict=prepare_aerosol()
+
 end
 
 
 function run_simulation_gas()
-    read_configure("Configure_gas.jl")
+    read_configure!("Configure_gas.jl")
     param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)

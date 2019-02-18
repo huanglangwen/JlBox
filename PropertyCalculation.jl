@@ -111,7 +111,8 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
         "y_mw"=>y_mw[include_inds],
         "o_c"=>o_cs[include_inds],
         "h_c"=>h_cs[include_inds],
-        "sat_vp"=>sat_vps[include_inds],
+        #"sat_vp"=>sat_vps[include_inds],
+        "Psat"=>exp10.(sat_vps[include_inds])
         "Delta_H"=>Delta_H[include_inds],
         "Latent_heat_gas"=>Latent_heat_gas[include_inds],
         "include_inds"=>include_inds
@@ -122,7 +123,7 @@ end
 function Pure_component2(num_species_condensed::Integer,y_mw::Array{Float64,1},R_gas::Real,temperature::Real)::Dict{String,Array{Real,1}}
     alpha_d_org=zeros(Float64,num_species_condensed)+0.1
     DStar_org=1.9E0*(y_mw.^(-2.0E0/3.0E0))
-    mean_them_vel=sqrt((8.0E0*R_gas*temp)./(pi*y_mw*1.0E-3))
+    mean_them_vel=sqrt.((8.0E0*R_gas*temp)./(pi*y_mw*1.0E-3))
     gamma_gas=((3.0E0*DStar_org)./(mean_them_vel*1.0E2))*1.0E-2
 
     return_dict=Dict(
