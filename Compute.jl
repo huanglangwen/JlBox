@@ -1,6 +1,7 @@
 #include("JlBoxModule.jl")
 using Parse_eqn:parse_reactants,gen_evaluate_rates
 using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reactants_list
+using SizeDistributions:lognormal
 using PropertyCalculation:Pure_component1,Pure_component2
 using Partitioning:Partition!
 using DifferentialEquations
@@ -61,7 +62,7 @@ end
 
 function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
-    include_inds,dy_dt_gas_matrix=[p[i] for i in ["include_inds","dy_dt_gas_matrix"]]
+    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
     dy_dt=dydt!(y_gas,p,t)
@@ -112,6 +113,9 @@ function prepare_aerosol()
     pc2_dict=Pure_component2(num_reactants_condensed,y_mw,R_gas,temp)
     merge!(param_dict,pc1_dict,pc2_dict)
     param_dict["num_reactants_condensed"]=num_reactants_condensed
+    println("Generating initial size distribution")
+    N_perbin,_=lognormal(num_bins,total_conc,meansize,std,lowersize,uppersize)
+    param_dict["N_perbin"]=N_perbin
     return param_dict
 end
 
