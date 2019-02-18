@@ -23,6 +23,7 @@ const lowersize=0.01 #microns
 const uppersize=1.0 #microns
 const meansize=0.2 #microns
 
+const vp_cutoff=-6.0
 const R_gas=8.3144598 #Ideal gas constant [kg m2 s-2 K-1 mol-1]
 const NA=6.0221409e+23 #Avogadros number
 const sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
