@@ -8,3 +8,21 @@ function test_Pure_component1()
     methods=Dict("bp"=>"nannoolal","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"schroeder")
     Pure_component1(num_species,species_names,vp_cutoff,temperature,methods)
 end
+
+include("JlBoxModule.jl")
+using Compute
+function test_aerosol_initial()
+    read_configure!("Configure_aerosol.jl")
+    param_dict,reactants2ind=prepare_aerosol()
+    num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
+    dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
+    dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
+    param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
+    param_dict["dydt"]=dy_dt
+    param_dict["Current_iter"]=0
+    y_init=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
+    for (k,v) in reactants_initial_dict
+        y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
+    end
+    return param_dict
+end
