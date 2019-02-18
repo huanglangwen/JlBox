@@ -1,10 +1,10 @@
 const file="MCM_APINENE.eqn.txt"#"MCM_test.eqn.txt"
-const temp=298.15 # Kelvin
+const temp=288.15 # Kelvin
 const RH=0.5 # RH/100% [0 - 0.99]
 const hour_of_day=12.0 # Define a start time  24 hr format
 const start_time=hour_of_day*60*60 # seconds, used as t0 in solver
-const simulation_time= 10800.0 # seconds
-const batch_step=100.0 # seconds
+const simulation_time= 3600.0 # seconds
+const batch_step=300.0 # seconds
 const temp_celsius=temp-273.15
 #const Psat=610.78*exp((temp_celsius/(temp_celsius+238.3))*17.2694)# Saturation VP of water vapour, to get concentration of H20
 #const Pw=RH*Psat
