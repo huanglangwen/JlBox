@@ -105,7 +105,7 @@ function prepare_aerosol()
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
     println("Calculating Partitioning Properties")
-    pc1_dict=Pure_component1(num_reactants,species_names,temp,property_methods)
+    pc1_dict=Pure_component1(num_reactants,species_names,vp_cutoff,temp,property_methods)
     include_inds=pc1_dict["include_inds"]
     num_reactants_condensed=length(include_inds)
     y_mw=pc1_dict["y_mw"]

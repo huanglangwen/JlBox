@@ -47,7 +47,8 @@ function compoundProperty(pybelobj::PyObject,temperature::Integer,methodfuncs::D
     return density,mw,o_c,h_c,sat_vp
 end
 
-function Pure_component1(num_species::Integer,species_names::Array{String,1},vp_cutoff::Real,temperature::Number,methods::Dict)
+function Pure_component1(num_species::Integer,species_names::Array{String,1},
+                         vp_cutoff::Real,temperature::Number,methods::Dict)
     species2inds=Dict(species_names[i]=>i for i in 1:num_species)
     bp_method,vp_method,critical_method,density_method=[methods[i] for i in ["bp","vp","critical","density"]]
     boiling_point = Dict(
