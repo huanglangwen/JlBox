@@ -27,3 +27,26 @@ function test_aerosol_initial()
     end
     return param_dict,reactants2ind
 end
+
+function test_include_inds()
+    param_dict,reactants2ind=test_aerosol_initial()
+    ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
+    reactants=[ind2reactants[ind] for ind in 1:num_reactants]
+    include_inds=param_dict["include_inds"]
+
+    sp2SMILES=readSMILESdict()
+    for i in [46,47,48]
+        reac_name=reactants[i]
+        reac_smi=sp2SMILES[reac_name]
+        reac_pyobj=SMILES2Pybel(reac_smi)
+        println("reactant_name:",reac_name)
+        println("SMILES:",reac_smi)
+        
+        property_methods=Dict("bp"=>boiling_points.joback_and_reid,
+                              "vp"=>vapour_pressures.nannoolal,
+                              "critical"=>critical_properties.nannoolal,
+                              "density"=>(c, t, p) -> liquid_densities.girolami(c))
+        density,mw,o_c,h_c,sat_vp=compoundProperty(reac_pyobj,temp,property_methods)
+        println(density," ,",mw," ,",o_c," ,",h_c," ,",sat_vp)
+    end
+    
