@@ -13,6 +13,11 @@ export Pure_component1,Pure_component2
 include("PropertyCalculation.jl")
 end
 
+module Partitioning
+export Partition!
+include("Partitioning.jl")
+end
+
 module Compute
 export run_simulation
 include("Compute.jl")

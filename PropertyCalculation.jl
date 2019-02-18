@@ -112,7 +112,7 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},tem
         "o_c"=>o_cs[include_inds],
         "h_c"=>h_cs[include_inds],
         #"sat_vp"=>sat_vps[include_inds],
-        "Psat"=>exp10.(sat_vps[include_inds])
+        "Psat"=>exp10.(sat_vps[include_inds]),
         "Delta_H"=>Delta_H[include_inds],
         "Latent_heat_gas"=>Latent_heat_gas[include_inds],
         "include_inds"=>include_inds

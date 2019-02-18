@@ -16,6 +16,13 @@ const reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm
 const constantdict=Dict([(:temp,temp),(:H2O,H2O)])
 
 const num_bins=16
+#Lognormal Distribution
+const total_conc=100 #Total particles per cc
+const std=2.2 #Standard Deviation
+const lowersize=0.01 #microns
+const uppersize=1.0 #microns
+const meansize=0.2 #microns
+
 const R_gas=8.3144598 #Ideal gas constant [kg m2 s-2 K-1 mol-1]
 const NA=6.0221409e+23 #Avogadros number
 const sigma=72.0e-3 # Assume surface tension of water (mN/m) ???

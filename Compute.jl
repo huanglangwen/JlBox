@@ -2,6 +2,7 @@
 using Parse_eqn:parse_reactants,gen_evaluate_rates
 using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reactants_list
 using PropertyCalculation:Pure_component1,Pure_component2
+using Partitioning:Partition!
 using DifferentialEquations
 using StaticArrays
 
@@ -60,11 +61,16 @@ end
 
 function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
-    include_inds=p["include_inds"]
+    include_inds,dy_dt_gas_matrix=[p[i] for i in ["include_inds","dy_dt_gas_matrix"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
-    dy_dt_gas=dydt!(y_gas,p,t)
+    dy_dt=dydt!(y_gas,p,t)
     C_g_i_t=y[include_inds]
-
+    Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
+        num_bins,num_reactants,num_reactants_condensed,include_inds
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        NA,sigma,R_gas,temp)
+    return dy_dt
 end
 
 function prepare_gas()
