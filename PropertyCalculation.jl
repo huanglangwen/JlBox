@@ -34,7 +34,7 @@ function SMILES2Pybel(smi_str)
     return pybel.readstring("smi",smi_str)
 end
 
-function compoundProperty(pybelobj::PyObject,temperature::Integer,methodfuncs::Dict)
+function compoundProperty(pybelobj::PyObject,temperature::Real,methodfuncs::Dict)
     boiling_point,vapour_pressure,critical_property,liquid_density=[methodfuncs[i] for i in ["bp","vp","critical","density"]]
     b1=boiling_points.nannoolal(pybelobj)
     density=liquid_density(pybelobj, temperature, pycall(critical_property,PyObject,pybelobj, b1))*1.0E3
@@ -124,7 +124,7 @@ end
 function Pure_component2(num_species_condensed::Integer,y_mw::Array{Float64,1},R_gas::Real,temperature::Real)::Dict{String,Array{Real,1}}
     alpha_d_org=zeros(Float64,num_species_condensed)+0.1
     DStar_org=1.9E0*(y_mw.^(-2.0E0/3.0E0))
-    mean_them_vel=sqrt.((8.0E0*R_gas*temp)./(pi*y_mw*1.0E-3))
+    mean_them_vel=sqrt.((8.0E0*R_gas*temperature)./(pi*y_mw*1.0E-3))
     gamma_gas=((3.0E0*DStar_org)./(mean_them_vel*1.0E2))*1.0E-2
 
     return_dict=Dict(

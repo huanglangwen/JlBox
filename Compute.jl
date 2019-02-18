@@ -71,10 +71,11 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
         num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         NA,sigma,R_gas,temp)
-    param_dict["Current_iter"]+=1
-    citer=param_dict["Current_iter"]
+    p["Current_iter"]+=1
+    citer=p["Current_iter"]
     if citer%10==0
         @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+    end
     return dy_dt
 end
 
@@ -97,7 +98,6 @@ function prepare_gas()
     extract_constants!(evaluate_rates_expr);
     println("Evaluating evaluate_rates&loss_gain codes")
     eval(evaluate_rates_expr)
-    println("Solving ODE")
     param_dict=Dict("dydt"=>dydt,"rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
                     "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
@@ -118,7 +118,7 @@ function prepare_aerosol()
     merge!(param_dict,pc1_dict,pc2_dict)
     param_dict["num_reactants_condensed"]=num_reactants_condensed
     println("Generating initial size distribution")
-    N_perbin,_=lognormal(num_bins,total_conc,meansize,std,lowersize,uppersize)
+    N_perbin,_=lognormal(num_bins,total_conc,meansize,size_std,lowersize,uppersize)
     param_dict["N_perbin"]=N_perbin
     return param_dict,reactants2ind
 end
@@ -127,8 +127,10 @@ function read_configure!(filename::String)
     @printf("Reading Config file %s\n",filename)
     open(filename) do f
         for s in readlines(f)
-            if (length(s)>2)&(s[1]!='#')
-                eval(Meta.parse(s))#eval runs in Module scope while include runs in global scope
+            if (length(s)>2)
+                if s[1]!='#'
+                    eval(Meta.parse(s))#eval runs in Module scope while include runs in global scope
+                end
             end
         end
     end
@@ -137,7 +139,7 @@ end
 function run_simulation_aerosol()
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind=prepare_aerosol()
-    num_bins,num_reactants,num_reactants_condensed=param_dict["num_bins","num_reactants","num_reactants_condensed"]
+    num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
     dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
@@ -147,7 +149,8 @@ function run_simulation_aerosol()
     for (k,v) in reactants_initial_dict
         y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
-    prob = ODEProblem{false}(dydt!,reactants_initial,tspan,param_dict)
+    println("Solving ODE")
+    prob = ODEProblem{false}(dydt_aerosol!,y_init,tspan,param_dict)
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
@@ -167,7 +170,8 @@ function run_simulation_gas()
     for (k,v) in reactants_initial_dict
         reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
-    prob = ODEProblem{false}(dydt_aerosol!,reactants_initial,tspan,
+    println("Solving ODE")
+    prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
                             param_dict,
                             #(dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)
                             )

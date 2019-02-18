@@ -9,25 +9,25 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
         stop_ind=num_reactants+(size_step*num_reactants_condensed)
         temp_array=y[start_ind:stop_ind]
         total_moles=sum(temp_array)
-        y_mole_fractions=temp_array/total_moles
+        y_mole_fractions=temp_array./total_moles
 
-        mass_array=temp_array.*mw_array/NA
+        mass_array=temp_array.*mw_array./NA
         
         total_SOA_mass_array[size_step]=sum(mass_array)
         #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
         total_mass=sum(mass_array)
-        mass_fractions_array=mass_array/total_mass
+        mass_fractions_array=mass_array./total_mass
 
-        density=1.0/(sum(mass_fractions_array/density_array))
+        density=1.0/(sum(mass_fractions_array./density_array))
 
         size_array[size_step]=((3.0*((total_mass*1.0E3)/(N_perbin[size_step]*1.0E6)))/(4.0*pi*density))^(1.0/3.0)
 
-        Kn=gamma_gas/size_array[size_step]
-        Inverse_Kn=1.0/Kn
+        Kn=gamma_gas./size_array[size_step]
+        Inverse_Kn=1.0./Kn
         Correction_part1=(1.33+0.71*Inverse_Kn)./(1.0+Inverse_Kn)
         Correction_part2=(4.0*(1.0-alpha_d_org))./(3.0*alpha_d_org)
         Correction_part3=1.0+(Correction_part1+Correction_part2).*Kn
-        Correction=1.0/Correction_part3
+        Correction=1.0./Correction_part3
 
         kelvin_factor=exp.((4.0*mw_array*1.0E-3*sigma)/(R_gas*Model_temp*size_array[size_step]*2.0*density))
         
@@ -42,7 +42,7 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
 
         #ASSIGN dy_dt_gas_matrix
         for ind=1:length(include_inds)
-            dy_dt_gas_matrix[include_inds[i]]=dm_dt[i]
+            dy_dt_gas_matrix[include_inds[ind]]=dm_dt[ind]
         end
 
         dy_dt[start_ind:stop_ind]=dm_dt
