@@ -10,7 +10,8 @@ function test_Pure_component1()
 end
 
 include("JlBoxModule.jl")
-using Compute
+include("Configure_aerosol.jl")
+using Compute:read_configure!,prepare_aerosol
 function test_aerosol_initial()
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind=prepare_aerosol()
@@ -24,5 +25,5 @@ function test_aerosol_initial()
     for (k,v) in reactants_initial_dict
         y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
-    return param_dict
+    return param_dict,reactants2ind
 end
