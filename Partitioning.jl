@@ -1,7 +1,7 @@
-function Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
-                    num_bins,num_reactants,num_reactants_condensed,include_inds,
+function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix::Array{Float64,2},C_g_i_t::Array{Float64,1},
+                    num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
                     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
-                    NA,sigma,R_gas,Model_temp)
+                    NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
     size_array=zeros(Float64,num_bins)
     total_SOA_mass_array=zeros(Float64,num_bins)
     for size_step=1:num_bins
