@@ -64,12 +64,14 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
     dy_dt=dydt!(y_gas,p,t)
     C_g_i_t=y[include_inds]
     dy_dt,total_SOA_mass=Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
         num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        core_dissociation,y_core,core_mass_array,core_density_array,
         NA,sigma,R_gas,temp)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
@@ -109,6 +111,7 @@ function prepare_aerosol()
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
+
     println("Calculating Partitioning Properties")
     pc1_dict=Pure_component1(num_reactants,species_names,vp_cutoff,temp,property_methods)
     include_inds=pc1_dict["include_inds"]
@@ -118,8 +121,20 @@ function prepare_aerosol()
     merge!(param_dict,pc1_dict,pc2_dict)
     param_dict["num_reactants_condensed"]=num_reactants_condensed
     println("Generating initial size distribution")
-    N_perbin,_=lognormal(num_bins,total_conc,meansize,size_std,lowersize,uppersize)
+    N_perbin,xs=lognormal(num_bins,total_conc,meansize,size_std,lowersize,uppersize)
     param_dict["N_perbin"]=N_perbin
+    
+    println("Calculating Dry Core Properties")
+    y_core=(4.0/3.0)*pi*((xs*1.0e-6)^3.0) #4/3*pi*radius^3
+    y_core=y_core.*core_density_array #mass per particle [kg]
+    y_core=y_core./(core_mw*1.0e-3) #moles per particle, changing mw from g/mol to kg/mol
+    y_core=y_core*NA #molecules per particle
+    y_core=y_core.*N_perbin #molecules/cc representing each size range
+    #Calculate a core mass based on the above information [converting from molecules/cc to micrograms/m3]    
+    core_mass_array=y_core./NA.*core_mw
+    println("Dry core mass = ", sum(core_mass_array)*1E12)
+    param_dict["y_core"]=y_core
+    param_dict["core_mass_array"]=core_mass_array
     return param_dict,reactants2ind
 end
 

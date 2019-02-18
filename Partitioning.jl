@@ -1,17 +1,23 @@
 function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix::Array{Float64,2},C_g_i_t::Array{Float64,1},
                     num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
-                    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+                    mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+                    core_diss::Real,y_core::Array{Float64,1},core_mass_array::Array{Float64,1},core_density_array::Array{Float64,1},
                     NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
     size_array=zeros(Float64,num_bins)
     total_SOA_mass_array=zeros(Float64,num_bins)
+    mass_array=zeros(Float64,num_reactants_condensed+1)
+    density_array=zeros(Float64,num_reactants_condensed+1)
     for size_step=1:num_bins
         start_ind=num_reactants+1+((size_step-1)*num_reactants_condensed)
         stop_ind=num_reactants+(size_step*num_reactants_condensed)
         temp_array=y[start_ind:stop_ind]
-        total_moles=sum(temp_array)
+        total_moles=sum(temp_array)+y_core[size_step]*core_diss
         y_mole_fractions=temp_array./total_moles
 
-        mass_array=temp_array.*mw_array./NA
+        mass_array[1:num_reactants_condensed]=temp_array.*mw_array./NA
+        mass_array[num_reactants_condensed+1]=core_mass_array[size_step]
+        density_array[1:num_reactants_condensed]=density_input[1:num_reactants_condensed]
+        density_array[num_reactants_condensed+1]=core_density_array[size_step]
         
         total_SOA_mass_array[size_step]=sum(mass_array)
         #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
