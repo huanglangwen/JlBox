@@ -4,4 +4,4 @@ using DataFrames
 using CSV
 
 @time sol,reactants2ind=run_simulation_aerosol()
-shape(sol)
+size(sol)

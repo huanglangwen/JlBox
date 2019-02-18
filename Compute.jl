@@ -76,7 +76,9 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%300==0
-        @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %f\n",citer,t,total_SOA_mass)
+        @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %e\n",citer,t,total_SOA_mass)
+        println("Sum(dy_dt[num_reacs+1:end])=",sum(dy_dt[num_reactants+1:end]))
+        println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
     end
     return dy_dt
 end
@@ -166,7 +168,7 @@ function run_simulation_aerosol()
     end
     println("Solving ODE")
     prob = ODEProblem{false}(dydt_aerosol!,y_init,tspan,param_dict)
-    sol = solve(prob,CVODE_BDF(linear_solver=:GMRES),reltol=1e-4,abstol=1.0e-2,
+    sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
