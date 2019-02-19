@@ -1,6 +1,6 @@
 function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix::Array{Float64,2},C_g_i_t::Array{Float64,1},
                     num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
-                    mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+                    mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{Float64,1},
                     core_diss::Real,y_core::Array{Float64,1},core_mass_array::Array{Float64,1},core_density_array::Array{Float64,1},
                     NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
     size_array=zeros(Float64,num_bins)
@@ -19,13 +19,13 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
         density_array[1:num_reactants_condensed]=density_input[1:num_reactants_condensed]
         density_array[num_reactants_condensed+1]=core_density_array[size_step]
         
-        total_SOA_mass_array[size_step]=sum(mass_array[1:end-1])
+        total_SOA_mass_array[size_step]=sum(mass_array[1:num_reactants_condensed-1])
         #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
         total_mass=sum(mass_array)
         mass_fractions_array=mass_array./total_mass
 
         density=1.0/(sum(mass_fractions_array./density_array))
-
+        
         size_array[size_step]=((3.0*((total_mass*1.0E3)/(N_perbin[size_step]*1.0E6)))/(4.0*pi*density))^(1.0/3.0)
 
         Kn=gamma_gas./size_array[size_step]
@@ -39,12 +39,16 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
         
         Pressure_eq=kelvin_factor.*y_mole_fractions.*Psat*101325.0
 
-        Cstar_i_m_t=Pressure_eq*(NA/(8.3144598*Model_temp))
+        Cstar_i_m_t=Pressure_eq*(NA/(8.3144598E6*Model_temp))
 
         k_i_m_t_part1=DStar_org.*Correction
         k_i_m_t=4.0*pi*size_array[size_step]*1.0E2*N_perbin[size_step]*k_i_m_t_part1
 
         dm_dt=k_i_m_t.*(C_g_i_t-Cstar_i_m_t)
+        #println("k_i_m_t,C_g_i_t,Cstar_i_m_t,dm_dt")
+        #println(k_i_m_t[end],",",C_g_i_t[end],",",Cstar_i_m_t[end],",",dm_dt[end])
+        #println("Pressure_eq,kelvin_factor,y_mole_frac,Psat")
+        #println(Pressure_eq[end],",",kelvin_factor[end],",",y_mole_fractions[end],",",Psat[end])
 
         #ASSIGN dy_dt_gas_matrix
         for ind=1:length(include_inds)

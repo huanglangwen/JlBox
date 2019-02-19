@@ -75,10 +75,10 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
         NA,sigma,R_gas,temp)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
-    if citer%300==0
+    if citer%500==0
         @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %e\n",citer,t,total_SOA_mass)
-        println("Sum(dy_dt[num_reacs+1:end])=",sum(dy_dt[num_reactants+1:end]))
-        println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
+        #println("Sum(dy_dt[num_reacs+1:end])=",sum(dy_dt[num_reactants+1:end]))
+        #println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
     end
     return dy_dt
 end
