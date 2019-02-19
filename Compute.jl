@@ -114,11 +114,28 @@ function prepare_aerosol()
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
 
-    println("Calculating Partitioning Properties")
+    println("Calculating Partitioning Properties: Part1")
     pc1_dict=Pure_component1(num_reactants,species_names,vp_cutoff,temp,property_methods)
+    
+    println("Adding H2O")
+    num_reactants+=1
+    pc1_dict["num_reactants"]=num_reactants
+    push!(pc1_dict["include_inds"],num_reactants)
+    reactants2ind["H2O"]=num_reactants
     include_inds=pc1_dict["include_inds"]
-    #println("include inds:",include_inds-1)
     num_reactants_condensed=length(include_inds)
+    sat_vap_water = exp(-0.58002206E4/temp+0.13914993E1-
+        0.48640239E-1*temp+0.41764768E-4*(temp^2.0E0)-
+        0.14452093E-7*(temp^3.0E0)+0.65459673E1*log(temp))#Pa
+    push!(pc1_dict["y_density_array"],1000.0E0)#Append density of water to array [kg/m3]
+    push!(pc1_dict["y_mw"],18.0E0)#Append mw of water to array [g/mol]
+    push!(pc1_dict["Psat"],sat_vap_water*9.86923E-6)#Convert Pa to atm
+    push!(pc1_dict["Delta_H"],40.66)
+    Lv_water_vapour=2.5e3 # Latent heat of vapourisation of water [J/g] 
+    push!(pc1_dict["Delta_H"],40.66)
+    push!(pc1_dict["Latent_heat_gas"],Lv_water_vapour)#Water vapour, taken from Paul Connolly's parcel model ACPIM
+
+    println("Calculating Partitioning Properties: Part2")
     y_mw=pc1_dict["y_mw"]
     pc2_dict=Pure_component2(num_reactants_condensed,y_mw,R_gas,temp)
     merge!(param_dict,pc1_dict,pc2_dict)
@@ -138,7 +155,15 @@ function prepare_aerosol()
     println("Dry core mass = ", sum(core_mass_array)*1E12)
     param_dict["y_core"]=y_core
     param_dict["core_mass_array"]=core_mass_array
-    return param_dict,reactants2ind
+
+    println("Configuring initial condensed phase")
+    y_cond=zeros(Float64,num_bins*num_reactants_condensed)
+    for step=1:length(xs)
+        radius=xs[step]
+        water_moles=(y_core[step]*core_dissociation)*(RH/(1.0E0-RH))
+        y_cond[step*num_species_condensed]=water_moles
+    end
+    return param_dict,reactants2ind,y_cond
 end
 
 function read_configure!(filename::String)
@@ -156,7 +181,7 @@ end
 
 function run_simulation_aerosol()
     read_configure!("Configure_aerosol.jl")
-    param_dict,reactants2ind=prepare_aerosol()
+    param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
     dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
@@ -167,6 +192,7 @@ function run_simulation_aerosol()
     for (k,v) in reactants_initial_dict
         y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
+    y_init[num_reactants+1:num_reactants+num_bins*num_reactants_condensed]=y_cond[1:num_bins*num_reactants_condensed]
     println("Solving ODE")
     prob = ODEProblem{false}(dydt_aerosol!,y_init,tspan,param_dict)
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1.0e-2,

@@ -14,7 +14,7 @@ include("Configure_aerosol.jl")
 using Compute:read_configure!,prepare_aerosol
 function test_aerosol_initial()
     read_configure!("Configure_aerosol.jl")
-    param_dict,reactants2ind=prepare_aerosol()
+    param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
     dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
