@@ -61,7 +61,7 @@ using CSV
 function test_properties()
     param_dict,reactants2ind=test_aerosol_initial()
     props_keys=["y_density_array","y_mw","Psat",
-                "Delta_H","Latent_heat","include_inds",
+                "Delta_H","Latent_heat_gas","include_inds",
                 "alpha_d_org","DStar_org","gamma_gas"]
     props_symbols=[Symbol(k) for k in props_keys]
     props_dict=filter((k,v)->k in props_keys,param_dict)
