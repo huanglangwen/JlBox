@@ -63,9 +63,10 @@ function test_properties()
     props_keys=["y_density_array","y_mw","Psat",
                 "Delta_H","Latent_heat","include_inds",
                 "alpha_d_org","DStar_org","gamma_gas"]
+    props_symbols=[Symbol(k) for k in props_keys]
     props_dict=filter((k,v)->k in props_keys,param_dict)
     props_dict["sat_vp"]=log10.(props_dict["Psat"])
-    props_df=DataFrame(props_dict)
+    props_df=DataFrame(props_dict)[props_symbols]
     CSV.write("/data/jlbox_props.csv",props_df)
     nothing
 end
