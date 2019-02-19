@@ -132,7 +132,6 @@ function prepare_aerosol()
     push!(pc1_dict["Psat"],sat_vap_water*9.86923E-6)#Convert Pa to atm
     push!(pc1_dict["Delta_H"],40.66)
     Lv_water_vapour=2.5e3 # Latent heat of vapourisation of water [J/g] 
-    push!(pc1_dict["Delta_H"],40.66)
     push!(pc1_dict["Latent_heat_gas"],Lv_water_vapour)#Water vapour, taken from Paul Connolly's parcel model ACPIM
 
     println("Calculating Partitioning Properties: Part2")
@@ -161,7 +160,7 @@ function prepare_aerosol()
     for step=1:length(xs)
         radius=xs[step]
         water_moles=(y_core[step]*core_dissociation)*(RH/(1.0E0-RH))
-        y_cond[step*num_species_condensed]=water_moles
+        y_cond[step*num_reactants_condensed]=water_moles
     end
     return param_dict,reactants2ind,y_cond
 end
