@@ -60,11 +60,12 @@ using DataFrames
 using CSV
 function test_properties()
     param_dict,reactants2ind=test_aerosol_initial()
-    props_keys=["y_density_array","y_mw","o_c","h_c","Psat","Delta_H","Latent_heat_gas","include_inds",
-               "alpha_d_org","DStar_org","mean_them_vel","gamma_gas"]
+    props_keys=["y_density_array","y_mw","Psat",
+                "Delta_H","Latent_heat","include_inds",
+                "alpha_d_org","DStar_org","gamma_gas"]
     props_dict=filter((k,v)->k in props_keys,param_dict)
     props_dict["sat_vp"]=log10.(props_dict["Psat"])
     props_df=DataFrame(props_dict)
-    CSV.write("/data/props.csv",props_df)
+    CSV.write("/data/jlbox_props.csv",props_df)
     nothing
 end
