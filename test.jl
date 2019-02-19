@@ -56,3 +56,8 @@ function test_include_inds()
     end
     
 end
+
+function test_properties()
+    param_dict,reactants2ind=test_aerosol_initial()
+    
+end
