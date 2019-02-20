@@ -1,5 +1,5 @@
 #using Printf
-pkgs=["Plots","DifferentialEquations","LanguageServer","StaticArrays"]#,
+pkgs=["DifferentialEquations","LanguageServer","StaticArrays","CSV","DataFrames"]#,
 for pkg in pkgs
     @printf("Installing %s\n",pkg)
     Pkg.add(pkg)
