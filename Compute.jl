@@ -221,7 +221,7 @@ function run_simulation_gas()
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
-                dtmax=100.0,
+                dtmax=20.0,
                 max_order = 5,
                 max_convergence_failures = 1000,
                 #progress=true
