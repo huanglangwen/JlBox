@@ -10,7 +10,7 @@ ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[ind2reactants[ind] for ind in 1:num_reactants]
 df=DataFrame(transpose(sol))
 names!(df,[Symbol(reac) for reac in reactants])
-CSV.write("results.csv",df)
+CSV.write("data/results.csv",df)
 df
 #@profile run_simulation()
 #open("prof.txt", "w") do s
