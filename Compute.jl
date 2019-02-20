@@ -201,7 +201,7 @@ function run_simulation_aerosol()
                 max_order = 5,
                 max_convergence_failures = 1000
                 )
-    return sol,reactants2ind
+    return sol,reactants2ind,num_reactants,num_reactants_condensed
 end
 
 

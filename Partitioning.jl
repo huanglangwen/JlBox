@@ -52,7 +52,7 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
 
         #ASSIGN dy_dt_gas_matrix
         for ind=1:length(include_inds)
-            dy_dt_gas_matrix[include_inds[ind]]=dm_dt[ind]
+            dy_dt_gas_matrix[include_inds[ind],size_step]=dm_dt[ind]#Critical Error!!! 
         end
 
         dy_dt[start_ind:stop_ind]=dm_dt
