@@ -1,5 +1,5 @@
 include("JlBoxModule.jl")
-using .Compute:prepare_gas
+using .Compute:prepare_gas,read_configure!
 using .Jacobian:gas_jac!
 using DifferentialEquations
 using SparseArrays
@@ -7,6 +7,7 @@ using DataFrames
 using CSV
 
 include("Configure_gas.jl")
+read_configure!("Configure_gas.jl")
 param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
 
 dydt_expr=quote function dydt!(reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
