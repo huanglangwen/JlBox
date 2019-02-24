@@ -56,7 +56,7 @@ function parse_reactants(file::String)#,RO2_names::Array{String,1}
     end
 
     num_reactants=length(reactants_dict)
-    assert(num_reactants==reactant_step)
+    @assert(num_reactants==reactant_step)
     #reactants_list=[ for i in 1:num_reactants]
     reactants_inds=1:num_reactants
     #reactants2ind=Dict(reactants_list[i]=>i for i in reactants_inds)
