@@ -103,15 +103,15 @@ function prepare_gas()
     constant_folding!(evaluate_rates_expr,constantdict,rate_values);
     extract_constants!(evaluate_rates_expr);
     println("Evaluating evaluate_rates&loss_gain codes")
-    eval(evaluate_rates_expr)
+    #eval(evaluate_rates_expr)
     param_dict=Dict("dydt"=>dydt,"rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
                     "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
-    return param_dict,reactants2ind
+    return param_dict,reactants2ind,evaluate_rates_expr
 end
 
 function prepare_aerosol()
-    param_dict,reactants2ind=prepare_gas()
+    param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
@@ -164,7 +164,7 @@ function prepare_aerosol()
         water_moles=(y_core[step]*core_dissociation)*(RH/(1.0E0-RH))
         y_cond[step*num_reactants_condensed]=water_moles
     end
-    return param_dict,reactants2ind,y_cond
+    return param_dict,reactants2ind,y_cond,evaluate_rates_expr
 end
 
 function read_configure!(filename::String)
@@ -182,7 +182,8 @@ end
 
 function run_simulation_aerosol()
     read_configure!("Configure_aerosol.jl")
-    param_dict,reactants2ind,y_cond=prepare_aerosol()
+    param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
+    eval(evaluate_rates_expr)
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
     dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
@@ -217,7 +218,8 @@ end
 
 function run_simulation_gas()
     read_configure!("Configure_gas.jl")
-    param_dict,reactants2ind=prepare_gas()
+    param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
+    eval(evaluate_rates_expr)
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)
     for (k,v) in reactants_initial_dict
@@ -241,7 +243,7 @@ end
 
 function run_simulation_gas_jac()
     read_configure!("Configure_gas.jl")
-    param_dict,reactants2ind=prepare_gas()
+    param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)
     for (k,v) in reactants_initial_dict
