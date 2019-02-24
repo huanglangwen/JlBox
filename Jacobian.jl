@@ -29,3 +29,14 @@ function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
     end
     return lossgain_jac_mtx
 end
+
+function dydt!(::Type{Val{:jac}},jac_mtx,reactants::Array{Float64,1},p::Dict,t::Real)
+    rate_values,stoich_mtx,stoich_list,reactants_list,num_eqns,num_reactants=
+        [p[ind] for ind in 
+            ["rate_values","stoich_mtx","stoich_list","reactants_list",
+             "num_eqns","num_reactants"]
+        ]
+    #Probably have to re-eval rate_values again
+    loss_gain_jac!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,jac_mtx)
+    nothing
+end

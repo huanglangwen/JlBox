@@ -4,7 +4,7 @@ using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reacta
 using SizeDistributions:lognormal
 using PropertyCalculation:Pure_component1,Pure_component2
 using Partitioning:Partition!
-using Jacobian:loss_gain_jac!
+using Jacobian:dydt!
 using DifferentialEquations
 using StaticArrays
 
@@ -59,17 +59,6 @@ function dydt!(reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
     return dydt
-end
-
-function dydt!(::Type{Val{:jac}},jac_mtx,reactants::Array{Float64,1},p::Dict,t::Real)
-    rate_values,stoich_mtx,stoich_list,reactants_list,num_eqns,num_reactants=
-        [p[ind] for ind in 
-            ["rate_values","stoich_mtx","stoich_list","reactants_list",
-             "num_eqns","num_reactants"]
-        ]
-    #Probably have to re-eval rate_values again
-    loss_gain_jac!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,jac_mtx)
-    nothing
 end
 
 function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
