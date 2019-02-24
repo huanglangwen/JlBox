@@ -4,7 +4,7 @@ using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reacta
 using SizeDistributions:lognormal
 using PropertyCalculation:Pure_component1,Pure_component2
 using Partitioning:Partition!
-using Jacobian:dydt!
+using Jacobian:gas_jac!
 using DifferentialEquations
 using StaticArrays
 

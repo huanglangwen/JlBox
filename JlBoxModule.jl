@@ -24,7 +24,7 @@ include("Partitioning.jl")
 end
 
 module Jacobian
-export dydt!
+export gas_jac!
 include("Jacobian.jl")
 end
 
