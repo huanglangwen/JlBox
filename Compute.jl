@@ -120,7 +120,7 @@ function prepare_aerosol()
     
     println("Adding H2O")
     num_reactants+=1
-    pc1_dict["num_reactants"]=num_reactants
+    param_dict["num_reactants"]=num_reactants#not pc1_dict!!!
     push!(pc1_dict["include_inds"],num_reactants)
     reactants2ind["H2O"]=num_reactants
     include_inds=pc1_dict["include_inds"]
