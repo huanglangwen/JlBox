@@ -33,18 +33,16 @@ RUN echo "export PATH=/Code/julia/julia-0.7.0/bin:/root/.julia/v0.7/Conda/deps/u
 ENV PYTHON=""
 ENV PATH="/Code/julia/julia-0.7.0/bin:/root/.julia/v0.7/Conda/deps/usr/bin:${PATH}"
 #RUN source /root/.bashrc
-RUN julia --eval 'Pkg.update()'
-RUN julia --eval 'Pkg.add("DifferentialEquations")'
-RUN julia --eval 'Pkg.add("StaticArrays")'
-RUN julia --eval 'Pkg.add("DataFrames")'
-RUN julia --eval 'Pkg.add("CSV")'
-RUN mkdir /root/.julia
-RUN mkdir /root/.julia/conda
-RUN mkdir /root/.julia/conda/3
-RUN julia --eval 'Pkg.add("Conda");using Conda;Conda.update()'
-RUN julia --eval 'Pkg.add("PyCall")'
-RUN julia --eval 'Pkg.build("PyCall")'
-RUN julia --eval 'Pkg.add("LightXML")'
+RUN julia --eval 'using Pkg;Pkg.update()'
+RUN julia --eval 'using Pkg;Pkg.add("DifferentialEquations")'
+RUN julia --eval 'using Pkg;Pkg.add("StaticArrays")'
+RUN julia --eval 'using Pkg;Pkg.add("DataFrames")'
+RUN julia --eval 'using Pkg;Pkg.add("CSV")'
+RUN julia --eval 'using Pkg;Pkg.add("Conda")'
+RUN julia --eval 'using Conda;Conda.update()'
+RUN julia --eval 'using Pkg;Pkg.add("PyCall")'
+RUN julia --eval 'using Pkg;Pkg.build("PyCall")'
+RUN julia --eval 'using Pkg;Pkg.add("LightXML")'
 RUN conda config --append channels conda-forge
 RUN conda install -c openbabel -y openbabel 
 RUN conda install -y flask flask-wtf xlsxwriter
