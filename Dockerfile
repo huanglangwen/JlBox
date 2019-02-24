@@ -38,6 +38,9 @@ RUN julia --eval 'Pkg.add("DifferentialEquations")'
 RUN julia --eval 'Pkg.add("StaticArrays")'
 RUN julia --eval 'Pkg.add("DataFrames")'
 RUN julia --eval 'Pkg.add("CSV")'
+RUN mkdir /root/.julia
+RUN mkdir /root/.julia/conda
+RUN mkdir /root/.julia/conda/3
 RUN julia --eval 'Pkg.add("Conda");using Conda;Conda.update()'
 RUN julia --eval 'Pkg.add("PyCall")'
 RUN julia --eval 'Pkg.build("PyCall")'
