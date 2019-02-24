@@ -30,9 +30,9 @@ RUN mkdir -p /Code/Git_repos
 WORKDIR /Code/julia
 RUN wget https://julialang-s3.julialang.org/bin/linux/x64/0.7/julia-0.7.0-linux-x86_64.tar.gz
 RUN tar xf julia-0.7.0-linux-x86_64.tar.gz
-RUN echo "export PATH=/Code/julia/julia-0.7.0/bin:/root/.julia/v0.7/Conda/deps/usr/bin:$PATH" >> /root/.bashrc
+RUN echo "export PATH=/Code/julia/julia-0.7.0/bin:/root/.julia/conda/3/bin:$PATH" >> /root/.bashrc
 ENV PYTHON=""
-ENV PATH="/Code/julia/julia-0.7.0/bin:/root/.julia/v0.7/Conda/deps/usr/bin:${PATH}"
+ENV PATH="/Code/julia/julia-0.7.0/bin:/root/.julia/conda/3/bin:${PATH}"
 #RUN source /root/.bashrc
 RUN julia --eval 'using Pkg;Pkg.update()'
 RUN julia --eval 'using Pkg;Pkg.add("DifferentialEquations")'
