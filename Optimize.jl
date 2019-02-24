@@ -9,7 +9,7 @@ function mk_reactants_list(num_reactants::Int,num_eqns::Int,
     for eqn_ind in 1:num_eqns
         indlist=zeros(Int64,16)
         stoichlist=zeros(Int8,15)
-        reactant_inds=findn(reactants_mtx[:,eqn_ind])
+        reactant_inds=findall(!iszero,reactants_mtx[:,eqn_ind])
         num_stoichs=length(reactant_inds)
         assert(num_stoichs<=15)#or it would break the static Array
         for i in 1:num_stoichs
@@ -29,7 +29,7 @@ function generate_loss_gain(num_reactants::Int,num_eqns::Int,
     rate_prod_exprs=quote end#Array{Expr,1}()#num_eqns
     for eqn_ind in 1:num_eqns
         rate_expr=:(*(rate_values[$eqn_ind]))#assume there is at least one reactant
-        reactant_inds=findn(stoich_mtx[:,eqn_ind])
+        reactant_inds=findall(!iszero,stoich_mtx[:,eqn_ind])
         assert(length(reactant_inds)>0)
         for reactant_ind in reactant_inds
             stoich=Int(stoich_mtx[reactant_ind,eqn_ind])
@@ -46,7 +46,7 @@ function generate_loss_gain(num_reactants::Int,num_eqns::Int,
     loss_gain_exprs=quote end
     for reactant_ind in 1:num_reactants
         loss_gain_expr=:(dydt[$reactant_ind]=(+(0)))#(:(=), (:ref, :dydt, $reactant_ind), (:call, :+))
-        eqn_inds=findn(stoich_mtx_T[:,reactant_ind])
+        eqn_inds=findall(!iszero,stoich_mtx_T[:,reactant_ind])
         assert(length(eqn_inds)>0)
         for eqn_ind in eqn_inds
             coef=Int((-1)*stoich_mtx_T[eqn_ind,reactant_ind])#negative for reactants, positive for products
