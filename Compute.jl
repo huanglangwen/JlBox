@@ -246,10 +246,10 @@ function run_simulation_gas_jac()
     for (k,v) in reactants_initial_dict
         reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
-    #lossgain_jac_mtx=spzeros(num_reactants,num_reactants)#num_output(dydt)*num_input(y)
+    lossgain_jac_mtx=spzeros(num_reactants,num_reactants)#num_output(dydt)*num_input(y)
     println("Solving ODE")
-    #odefun=ODEFunction(dydt!; jac=gas_jac!, jac_prototype=lossgain_jac_mtx)
-    prob = ODEProblem(dydt!,reactants_initial,tspan,param_dict)
+    odefun=ODEFunction(dydt!; jac=gas_jac!, jac_prototype=lossgain_jac_mtx)
+    prob = ODEProblem(odefun,reactants_initial,tspan,param_dict)
     sol = solve(prob,CVODE_BDF(linear_solver=:KLU),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
