@@ -11,7 +11,7 @@ end
 
 include("JlBoxModule.jl")
 include("Configure_aerosol.jl")
-using Compute:read_configure!,prepare_aerosol
+using .Compute:read_configure!,prepare_aerosol
 function test_aerosol_initial()
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond=prepare_aerosol()

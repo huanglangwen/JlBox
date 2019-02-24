@@ -1,5 +1,5 @@
 include("JlBoxModule.jl")
-using Compute:run_simulation_gas_jac
+using .Compute:run_simulation_gas_jac
 using DataFrames
 using CSV
 

@@ -1,13 +1,14 @@
 #include("JlBoxModule.jl")
-using Parse_eqn:parse_reactants,gen_evaluate_rates
-using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reactants_list
-using SizeDistributions:lognormal
-using PropertyCalculation:Pure_component1,Pure_component2
-using Partitioning:Partition!
-using Jacobian:gas_jac!
+using ..Parse_eqn:parse_reactants,gen_evaluate_rates
+using ..Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reactants_list
+using ..SizeDistributions:lognormal
+using ..PropertyCalculation:Pure_component1,Pure_component2
+using ..Partitioning:Partition!
+using ..Jacobian:gas_jac!
 using DifferentialEquations
 using StaticArrays
 using SparseArrays
+using Printf
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
