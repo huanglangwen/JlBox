@@ -4,6 +4,7 @@ using Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reacta
 using SizeDistributions:lognormal
 using PropertyCalculation:Pure_component1,Pure_component2
 using Partitioning:Partition!
+using Jacobian:gas_jac!
 using DifferentialEquations
 using StaticArrays
 
@@ -227,6 +228,29 @@ function run_simulation_gas()
                             #(dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)
                             )
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
+                tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
+                dt=1.0e-6, #Initial step-size
+                dtmax=20.0,
+                max_order = 5,
+                max_convergence_failures = 1000,
+                #progress=true
+                )
+    return sol,reactants2ind
+end
+
+function run_simulation_gas_jac()
+    read_configure!("Configure_gas.jl")
+    param_dict,reactants2ind=prepare_gas()
+    num_reactants=param_dict["num_reactants"]
+    reactants_initial=zeros(Float64,num_reactants)
+    for (k,v) in reactants_initial_dict
+        reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
+    end
+    lossgain_jac_mtx=spzeros(num_reactants,num_reactants)#num_output(dydt)*num_input(y)
+    println("Solving ODE")
+    odefun=ODEFunction(dydt!; jac=gas_jac!, jac_prototype=lossgain_jac_mtx)
+    prob = ODEProblem(odefun,reactants_initial,tspan,param_dict)
+    sol = solve(prob,CVODE_BDF(linear_solver=:KLU),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=20.0,

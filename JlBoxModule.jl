@@ -23,6 +23,11 @@ export Partition!
 include("Partitioning.jl")
 end
 
+module Jacobian
+export gas_jac!
+include("Jacobian.jl")
+end
+
 module Compute
 export run_simulation_gas,run_simulation_aerosol
 include("Compute.jl")
