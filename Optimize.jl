@@ -92,6 +92,9 @@ function constant_folding!(fun_expr::Expr,constant_list::Dict,rate_values::Array
     ops=fun_expr.args[2].args[2].args
     for i in 1:length(ops)
         op=ops[i]
+        if typeof(op)==LineNumberNode
+            continue
+        end
         if op.head==:(=)
             expr=try_eval(op)
             if typeof(expr.args[2])<:Number
@@ -103,6 +106,9 @@ function constant_folding!(fun_expr::Expr,constant_list::Dict,rate_values::Array
             rate_val_ops=op.args
             for j in 1:length(rate_val_ops)
                 r_op=rate_val_ops[j]
+                if typeof(r_op)==LineNumberNode
+                    continue
+                end
                 if r_op.head==:(=)
                     expr=try_eval(r_op)
                     if typeof(expr.args[2])<:Number
@@ -120,7 +126,11 @@ end
 function extract_constants!(fun_expr::Expr)::Expr
     ops=fun_expr.args[2].args[2].args
     for op in ops
+        if typeof(op)==LineNumberNode
+            continue
+        end
         if op.head==:block
+            filter!(l->!(typeof(l)==LineNumberNode),op.args)
             filter!(l->!(typeof(l.args[2])<:Number),op.args)
         end
     end
