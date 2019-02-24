@@ -1,3 +1,5 @@
+using StaticArrays
+using SparseArrays
 function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
                        reactants::Array{Float64,1},#num_reactants
                        stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns

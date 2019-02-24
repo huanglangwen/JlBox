@@ -7,6 +7,7 @@ using Partitioning:Partition!
 using Jacobian:gas_jac!
 using DifferentialEquations
 using StaticArrays
+using SparseArrays
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
