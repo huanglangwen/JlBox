@@ -208,7 +208,7 @@ function run_simulation_aerosol()
     t_length=size(aerosol_mtx)[1]
     mw_array=param_dict["y_mw"]
     SOA_array=[sum((sum(reshape(aerosol_mtx[i,1:end],(num_reactants_condensed,num_bins))
-                               ,2).*mw_array./NA)[1:end-1]#exclude H2O at the end
+                               ,dims=2).*mw_array./NA)[1:end-1]#exclude H2O at the end
                   ) for i in 1:t_length]*1E12
 
     return sol_mtx,reactants2ind,SOA_array,num_reactants
