@@ -52,12 +52,12 @@ RUN git clone https://github.com/loftytopping/PyBox.git
 RUN git clone https://github.com/loftytopping/UManSysProp_public.git
 RUN git clone https://github.com/huanglangwen/JlBox.git
 
-WORKDIR /Code/Git_repos/JlBox
-RUN git checkout oldversion
-
 WORKDIR /root
 RUN git clone git://github.com/JuliaEditorSupport/julia-vim.git
 WORKDIR /root/julia-vim
 RUN mkdir -p /root/.vim
 RUN cp -R * /root/.vim
 RUN echo "set nowrap\nset number\nset tabstop=4\nset shiftwidth=4\nset softtabstop=4\nset expandtab\nset smarttab" >> /root/.vimrc
+
+WORKDIR /Code/Git_repos/JlBox
+RUN git checkout transfer
