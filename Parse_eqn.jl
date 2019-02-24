@@ -92,12 +92,12 @@ function gen_evaluate_rates(file)
             spd_exprs=replace(spd_exprs,"**"=>"^")
             spd_exprs=replace(spd_exprs,r"J\(([0-9]+)\)"=>s"J[\1]")
             #println(spd_expr)
-            spd_expr=parse(spd_exprs)
+            spd_expr=Meta.parse(spd_exprs)
             ind = parse(Int,match(r"\{([0-9]+)\.\}",line,1).captures[1])
             push!(rate_expr.args,:(rate_values[$ind]=$spd_expr))
         end
     end
-    #op=parse(expr)
+    #op=Meta.parse(expr)
     return quote
 
 
