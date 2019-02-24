@@ -24,7 +24,7 @@ include("Partitioning.jl")
 end
 
 module Jacobian
-export dydt!
+export loss_gain_jac!
 include("Jacobian.jl")
 end
 
