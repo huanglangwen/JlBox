@@ -1,3 +1,4 @@
+using StaticArrays
 function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
                        reactants::Array{Float64,1},#num_reactants
                        stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
@@ -19,7 +20,7 @@ function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
             end
             reactant_y_ind=indvec[y_ind]
             stoich_y::Integer=stoichvec[y_ind]
-            prod*=stoich*reactants[reactant_y_ind]^(stoich-1)
+            prod*=stoich_y*reactants[reactant_y_ind]^(stoich_y-1)
             for i in 1:num_stoichs
                 reactant_ind=stoich_indvec[i]
                 lossgain_jac_mtx[reactant_ind,y_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
