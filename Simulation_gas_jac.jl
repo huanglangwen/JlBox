@@ -23,7 +23,7 @@ dydt_expr=quote function dydt!(dydt::Array{Float64,1},reactants::Array{Float64,1
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
-    nothing
+    dydt
 end
 end
 open("generated_code.jl", "w") do f
