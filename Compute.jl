@@ -251,7 +251,7 @@ function run_simulation_gas_jac()
     println("Solving ODE")
     odefun=ODEFunction(dydt!; jac=gas_jac!, jac_prototype=lossgain_jac_mtx)
     prob = ODEProblem(odefun,reactants_initial,tspan,param_dict)
-    sol = solve(prob,CVODE_BDF(linear_solver=:GMRES),reltol=1e-6,abstol=1.0e-3,
+    sol = solve(prob,Rodas5(),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=20.0,
