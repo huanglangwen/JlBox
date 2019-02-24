@@ -30,9 +30,9 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
 
         Kn=gamma_gas./size_array[size_step]
         Inverse_Kn=1.0./Kn
-        Correction_part1=(1.33+0.71*Inverse_Kn)./(1.0+Inverse_Kn)
-        Correction_part2=(4.0*(1.0-alpha_d_org))./(3.0*alpha_d_org)
-        Correction_part3=1.0+(Correction_part1+Correction_part2).*Kn
+        Correction_part1=(1.33.+0.71*Inverse_Kn)./(1.0.+Inverse_Kn)
+        Correction_part2=(4.0*(1.0.-alpha_d_org))./(3.0*alpha_d_org)
+        Correction_part3=1.0.+(Correction_part1.+Correction_part2).*Kn
         Correction=1.0./Correction_part3
 
         kelvin_factor=exp.((4.0*mw_array*1.0E-3*sigma)/(R_gas*Model_temp*size_array[size_step]*2.0*density))
@@ -57,7 +57,7 @@ function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix
 
         dy_dt[start_ind:stop_ind]=dm_dt
     end
-    dy_dt[1:num_reactants]=dy_dt[1:num_reactants]-sum(dy_dt_gas_matrix,2)
+    dy_dt[1:num_reactants]=dy_dt[1:num_reactants]-sum(dy_dt_gas_matrix,dims=2)
     total_SOA_mass=sum(total_SOA_mass_array)*1.0E12
     return dy_dt,total_SOA_mass
 end

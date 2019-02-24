@@ -25,9 +25,9 @@ const meansize=0.2 #microns
 
 # - Specify the core material. 
 # This code is currently setup to consider *ammonium sulphate* as the core
-const y_core_init=1.0e-3+zeros(Float64,num_bins) #Will hold concentration of core material, only initialise here [molecules/cc] 
-const core_density_array=1770.0+zeros(Float64,num_bins) #[kg/m3] - need to make sure this matches core definition above
-const core_mw=132.14+zeros(Float64,num_bins) #[g/mol]
+const y_core_init=1.0e-3.+zeros(Float64,num_bins) #Will hold concentration of core material, only initialise here [molecules/cc] 
+const core_density_array=1770.0.+zeros(Float64,num_bins) #[kg/m3] - need to make sure this matches core definition above
+const core_mw=132.14.+zeros(Float64,num_bins) #[g/mol]
 const core_dissociation=3.0 #Define this according to choice of core type. Please note this value might change
 
 const vp_cutoff=-6.0
