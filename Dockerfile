@@ -20,7 +20,8 @@ RUN apt-get install -y build-essential \
     libxml2 \
     xauth \
     git \
-    tmux
+    tmux \
+    curl
 
 RUN mkdir -p /Code
 RUN mkdir -p /Code/julia
