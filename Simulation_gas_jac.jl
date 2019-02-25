@@ -42,7 +42,7 @@ lossgain_jac_mtx=spzeros(num_reactants,num_reactants)#num_output(dydt)*num_input
 println("Solving ODE with Jacobian")
 odefun=ODEFunction(dydt!; jac=gas_jac!, jac_prototype=lossgain_jac_mtx)
 prob = ODEProblem(odefun,reactants_initial,tspan,param_dict)
-sol = solve(prob,Rodas5(autodiff=false),reltol=1e-6,abstol=1.0e-3,
+sol = solve(prob,CVODE_BDF(linear_solver=:GMRES),reltol=1e-6,abstol=1.0e-3,#Rodas5(autodiff=false)
             tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
             dt=1.0e-6, #Initial step-size
             dtmax=20.0,
