@@ -6,7 +6,7 @@ function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
                        stoich_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, both reac and prod
                        reactants_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, only reac
                        rate_values::Array{Float64,1},#num_eqns
-                       lossgain_jac_mtx::SparseMatrixCSC{Float64,Int64},#num_output(dydt)*num_input(y)
+                       lossgain_jac_mtx::Array{Float64,2}#SparseMatrixCSC{Float64,Int64},#num_output(dydt)*num_input(y)
                        )
     #lossgain_jac_mtx=spzeros(num_reactants,num_reactants)#num_output(dydt)*num_input(y)
     for eqn_ind in 1:num_eqns
