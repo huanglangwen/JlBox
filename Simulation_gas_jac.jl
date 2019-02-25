@@ -10,7 +10,7 @@ include("Configure_gas.jl")
 read_configure!("Configure_gas.jl")
 param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
 
-dydt_expr=quote function dydt!(dydt::Array{Float64,1},reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
+dydt_expr=quote function dydt!(dydt::Array{Float64,1},reactants::Array{Float64,1},p::Dict,t::Real)
     #dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=p
     rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
         [p[ind] for ind in 
@@ -23,7 +23,7 @@ dydt_expr=quote function dydt!(dydt::Array{Float64,1},reactants::Array{Float64,1
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
-    dydt
+    nothing
 end
 end
 open("generated_code.jl", "w") do f
