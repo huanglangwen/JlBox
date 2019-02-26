@@ -47,7 +47,7 @@ end
 println("Solving ODE with Jacobian")
 odefun=ODEFunction(dydt!; jac=gas_jac!)#, jac_prototype=lossgain_jac_mtx
 param_dict["iter"]=0
-prob = ODEProblem(dydt!,reactants_initial,tspan,param_dict)
+prob = ODEProblem(odefun,reactants_initial,tspan,param_dict)
 @time sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,#,Rodas5(autodiff=false)
             tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
             dt=1.0e-6, #Initial step-size
