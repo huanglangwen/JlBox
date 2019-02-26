@@ -2,7 +2,7 @@
 
 This is a rewrite version of [PyBox].
 
-Work on Julia v0.6.4.
+Work on Julia v0.7.0.
 
 ## Get Started
 It is recommended to run JlBox in Docker:
