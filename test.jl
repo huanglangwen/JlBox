@@ -83,6 +83,7 @@ function test_jacobian()
              "num_eqns","num_reactants"]
         ]
     reactants_initial=zeros(Float64,num_reactants)
+    dydt=zeros(Float64,num_reactants)
     for (k,v) in reactants_initial_dict
         reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
