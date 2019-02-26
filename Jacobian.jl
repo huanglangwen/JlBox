@@ -24,7 +24,7 @@ function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
             prod*=stoich_y*reactants[reactant_y_ind]^(stoich_y-1)
             for i in 1:num_stoichs
                 reactant_ind=stoich_indvec[i]
-                lossgain_jac_mtx[reactant_ind,y_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
+                lossgain_jac_mtx[reactant_ind,reactant_y_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
             end
         end
     end
