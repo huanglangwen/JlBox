@@ -5,6 +5,7 @@ using DifferentialEquations
 using SparseArrays
 using DataFrames
 using CSV
+using Printf
 
 include("Configure_gas.jl")
 read_configure!("Configure_gas.jl")
@@ -23,6 +24,10 @@ dydt_expr=quote function dydt!(dydt::Array{Float64,1},reactants::Array{Float64,1
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
+    p["iter"]+=1
+    if p["iter"]%200==0
+        @printf("time:%e,APINENE:%e\n",t,reactants[1])
+    end
     nothing
 end
 end
@@ -41,11 +46,12 @@ end
 lossgain_jac_mtx=zeros(num_reactants,num_reactants)#num_output(dydt)*num_input(y)
 println("Solving ODE with Jacobian")
 odefun=ODEFunction(dydt!; jac=gas_jac!, jac_prototype=lossgain_jac_mtx)
-prob = ODEProblem(odefun,reactants_initial,tspan,param_dict)
-sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,#Rodas5(autodiff=false)
+param_dict["iter"]=0
+prob = ODEProblem(dydt!,reactants_initial,tspan,param_dict)
+sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,#,Rodas5(autodiff=false)
             tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
             dt=1.0e-6, #Initial step-size
-            dtmax=20.0,
+            dtmax=100.0,
             max_order = 5,
             max_convergence_failures = 1000,
             #progress=true
