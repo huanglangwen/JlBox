@@ -26,7 +26,7 @@ dydt_expr=quote function dydt!(dydt::Array{Float64,1},reactants::Array{Float64,1
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
     p["iter"]+=1
     if p["iter"]%200==0
-        @printf("time:%e,APINENE:%e\n",t,reactants[1])
+        @printf("time:%e,Reactants[1]:%e\n",t,reactants[1])
     end
     nothing
 end
