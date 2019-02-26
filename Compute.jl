@@ -6,6 +6,7 @@ using ..PropertyCalculation:Pure_component1,Pure_component2
 using ..Partitioning:Partition!
 using ..Jacobian:gas_jac!
 using DifferentialEquations
+using DifferentialEquations:CVODE_BDF
 using StaticArrays
 using SparseArrays
 using Printf

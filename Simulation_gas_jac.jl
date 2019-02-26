@@ -2,6 +2,7 @@ include("JlBoxModule.jl")
 using .Compute:prepare_gas,read_configure!,loss_gain!
 using .Jacobian:gas_jac!
 using DifferentialEquations
+using DifferentialEquations:CVODE_BDF
 using SparseArrays
 using DataFrames
 using CSV
