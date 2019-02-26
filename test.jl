@@ -82,6 +82,8 @@ function test_jacobian()
             ["rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
              "num_eqns","num_reactants"]
         ]
+    ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
+    reactants_names=[ind2reactants[ind] for ind in 1:num_reactants]
     reactants_initial=zeros(Float64,num_reactants)
     dydt=zeros(Float64,num_reactants)
     for (k,v) in reactants_initial_dict
@@ -102,7 +104,11 @@ function test_jacobian()
         lossgain_jac_mtx[:,reactant_ind]=(dydt.-dydt_raw).*invdelta
     end
     loss_gain_jac!(num_reactants,num_eqns,reactants_initial,stoich_mtx,stoich_list,reactants_list,rate_values,lossgain_jac_mtx2)
-    CSV.write("/data/lossgain_jac1.csv",DataFrame(lossgain_jac_mtx))
-    CSV.write("/data/lossgain_jac2.csv",DataFrame(lossgain_jac_mtx2))
-    lossgain_jac_mtx,lossgain_jac_mtx2
+    df1=DataFrame(lossgain_jac_mtx)
+    df2=DataFrame(lossgain_jac_mtx2)
+    names!(df1,[Symbol(reac) for reac in reactants_names])
+    names!(df2,[Symbol(reac) for reac in reactants_names])
+    CSV.write("/data/lossgain_jac1.csv",df1)
+    CSV.write("/data/lossgain_jac2.csv",df2)
+    df1,df2
 end
