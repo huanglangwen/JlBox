@@ -1,4 +1,4 @@
-const file="data/MCM_APINENE.eqn.txt"#"MCM_test.eqn.txt"
+const file="data/MCM_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
 const temp=298.15 # Kelvin
 const RH=0.5 # RH/100% [0 - 0.99]
 const hour_of_day=12.0 # Define a start time  24 hr format
