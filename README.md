@@ -2,7 +2,7 @@
 
 This is a rewrite version of [PyBox].
 
-Work on Julia v0.7.0.
+Work on Julia v1.1.0.
 
 ## Get Started
 It is recommended to run JlBox in Docker:
@@ -16,7 +16,8 @@ It is recommended to run JlBox in Docker:
 Compared to PyBox, more optimizations are (going to be) added:
 - [x] constant folding for rate_values()
 - [x] caching rate_values, loss_gain matrix when solving ODE
-- [ ] add jacobian for gas kinetic and partitioning process
+- [x] add jacobian for gas kinetic
+- [ ] add jacobian for partitioning process
 - [ ] parallel version of rate_values, loss_gain and jacobian
 
 ## Dependency
