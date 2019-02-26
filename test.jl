@@ -10,9 +10,9 @@ function test_Pure_component1()
 end
 
 include("JlBoxModule.jl")
-include("Configure_aerosol.jl")
 using .Compute:read_configure!,prepare_aerosol
 function test_aerosol_initial()
+    include("Configure_aerosol.jl")
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
@@ -69,4 +69,35 @@ function test_properties()
     props_df=DataFrame(props_dict)[props_symbols]
     CSV.write("/data/jlbox_props.csv",props_df)
     nothing
+end
+
+using .Compute:read_configure!,prepare_gas,loss_gain!
+using .Jacobian:loss_gain_jac!
+function test_jacobian()
+    read_configure!("Configure_gas.jl")
+    param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
+    rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
+        [param_dict[ind] for ind in 
+            ["rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
+             "num_eqns","num_reactants"]
+        ]
+    reactants_initial=zeros(Float64,num_reactants)
+    for (k,v) in reactants_initial_dict
+        reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
+    end
+    dydt_raw=deepcopy(loss_gain!(num_reactants,num_eqns,reactants_initial,stoich_mtx,stoich_list,reactants_list,rate_values,dydt))
+    delta=1E-10
+    invdelta=1E10
+    lossgain_jac_mtx=zeros(num_reactants,num_reactants)#num_output(dydt)*num_input(y)
+    lossgain_jac_mtx2=zeros(num_reactants,num_reactants)
+    for reactant_ind in 1:num_reactants
+        inc_array=zeros(Float64,num_reactants)
+        inc_array[reactant_ind]=delta
+        loss_gain!(num_reactants,num_eqns,reactants_initial.+inc_array,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
+        lossgain_jac_mtx[:,reactant_ind]=(dydt.-dydt_raw).*invdelta
+    end
+    loss_gain_jac!(num_reactants,num_eqns,reactants_initial.+inc_array,stoich_mtx,stoich_list,reactants_list,rate_values,lossgain_jac_mtx2)
+    CSV.write("/data/lossgain_jac1.csv",lossgain_jac_mtx)
+    CSV.write("/data/lossgain_jac2.csv",lossgain_jac_mtx2)
+    lossgain_jac_mtx,lossgain_jac_mtx2
 end
