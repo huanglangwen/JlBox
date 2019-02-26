@@ -92,13 +92,15 @@ function test_jacobian()
     invdelta=1E10
     lossgain_jac_mtx=zeros(num_reactants,num_reactants)#num_output(dydt)*num_input(y)
     lossgain_jac_mtx2=zeros(num_reactants,num_reactants)
+    inc_array=zeros(Float64,num_reactants)
     for reactant_ind in 1:num_reactants
-        inc_array=zeros(Float64,num_reactants)
+        if reactant_ind>=2
+            inc_array[reactant_ind-1]=0
         inc_array[reactant_ind]=delta
         loss_gain!(num_reactants,num_eqns,reactants_initial.+inc_array,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
         lossgain_jac_mtx[:,reactant_ind]=(dydt.-dydt_raw).*invdelta
     end
-    loss_gain_jac!(num_reactants,num_eqns,reactants_initial.+inc_array,stoich_mtx,stoich_list,reactants_list,rate_values,lossgain_jac_mtx2)
+    loss_gain_jac!(num_reactants,num_eqns,reactants_initial,stoich_mtx,stoich_list,reactants_list,rate_values,lossgain_jac_mtx2)
     CSV.write("/data/lossgain_jac1.csv",lossgain_jac_mtx)
     CSV.write("/data/lossgain_jac2.csv",lossgain_jac_mtx2)
     lossgain_jac_mtx,lossgain_jac_mtx2
