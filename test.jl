@@ -96,6 +96,7 @@ function test_jacobian()
     for reactant_ind in 1:num_reactants
         if reactant_ind>=2
             inc_array[reactant_ind-1]=0
+        end
         inc_array[reactant_ind]=delta
         loss_gain!(num_reactants,num_eqns,reactants_initial.+inc_array,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
         lossgain_jac_mtx[:,reactant_ind]=(dydt.-dydt_raw).*invdelta
