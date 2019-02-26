@@ -74,6 +74,7 @@ end
 using .Compute:read_configure!,prepare_gas,loss_gain!
 using .Jacobian:loss_gain_jac!
 function test_jacobian()
+    include("Configure_gas.jl")
     read_configure!("Configure_gas.jl")
     param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
     rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
