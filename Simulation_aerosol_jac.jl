@@ -5,9 +5,11 @@ using DataFrames
 using CSV
 using Profile
 
+Profile.clear()
+Profile.init(n = 10^7, delay = 0.01)
 @profile sol_mtx,reactants2ind,SOA_array,num_reactants=run_simulation_aerosol(use_jacobian=true)
 open("/data/prof.txt", "w") do s
-    Profile.print(IOContext(s, :displaysize => (1000, 500)),format=:flat))
+    Profile.print(IOContext(s, :displaysize => (1000, 500)),format=:flat)
 end
 
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
