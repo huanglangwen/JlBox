@@ -181,7 +181,7 @@ function read_configure!(filename::String)
     end
 end
 
-function run_simulation_aerosol(use_jacobian::Bool)
+function run_simulation_aerosol(;use_jacobian::Bool)
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
     eval(evaluate_rates_expr)
