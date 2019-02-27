@@ -4,7 +4,7 @@ using ..Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reac
 using ..SizeDistributions:lognormal
 using ..PropertyCalculation:Pure_component1,Pure_component2
 using ..Partitioning:Partition!
-using ..Jacobian:gas_jac!,aerosol_jac!
+using ..Jacobian:gas_jac!,Partition_jac!
 using DifferentialEquations
 using DifferentialEquations:CVODE_BDF
 using StaticArrays
@@ -84,6 +84,21 @@ function dydt_aerosol!(dy_dt,y::Array{Float64,1},p::Dict,t::Real)
         #println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
     end
     nothing#return dy_dt
+end
+
+function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+    gas_jac!(jac_mtx,y,p,t)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    C_g_i_t=y[include_inds]
+    Partition_jac!(jac_mtx,y,C_g_i_t,
+        num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        core_dissociation,y_core,core_mass_array,core_density_array,
+        NA,sigma,R_gas,temp)
+    nothing
 end
 
 function prepare_gas()
