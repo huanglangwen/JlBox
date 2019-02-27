@@ -51,8 +51,8 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
     #total_SOA_mass_array=zeros(Float64,num_bins)
     mass_array=zeros(Float64,num_reactants_condensed+1)
     density_array=zeros(Float64,num_reactants_condensed+1)
-    DC_g_i_t=spzeros(num_reactants_condensed,num_reactants)
-    Ddm_dt_Dy_gas_sum=spzeros(num_reactants_condensed,num_reactants)
+    DC_g_i_t=zeros(num_reactants_condensed,num_reactants)
+    Ddm_dt_Dy_gas_sum=zeros(num_reactants_condensed,num_reactants)
     for i in 1:num_reactants_condensed
         DC_g_i_t[i,include_inds[i]]=1
     end
