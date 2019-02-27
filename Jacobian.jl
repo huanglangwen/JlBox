@@ -51,6 +51,8 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
     #total_SOA_mass_array=zeros(Float64,num_bins)
     mass_array=zeros(Float64,num_reactants_condensed+1)
     density_array=zeros(Float64,num_reactants_condensed+1)
+    #DC_g_i_t=spzeros(num_reactants_condensed,num_reactants)
+    #Ddm_dt_Dy_gas_sum=spzeros(num_reactants_condensed,num_reactants)
     DC_g_i_t=zeros(num_reactants_condensed,num_reactants)
     Ddm_dt_Dy_gas_sum=zeros(num_reactants_condensed,num_reactants)
     for i in 1:num_reactants_condensed
@@ -110,10 +112,12 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
         end
         #=================Jacobian, Input=y_bins======================#
         begin
-            Dtemp_array=sparse(1:num_reactants_condensed,1:num_reactants_condensed,ones(num_reactants_condensed))#I, num_condensed*num_condensed
+            #Dtemp_array=sparse(1:num_reactants_condensed,1:num_reactants_condensed,ones(num_reactants_condensed))#I, num_condensed*num_condensed
+            Dtemp_array=Matrix{Float64}(I,num_reactants_condensed,num_reactants_condensed)
             Dtotal_moles=ones(1,num_reactants_condensed)
             Dy_mole_fractions=1/total_moles.*Dtemp_array.-(temp_array./total_moles^2).*Dtotal_moles#num_condensed*num_condensed
-            Dmass_array=spzeros(num_reactants_condensed+1,num_reactants_condensed)
+            #Dmass_array=spzeros(num_reactants_condensed+1,num_reactants_condensed)
+            Dmass_array=zeros(num_reactants_condensed+1,num_reactants_condensed)
             Dmass_array[1:num_reactants_condensed,:]=(mw_array./NA).*Dtemp_array
             Dtotal_mass=sum(Dmass_array,dims=1)#1*num_condensed
             Dmass_fractions_array=Dmass_array./total_mass-(mass_array./(total_mass^2)).*Dtotal_mass#(num_condensed+1)*num_condensed
