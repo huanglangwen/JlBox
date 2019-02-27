@@ -197,7 +197,7 @@ function read_configure!(filename::String)
     end
 end
 
-function run_simulation_aerosol(;use_jacobian::Bool)
+function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
     eval(evaluate_rates_expr)
@@ -221,7 +221,7 @@ function run_simulation_aerosol(;use_jacobian::Bool)
         prob = ODEProblem{true}(dydt_aerosol!,y_init,tspan,param_dict)
         param_dict["ShowIterPeriod"]=500
     end
-    sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1.0e-2,
+    sol = solve(prob,CVODE_BDF(linear_solver=linsolver),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
