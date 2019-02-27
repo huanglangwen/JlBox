@@ -7,7 +7,7 @@ using Profile
 
 Profile.clear()
 Profile.init(n = 10^7, delay = 0.01)
-sol_mtx,reactants2ind,SOA_array,num_reactants=run_simulation_aerosol(use_jacobian=true)
+@time sol_mtx,reactants2ind,SOA_array,num_reactants=run_simulation_aerosol(use_jacobian=true)
 open("/data/prof.txt", "w") do s
     Profile.print(IOContext(s, :displaysize => (1000, 500)),format=:flat)
 end
