@@ -1,5 +1,6 @@
 using StaticArrays
 using SparseArrays
+using LinearAlgebra
 function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
                        reactants::Array{Float64,1},#num_reactants
                        stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
@@ -51,6 +52,11 @@ function Partition_jac!(y_jac,y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_
     total_SOA_mass_array=zeros(Float64,num_bins)
     mass_array=zeros(Float64,num_reactants_condensed+1)
     density_array=zeros(Float64,num_reactants_condensed+1)
+    DC_g_i_t=spzeros(num_reactants_condensed,num_reactants)
+    Ddm_dt_Dy_gas_sum=spzeros(num_reactants_condensed,num_reactants)
+    for i in 1:num_reactants_condensed
+        DC_g_i_t[i,include_inds[i]]=1
+    end
     for size_step=1:num_bins
         start_ind=num_reactants+1+((size_step-1)*num_reactants_condensed)
         stop_ind=num_reactants+(size_step*num_reactants_condensed)
@@ -96,8 +102,44 @@ function Partition_jac!(y_jac,y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_
         end
 
         dy_dt[start_ind:stop_ind]=dm_dt
+
+        #=================Jacobian, Input=y_gas======================#
+        begin
+            Ddm_dt_Dy_gas=k_i_m_t.*DC_g_i_t
+            y_jac[start_ind:stop_ind,1:num_reactants]=Ddm_dt_Dy_gas#num_condensed*num_reactants
+            Ddm_dt_Dy_gas_sum.+=Ddm_dt_Dy_gas
+        end
+        #=================Jacobian, Input=y_bins======================#
+        begin
+            Dtemp_array=sparse(1:num_reactants_condensed,1:num_reactants_condensed,ones(num_reactants_condensed))#I, num_condensed*num_condensed
+            Dtotal_moles=ones(1,num_reactants_condensed)
+            Dy_mole_fractions=1/total_moles.*Dtemp_array.-(temp_array./total_moles^2).*Dtotal_moles#num_condensed*num_condensed
+            Dmass_array=spzeros(num_reactants_condensed+1,num_reactants_condensed)
+            Dmass_array[1:num_reactants_condensed,:]=(mw_array./NA).*Dtemp_array
+            Dtotal_mass=sum(Dmass_array,dims=1)#1*num_condensed
+            Dmass_fractions_array=Dmass_array./total_mass-(mass_array./total_mass^2).*Dtotal_mass#(num_condensed+1)*num_condensed
+            Ddensity=-density^2.*sum(Dmass_fractions_array./density_array,dims=1)#1*num_condensed
+            Dsize=1/3*size_array[size_step]^(-2)*3.0*1E3/(N_perbin[size_step]*1E6*4*pi)*(Dtotal_mass./density.-total_mass/density^2.*Ddensity)#1*num_condensed
+            DKn=-gamma_gas./size_array[size_step]^2.*Dsize#num_condensed*num_condensed
+            DCorrection_part1=(1.33-0.71)./(Kn.+1).^2.*DKn#num_condensed*num_condensed
+            DCorrection_part3=Kn.*DCorrection_part1+Correction_part1.*DKn#num_condensed*num_condensed
+            DCorrection=-Correction.^2.*DCorrection_part3#num_condensed*num_condensed
+            Dkelvin_factor=(kelvin_factor.*(4.0*mw_array*1.0E-3*sigma)./(R_gas*Model_temp*2.0)*(-1)./(size_array[size_step]*density)^2).*(density*Dsize+size*Ddensity)#num_condensed*num_condensed
+            DPressure_eq=(Psat*101325.0).*(y_mole_fractions.*Dkelvin_factor+kelvin_factor.*Dy_mole_fractions)#num_condensed*num_condensed
+            DCstar_i_m_t=(NA/(8.3144598E6*Model_temp)).*DPressure_eq#num_condensed*num_condensed
+            Dk_i_m_t_part1=DStar_org.*DCorrection#num_condensed*num_condensed
+            Dk_i_m_t=4.0*pi*1.0E2*N_perbin[size_step].*(size_array[size_step].*Dk_i_m_t_part1.+k_i_m_t_part1.*Dsize)#num_condensed*num_condensed
+            Ddm_dt=(C_g_i_t-Cstar_i_m_t).*Dk_i_m_t-k_i_m_t.*DCstar_i_m_t#num_condensed*num_condensed
+            y_jac[start_ind:stop_ind,start_ind:stop_ind]=Ddm_dt#num_condensed*num_condensed
+            y_jac[1:num_reactants,start_ind:stop_ind]=transpose(DC_g_i_t)*Ddm_dt#num_reactants*num_condensed
+        end
     end
     dy_dt[1:num_reactants]=dy_dt[1:num_reactants]-sum(dy_dt_gas_matrix,dims=2)
     total_SOA_mass=sum(total_SOA_mass_array)*1.0E12
+
+    #Jacobian
+    Ddy_dt_gas_matrix_sum_Dy_gas=transpose(DC_g_i_t)*Ddm_dt_Dy_gas_sum#num_reactants*num_reactants
+    y_jac[1:num_reactants,1:num_reactants].-=Ddy_dt_gas_matrix_sum_Dy_gas
+
     return dy_dt,total_SOA_mass
 end
