@@ -47,7 +47,7 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     return dydt
 end
 
-function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
+function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
     #dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=p
     rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
         [p[ind] for ind in 
@@ -63,7 +63,7 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,
     nothing#return dydt
 end
 
-function dydt_aerosol!(dy_dt,y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
+function dydt_aerosol!(dy_dt,y::Array{Float64,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
