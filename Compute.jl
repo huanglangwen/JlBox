@@ -4,7 +4,7 @@ using ..Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reac
 using ..SizeDistributions:lognormal
 using ..PropertyCalculation:Pure_component1,Pure_component2
 using ..Partitioning:Partition!
-using ..Jacobian:gas_jac!
+using ..Jacobian:gas_jac!,aerosol_jac!
 using DifferentialEquations
 using DifferentialEquations:CVODE_BDF
 using StaticArrays
@@ -181,7 +181,7 @@ function read_configure!(filename::String)
     end
 end
 
-function run_simulation_aerosol()
+function run_simulation_aerosol(use_jacobian::Bool)
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
     eval(evaluate_rates_expr)
@@ -197,7 +197,12 @@ function run_simulation_aerosol()
     end
     y_init[num_reactants+1:num_reactants+num_bins*num_reactants_condensed]=y_cond[1:num_bins*num_reactants_condensed]
     println("Solving ODE")
-    prob = ODEProblem{false}(dydt_aerosol!,y_init,tspan,param_dict)
+    if use_jacobian
+        odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
+        prob = ODEProblem{false}(odefun,y_init,tspan,param_dict)
+    else
+        prob = ODEProblem{false}(dydt_aerosol!,y_init,tspan,param_dict)
+    end
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
@@ -215,7 +220,6 @@ function run_simulation_aerosol()
 
     return sol_mtx,reactants2ind,SOA_array,num_reactants
 end
-
 
 function run_simulation_gas()
     read_configure!("Configure_gas.jl")

@@ -4,7 +4,7 @@ using .Compute:run_simulation_aerosol
 using DataFrames
 using CSV
 
-@time sol_mtx,reactants2ind,SOA_array,num_reactants=run_simulation_aerosol()
+@time sol_mtx,reactants2ind,SOA_array,num_reactants=run_simulation_aerosol(use_jacobian=false)
 #num_reactants=length(reactants2ind)
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[Symbol(ind2reactants[ind]) for ind in 1:num_reactants]
