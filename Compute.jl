@@ -78,7 +78,7 @@ function dydt_aerosol!(dy_dt,y::Array{Float64,1},p::Dict,t::Real)
         NA,sigma,R_gas,temp)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
-    if citer%500==0
+    if citer%(p["ShowIterPeriod"])==0
         @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %e\n",citer,t,total_SOA_mass)
         #println("Sum(dy_dt[num_reacs+1:end])=",sum(dy_dt[num_reactants+1:end]))
         #println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
@@ -215,8 +215,10 @@ function run_simulation_aerosol(;use_jacobian::Bool)
     if use_jacobian
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         prob = ODEProblem{true}(odefun,y_init,tspan,param_dict)
+        param_dict["ShowIterPeriod"]=5
     else
         prob = ODEProblem{true}(dydt_aerosol!,y_init,tspan,param_dict)
+        param_dict["ShowIterPeriod"]=500
     end
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
