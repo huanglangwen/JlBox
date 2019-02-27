@@ -123,7 +123,7 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
             DCorrection_part1=(1.33-0.71)./((Kn.+1).^2).*DKn#num_condensed*num_condensed
             DCorrection_part3=Kn.*DCorrection_part1+Correction_part1.*DKn#num_condensed*num_condensed
             DCorrection=-(Correction.^2).*DCorrection_part3#num_condensed*num_condensed
-            Dkelvin_factor=(kelvin_factor.*(4.0*mw_array*1.0E-3*sigma)./(R_gas*Model_temp*2.0)*(-1)./(size_array[size_step]*density)^2).*(density*Dsize+size*Ddensity)#num_condensed*num_condensed
+            Dkelvin_factor=(kelvin_factor.*(4.0*mw_array*1.0E-3*sigma)./(R_gas*Model_temp*2.0)*(-1)./(size_array[size_step]*density)^2).*(density*Dsize+size_array[size_step]*Ddensity)#num_condensed*num_condensed
             DPressure_eq=(Psat*101325.0).*(y_mole_fractions.*Dkelvin_factor+kelvin_factor.*Dy_mole_fractions)#num_condensed*num_condensed
             DCstar_i_m_t=(NA/(8.3144598E6*Model_temp)).*DPressure_eq#num_condensed*num_condensed
             Dk_i_m_t_part1=DStar_org.*DCorrection#num_condensed*num_condensed
