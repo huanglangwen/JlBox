@@ -10,7 +10,7 @@ using DifferentialEquations:CVODE_BDF
 using StaticArrays
 using SparseArrays
 using Printf
-using Profile
+#using Profile
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
@@ -94,7 +94,7 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     C_g_i_t=y[include_inds]
-    @profile Partition_jac!(jac_mtx,y,C_g_i_t,
+    Partition_jac!(jac_mtx,y,C_g_i_t,
         num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         core_dissociation,y_core,core_mass_array,core_density_array,

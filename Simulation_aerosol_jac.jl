@@ -3,14 +3,14 @@ include("Configure_aerosol.jl")
 using .Compute:run_simulation_aerosol
 using DataFrames
 using CSV
-using Profile
+#using Profile
 
 Profile.clear()
 Profile.init(n = 10^7, delay = 0.01)
 @time sol_mtx,reactants2ind,SOA_array,num_reactants=run_simulation_aerosol(use_jacobian=true)
-open("/data/prof.txt", "w") do s
-    Profile.print(IOContext(s, :displaysize => (1000, 500)),format=:flat)
-end
+#open("/data/prof.txt", "w") do s
+#    Profile.print(IOContext(s, :displaysize => (1000, 500)),format=:flat)
+#end
 
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[Symbol(ind2reactants[ind]) for ind in 1:num_reactants]
