@@ -131,7 +131,7 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
             Dk_i_m_t=4.0*pi*1.0E2*N_perbin[size_step].*(size_array[size_step].*Dk_i_m_t_part1.+k_i_m_t_part1.*Dsize)#num_condensed*num_condensed
             Ddm_dt=(C_g_i_t-Cstar_i_m_t).*Dk_i_m_t-k_i_m_t.*DCstar_i_m_t#num_condensed*num_condensed
             y_jac[start_ind:stop_ind,start_ind:stop_ind]=Ddm_dt#num_condensed*num_condensed
-            y_jac[1:num_reactants,start_ind:stop_ind]=transpose(DC_g_i_t)*Ddm_dt#num_reactants*num_condensed
+            y_jac[1:num_reactants,start_ind:stop_ind]=-transpose(DC_g_i_t)*Ddm_dt#num_reactants*num_condensed
         end
     end
     #dy_dt[1:num_reactants]=dy_dt[1:num_reactants]-sum(dy_dt_gas_matrix,dims=2)
@@ -146,5 +146,16 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
 end
 
 function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
-
+    gas_jac!(jac_mtx,y,p,t)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    C_g_i_t=y[include_inds]
+    Partition!(jac_mtx,y,C_g_i_t,
+        num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        core_dissociation,y_core,core_mass_array,core_density_array,
+        NA,sigma,R_gas,temp)
+    nothing
 end
