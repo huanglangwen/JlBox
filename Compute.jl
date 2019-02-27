@@ -47,11 +47,11 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     return dydt
 end
 
-function dydt!(reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
+function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     #dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=p
-    dydt,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
+    rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
         [p[ind] for ind in 
-            ["dydt","rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
+            ["rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
              "num_eqns","num_reactants"]
         ]
     #dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants=p
@@ -60,18 +60,18 @@ function dydt!(reactants::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
-    return dydt
+    nothing#return dydt
 end
 
-function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
+function dydt_aerosol!(dy_dt,y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
-    dy_dt=dydt!(y_gas,p,t)
+    dydt!(dy_dt,y_gas,p,t)
     C_g_i_t=y[include_inds]
-    dy_dt,total_SOA_mass=Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
+    _,total_SOA_mass=Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
         num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         core_dissociation,y_core,core_mass_array,core_density_array,
@@ -83,7 +83,7 @@ function dydt_aerosol!(y::Array{Float64,1},p::Dict,t::Real)::Array{Float64,1}
         #println("Sum(dy_dt[num_reacs+1:end])=",sum(dy_dt[num_reactants+1:end]))
         #println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
     end
-    return dy_dt
+    nothing#return dy_dt
 end
 
 function prepare_gas()
@@ -99,13 +99,13 @@ function prepare_gas()
     rate_values=zeros(Float64,num_eqns)
     rate_prods=zeros(Float64,num_eqns)
     J=zeros(Float64,62)
-    dydt=zeros(Float64,num_reactants)
+    #dydt=zeros(Float64,num_reactants)
     println("Performing constant folding")
     constant_folding!(evaluate_rates_expr,constantdict,rate_values);
     extract_constants!(evaluate_rates_expr);
     println("Evaluating evaluate_rates&loss_gain codes")
     #eval(evaluate_rates_expr)
-    param_dict=Dict("dydt"=>dydt,"rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,
+    param_dict=Dict("rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,#"dydt"=>dydt,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
                     "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
     return param_dict,reactants2ind,evaluate_rates_expr
@@ -199,9 +199,9 @@ function run_simulation_aerosol(use_jacobian::Bool)
     println("Solving ODE")
     if use_jacobian
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
-        prob = ODEProblem{false}(odefun,y_init,tspan,param_dict)
+        prob = ODEProblem{true}(odefun,y_init,tspan,param_dict)
     else
-        prob = ODEProblem{false}(dydt_aerosol!,y_init,tspan,param_dict)
+        prob = ODEProblem{true}(dydt_aerosol!,y_init,tspan,param_dict)
     end
     sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
@@ -231,7 +231,7 @@ function run_simulation_gas()
         reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
     println("Solving ODE")
-    prob = ODEProblem{false}(dydt!,reactants_initial,tspan,
+    prob = ODEProblem{true}(dydt!,reactants_initial,tspan,
                             param_dict,
                             #(dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)
                             )

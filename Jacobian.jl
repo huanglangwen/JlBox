@@ -42,14 +42,14 @@ function gas_jac!(jac_mtx,reactants::Array{Float64,1},p::Dict,t::Real)
     loss_gain_jac!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,jac_mtx)
 end
 
-function Partition_jac!(y_jac,y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix::Array{Float64,2},C_g_i_t::Array{Float64,1},
+function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
                         num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
                         mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{Float64,1},
                         core_diss::Real,y_core::Array{Float64,1},core_mass_array::Array{Float64,1},core_density_array::Array{Float64,1},
                         NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
     #y_jac: Jacobian matrix (num_output*num_input) num_output==num_input==num_reactants+num_bins*num_reactants_condensed
     size_array=zeros(Float64,num_bins)
-    total_SOA_mass_array=zeros(Float64,num_bins)
+    #total_SOA_mass_array=zeros(Float64,num_bins)
     mass_array=zeros(Float64,num_reactants_condensed+1)
     density_array=zeros(Float64,num_reactants_condensed+1)
     DC_g_i_t=spzeros(num_reactants_condensed,num_reactants)
@@ -69,7 +69,7 @@ function Partition_jac!(y_jac,y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_
         density_array[1:num_reactants_condensed]=density_input[1:num_reactants_condensed]
         density_array[num_reactants_condensed+1]=core_density_array[size_step]
         
-        total_SOA_mass_array[size_step]=sum(mass_array[1:num_reactants_condensed-1])
+        #total_SOA_mass_array[size_step]=sum(mass_array[1:num_reactants_condensed-1])
         #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
         total_mass=sum(mass_array)
         mass_fractions_array=mass_array./total_mass
@@ -97,11 +97,11 @@ function Partition_jac!(y_jac,y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_
         dm_dt=k_i_m_t.*(C_g_i_t-Cstar_i_m_t)
 
         #ASSIGN dy_dt_gas_matrix
-        for ind=1:length(include_inds)
-            dy_dt_gas_matrix[include_inds[ind],size_step]=dm_dt[ind]
-        end
+        #for ind=1:length(include_inds)
+        #    dy_dt_gas_matrix[include_inds[ind],size_step]=dm_dt[ind]
+        #end
 
-        dy_dt[start_ind:stop_ind]=dm_dt
+        #dy_dt[start_ind:stop_ind]=dm_dt
 
         #=================Jacobian, Input=y_gas======================#
         begin
@@ -134,12 +134,17 @@ function Partition_jac!(y_jac,y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_
             y_jac[1:num_reactants,start_ind:stop_ind]=transpose(DC_g_i_t)*Ddm_dt#num_reactants*num_condensed
         end
     end
-    dy_dt[1:num_reactants]=dy_dt[1:num_reactants]-sum(dy_dt_gas_matrix,dims=2)
-    total_SOA_mass=sum(total_SOA_mass_array)*1.0E12
+    #dy_dt[1:num_reactants]=dy_dt[1:num_reactants]-sum(dy_dt_gas_matrix,dims=2)
+    #total_SOA_mass=sum(total_SOA_mass_array)*1.0E12
 
     #Jacobian
     Ddy_dt_gas_matrix_sum_Dy_gas=transpose(DC_g_i_t)*Ddm_dt_Dy_gas_sum#num_reactants*num_reactants
     y_jac[1:num_reactants,1:num_reactants].-=Ddy_dt_gas_matrix_sum_Dy_gas
 
-    return dy_dt,total_SOA_mass
+    nothing
+    #return dy_dt,total_SOA_mass
+end
+
+function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+
 end
