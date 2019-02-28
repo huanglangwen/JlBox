@@ -10,6 +10,7 @@ using DifferentialEquations:CVODE_BDF
 using StaticArrays
 using SparseArrays
 using Printf
+using DiffEqSensitivty
 #using Profile
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
@@ -197,7 +198,7 @@ function read_configure!(filename::String)
     end
 end
 
-function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense,enable_sensitivity::Bool=false)
+function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
     eval(evaluate_rates_expr)
@@ -221,6 +222,43 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense,ena
         prob = ODEProblem{true}(dydt_aerosol!,y_init,tspan,param_dict)
         param_dict["ShowIterPeriod"]=500
     end
+    sol = solve(prob,CVODE_BDF(linear_solver=linsolver),reltol=1e-4,abstol=1.0e-2,
+                tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
+                dt=1.0e-6, #Initial step-size
+                dtmax=100.0,
+                max_order = 5,
+                max_convergence_failures = 1000
+                )
+    sol_mtx=transpose(sol)
+    aerosol_mtx=sol_mtx[1:end,num_reactants+1:num_reactants+num_bins*num_reactants_condensed]
+    t_length=size(aerosol_mtx)[1]
+    mw_array=param_dict["y_mw"]
+    SOA_array=[sum((sum(reshape(aerosol_mtx[i,1:end],(num_reactants_condensed,num_bins))
+                               ,dims=2).*mw_array./NA)[1:end-1]#exclude H2O at the end
+                  ) for i in 1:t_length]*1E12
+
+    return sol_mtx,reactants2ind,SOA_array,num_reactants
+end
+
+function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
+    read_configure!("Configure_aerosol.jl")
+    param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
+    eval(evaluate_rates_expr)
+    num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
+    dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
+    dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
+    param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
+    param_dict["dydt"]=dy_dt
+    param_dict["Current_iter"]=0
+    y_init=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
+    for (k,v) in reactants_initial_dict
+        y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
+    end
+    y_init[num_reactants+1:num_reactants+num_bins*num_reactants_condensed]=y_cond[1:num_bins*num_reactants_condensed]
+    println("Solving ODE")
+    odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
+    prob = ODELocalSensitivityProblem(odefun,y_init,tspan,param_dict)
+    param_dict["ShowIterPeriod"]=5
     sol = solve(prob,CVODE_BDF(linear_solver=linsolver),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
