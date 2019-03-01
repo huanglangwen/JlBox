@@ -36,6 +36,7 @@ ENV PATH="/Code/julia/julia-1.1.0/bin:/root/.julia/conda/3/bin:${PATH}"
 #RUN source /root/.bashrc
 RUN julia --eval 'using Pkg;Pkg.update()'
 RUN julia --eval 'using Pkg;Pkg.add("DifferentialEquations")'
+RUN julia --eval 'using Pkg;Pkg.add("Sundials")'
 RUN julia --eval 'using Pkg;Pkg.add("StaticArrays")'
 RUN julia --eval 'using Pkg;Pkg.add("DataFrames")'
 RUN julia --eval 'using Pkg;Pkg.add("CSV")'
