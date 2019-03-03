@@ -1,4 +1,4 @@
-const file="data/MCM_APINENE.eqn.txt"#"MCM_test.eqn.txt"
+const file="data/MCM_test.eqn.txt"#"MCM_test.eqn.txt"
 const temp=298.15 # Kelvin
 const RH=0.5 # RH/100% [0 - 0.99]
 const hour_of_day=12.0 # Define a start time  24 hr format
@@ -12,5 +12,5 @@ const Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
 const H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
 const tspan=(0,simulation_time)
 const Cfactor= 2.55e+10 #ppb-to-molecules/cc
-const reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm 
+const reactants_initial_dict=Dict(["O3"=>18.0,"BUT1ENE"=>30.0])#ppm 
 const constantdict=Dict([(:temp,temp),(:H2O,H2O)])
