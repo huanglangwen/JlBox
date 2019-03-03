@@ -26,8 +26,16 @@ function parse_reactants(file::String)#,RO2_names::Array{String,1}
             lhs=[strip(i) for i in split(lhs_rhs[1],"+")]
             rhs=[strip(i) for i in split(lhs_rhs[2],"+")]
             reac_regexp=r"([0-9]*)([A-Z][0-9A-Z]*)"
-            reacs=[Tuple{String,String}(match(reac_regexp,i).captures) for i in lhs]
-            prods=[Tuple{String,String}(match(reac_regexp,i).captures) for i in rhs]
+            if lhs[1]==""
+                reacs=[]
+            else
+                reacs=[Tuple{String,String}(match(reac_regexp,i).captures) for i in lhs]
+            end
+            if rhs[1]==""
+                prods=[]
+            else            
+                prods=[Tuple{String,String}(match(reac_regexp,i).captures) for i in rhs]
+            end
             for (stoich,reac) in reacs
                 num_stoich=stoich_str2int(stoich)
                 if !haskey(reactants_dict,reac)
