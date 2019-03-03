@@ -10,7 +10,7 @@ using DifferentialEquations:CVODE_BDF
 using StaticArrays
 using SparseArrays
 using Printf
-using DiffEqSensitivty
+using DiffEqSensitivity
 #using Profile
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
