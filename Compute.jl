@@ -274,7 +274,7 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
                                ,dims=2).*mw_array./NA)[1:end-1]#exclude H2O at the end
                   ) for i in 1:t_length]*1E12
 
-    return sol_mtx,reactants2ind,SOA_array,num_reactants
+    return sol,reactants2ind,SOA_array,num_reactants
 end
 
 function run_simulation_gas()
