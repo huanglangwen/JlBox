@@ -340,6 +340,7 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     stoich_mtx=param_dict["stoich_mtx"]
     stoich_list=param_dict["stoich_list"]
     reactants_list=param_dict["reactants_list"]
+    num_eqns=param_dict["num_eqns"]
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
     for i in 1:num_tstops
         t=tstops[i]
