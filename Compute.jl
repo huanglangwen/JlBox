@@ -313,7 +313,7 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     println("Solving Adjoint Problem")
     lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
-                     dt=-1e-6,dtmax=-100.0,max_order=5,max_convergence_failures=1000)
+                     dt=-1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
     return lambda_sol,reactants2ind,num_reactants
 end
 
