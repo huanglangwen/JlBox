@@ -5,7 +5,7 @@ using ..SizeDistributions:lognormal
 using ..PropertyCalculation:Pure_component1,Pure_component2
 using ..Partitioning:Partition!
 using ..Jacobian:gas_jac!,Partition_jac!
-using ..Sensitivity:SOA_mass_jac!
+using ..Sensitivity:SOA_mass_jac!,loss_gain_drate_values!
 using DifferentialEquations
 using DifferentialEquations:CVODE_BDF
 using StaticArrays
@@ -328,14 +328,28 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     param_dict["sol"]=sol
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
-    param_dict["ShowIterPeriod"]=300
+    param_dict["ShowIterPeriod"]=5
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,lambda_init,tspan_adj,param_dict)
     println("Solving Adjoint Problem")
     lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
                      dt=-1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
-    return lambda_sol,reactants2ind,num_reactants
+    tstops=[t for t in 0:batch_step:simulation_time]
+    num_tstops=length(tstops)
+    stoich_mtx=param_dict["stoich_mtx"]
+    stoich_list=param_dict["stoich_list"]
+    reactants_list=param_dict["reactants_list"]
+    dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
+    for i in 1:num_tstops
+        t=tstops[i]
+        y_gas=sol(t)[1:num_reactants]
+        loss_gain_drate_mtx=zeros(Float64,(num_reactants,num_eqns))
+        loss_gain_drate_values!(num_reactants,num_eqns,y_gas,stoich_mtx,stoich_list,reactants_list,loss_gain_drate_mtx)
+        lambda=lambda_sol(t)[1:num_reactants]
+        dSOA_mass_drate[1:num_eqns,i]=lambda' * loss_gain_drate_mtx
+    end
+    return dSOA_mass_drate
 end
 
 function run_simulation_gas()

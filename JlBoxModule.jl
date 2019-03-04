@@ -29,7 +29,7 @@ include("Jacobian.jl")
 end
 
 module Sensitivity
-export SOA_mass_jac!
+export SOA_mass_jac!,loss_gain_drate_values!
 include("Sensitivity.jl")
 end
 
