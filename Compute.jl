@@ -104,6 +104,24 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     nothing
 end
 
+function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
+    sol=p["sol"]
+    y=sol(t)
+    gas_jac!(jac_mtx,y,p,t)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    C_g_i_t=y[include_inds]
+    Partition_jac!(jac_mtx,y,C_g_i_t,
+        num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        core_dissociation,y_core,core_mass_array,core_density_array,
+        NA,sigma,R_gas,temp)
+    jac_mtx.*=-1
+    nothing
+end
+
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
@@ -309,7 +327,8 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=300
-    prob_adj=ODEProblem{true}(sensitivity_adjoint_dldt!,lambda_init,tspan_adj,param_dict)
+    odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
+    prob_adj=ODEProblem{true}(odefun_adj,lambda_init,tspan_adj,param_dict)
     println("Solving Adjoint Problem")
     lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
