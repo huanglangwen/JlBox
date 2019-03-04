@@ -119,6 +119,8 @@ function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
         core_dissociation,y_core,core_mass_array,core_density_array,
         NA,sigma,R_gas,temp)
     jac_mtx.*=-1
+    jac_mtx=transpose(jac_mtx)#IMPORTANT jacobian should be the transpose of the original one 
+    # since dldt=g(t)-l*J, for ith element in l and jth element in dldt appears at ith line and jth col in the Jacobian matrix
     nothing
 end
 
