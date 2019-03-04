@@ -108,10 +108,10 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     time_of_day_seconds=start_time+t
+    y=sol(t)
     RO2=sum(y[RO2_inds])
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)
 
-    y=sol(t)
     jac_mtx=p["jac_mtx"]
     gas_jac!(jac_mtx,y,p,t)
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
