@@ -106,16 +106,12 @@ end
 
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
-    sol=p["sol"]
-    dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
-    y=sol(t)
-    SOA_mass_jac!(dSOA_dy,y,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
-
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     time_of_day_seconds=start_time+t
     RO2=sum(y[RO2_inds])
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)
 
+    y=sol(t)
     jac_mtx=p["jac_mtx"]
     gas_jac!(jac_mtx,y,p,t)
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
@@ -127,6 +123,10 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         core_dissociation,y_core,core_mass_array,core_density_array,
         NA,sigma,R_gas,temp)
+
+    sol=p["sol"]
+    dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
+    SOA_mass_jac!(dSOA_dy,y,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
 
     dldt=dSOA_dy.-lambda*jac_mtx
     p["Current_iter"]+=1
