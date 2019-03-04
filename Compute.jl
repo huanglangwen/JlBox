@@ -145,10 +145,10 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
         core_dissociation,y_core,core_mass_array,core_density_array,
         NA,sigma,R_gas,temp)
 
-    dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
-    SOA_mass_jac!(dSOA_dy,y,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
+    #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
+    #SOA_mass_jac!(dSOA_dy,y,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
 
-    dldt=dSOA_dy.-lambda*jac_mtx
+    dldt=-lambda*jac_mtx#adopting KPP paper I
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
@@ -324,7 +324,9 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     t0,tF=tspan
     tspan_adj=(tF,t0)
     len_y=num_reactants+num_bins*num_reactants_condensed
-    lambda_init=zeros(Float64,(1,len_y))
+    mw_array=param_dict["y_mw"]
+    lambda_init=zeros(Float64,(1,len_y))#DiffEq.jl version seems incorrect
+    SOA_mass_jac!(lambda_init,sol(tF),mw_array,NA,num_reactants,num_reactants_condensed,num_bins)#adopting KPP paper I
     param_dict["sol"]=sol
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
