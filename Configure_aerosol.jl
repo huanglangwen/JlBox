@@ -10,7 +10,7 @@ const Psat_w=610.78*exp((temp_celsius/(temp_celsius+238.3))*17.2694)# Saturation
 const Pw=RH*Psat_w
 const Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
 const H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
-const tspan=(0,simulation_time)
+const tspan=(0.,simulation_time)
 const Cfactor= 2.55e+10 #ppb-to-molecules/cc
 const reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
 const constantdict=Dict([(:temp,temp)])

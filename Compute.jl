@@ -294,7 +294,7 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     prob = ODEProblem{true}(odefun,y_init,tspan,param_dict)
     param_dict["ShowIterPeriod"]=5
     sol = solve(prob,CVODE_BDF(linear_solver=linsolver),reltol=1e-4,abstol=1.0e-2,
-                tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
+                tstops=0.:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
                 max_order = 5,
@@ -311,8 +311,9 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     param_dict["ShowIterPeriod"]=300
     prob_adj=ODEProblem{true}(sensitivity_adjoint_dldt!,lambda_init,tspan_adj,param_dict)
     println("Solving Adjoint Problem")
-    lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,saveat=batch_step,
-                     dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
+    lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,
+                     tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
+                     dt=-1e-6,dtmax=-100.0,max_order=5,max_convergence_failures=1000)
     return lambda_sol,reactants2ind,num_reactants
 end
 
