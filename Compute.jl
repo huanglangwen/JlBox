@@ -5,6 +5,7 @@ using ..SizeDistributions:lognormal
 using ..PropertyCalculation:Pure_component1,Pure_component2
 using ..Partitioning:Partition!
 using ..Jacobian:gas_jac!,Partition_jac!
+using ..Sensitivity:SOA_mass_jac!
 using DifferentialEquations
 using DifferentialEquations:CVODE_BDF
 using StaticArrays
@@ -100,6 +101,39 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         core_dissociation,y_core,core_mass_array,core_density_array,
         NA,sigma,R_gas,temp)
+    nothing
+end
+
+function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    sol=p["sol"]
+    dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
+    y=sol(t)
+    SOA_mass_jac!(dSOA_dy,y,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
+
+    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
+    time_of_day_seconds=start_time+t
+    RO2=sum(y[RO2_inds])
+    evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)
+
+    jac_mtx=p["jac_mtx"]
+    gas_jac!(jac_mtx,y,p,t)
+    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    C_g_i_t=y[include_inds]
+    Partition_jac!(jac_mtx,y,C_g_i_t,
+        num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        core_dissociation,y_core,core_mass_array,core_density_array,
+        NA,sigma,R_gas,temp)
+
+    dldt=dSOA_dy.-lambda*jac_mtx
+    p["Current_iter"]+=1
+    citer=p["Current_iter"]
+    if citer%(p["ShowIterPeriod"])==0
+        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+    end
     nothing
 end
 
@@ -257,7 +291,7 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     y_init[num_reactants+1:num_reactants+num_bins*num_reactants_condensed]=y_cond[1:num_bins*num_reactants_condensed]
     println("Solving ODE")
     odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
-    prob = ODELocalSensitivityProblem(odefun,y_init,tspan,param_dict)
+    prob = ODEProblem{true}(odefun,y_init,tspan,param_dict)
     param_dict["ShowIterPeriod"]=5
     sol = solve(prob,CVODE_BDF(linear_solver=linsolver),reltol=1e-4,abstol=1.0e-2,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
@@ -266,15 +300,20 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
                 max_order = 5,
                 max_convergence_failures = 1000
                 )
-    sol_mtx=transpose(sol)
-    aerosol_mtx=sol_mtx[1:end,num_reactants+1:num_reactants+num_bins*num_reactants_condensed]
-    t_length=size(aerosol_mtx)[1]
-    mw_array=param_dict["y_mw"]
-    SOA_array=[sum((sum(reshape(aerosol_mtx[i,1:end],(num_reactants_condensed,num_bins))
-                               ,dims=2).*mw_array./NA)[1:end-1]#exclude H2O at the end
-                  ) for i in 1:t_length]*1E12
-
-    return sol,reactants2ind,SOA_array,num_reactants
+    println("Preparing Adjoint Problem")
+    t0,tF=tspan
+    tspan_adj=(tF,t0)
+    len_y=num_reactants+num_bins*num_reactants_condensed
+    lambda_init=zeros(Float64,(1,len_y))
+    param_dict["sol"]=sol
+    param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
+    param_dict["Current_iter"]=0
+    param_dict["ShowIterPeriod"]=300
+    prob_adj=ODEProblem{true}(sensitivity_adjoint_dldt!,lambda_init,tspan_adj,param_dict)
+    println("Solving Adjoint Problem")
+    lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,saveat=batch_step,
+                     dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
+    return lambda_sol,reactants2ind,num_reactants
 end
 
 function run_simulation_gas()

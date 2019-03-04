@@ -28,6 +28,11 @@ export gas_jac!
 include("Jacobian.jl")
 end
 
+module Sensitivity
+export SOA_mass_jac!
+include("Sensitivity.jl")
+end
+
 module Compute
 export run_simulation_gas,run_simulation_aerosol
 include("Compute.jl")
