@@ -354,9 +354,10 @@ end
 function sensitivity_mtx2dSOA(S,t::Real,integrator)
     p=integrator.p
     mw_array,num_reactants,num_reactants_condensed,num_eqns=[p[i] for i in ["y_mw","num_reactants","num_reactants_condensed","num_eqns"]]
-    dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
+    y_len=num_reactants+num_bins*num_reactants_condensed
+    dSOA_dy=zeros(Float64,(1,y_len))
     SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
-    return reshape(dSOA_dy * S,num_eqns)
+    return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
 
 function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
