@@ -346,6 +346,14 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     return dSOA_mass_drate
 end
 
+function sensitivity_mtx2dSOA(S,t::Real,integrator)
+    p=integrator.p
+    mw_array,num_reactants,num_reactants_condensed,num_eqns=[p[i] for i in ["y_mw","num_reactants","num_reactants_condensed","num_eqns"]]
+    dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
+    SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
+    return reshape(dSOA_dy * S,num_eqns)
+end
+
 function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
     sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
@@ -358,7 +366,14 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     S_init=zeros(Float64,(num_reactants+num_reactants_condensed*num_bins,num_eqns))
     odefun_ddm=ODEFunction(sensitivity_DDM_dSdt!,jac=sensitivity_DDM_jac!)
     prob_ddm=ODEProblem{true}(odefun_ddm,S_init,tspan,param_dict)
-    
+
+    save_callback=SavingCallback(sensitivity_mtx2dSOA,SavedValues(Float64,Array{Float64,1}),saveat=0:batch_step:simulation_time)
+    printfln("Solving Sensitivity ODE (DDM)")
+    ddm_sol=solve(prob_ddm,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,
+                     callback=save_callback,
+                     tstops=0:batch_step:simulation_time,saveat=batch_step,
+                     dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
+    return ddm_sol
 end
 
 function run_simulation_gas()
