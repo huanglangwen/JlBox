@@ -105,22 +105,15 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
 end
 
 function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
-    sol=p["sol"]
-    y=sol(t)
-    gas_jac!(jac_mtx,y,p,t)
-    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
-    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
-    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
-    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
-    C_g_i_t=y[include_inds]
-    Partition_jac!(jac_mtx,y,C_g_i_t,
-        num_bins,num_reactants,num_reactants_condensed,include_inds,
-        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
-        core_dissociation,y_core,core_mass_array,core_density_array,
-        NA,sigma,R_gas,temp)
-    jac_mtx.*=-1
-    jac_mtx=transpose(jac_mtx)#IMPORTANT jacobian should be the transpose of the original one 
+    jacobian_from_sol!(p,t)
+    jac_mtx=-1.*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
     # since dldt=g(t)-l*J, for ith element in l and jth element in dldt appears at ith line and jth col in the Jacobian matrix
+    nothing
+end
+
+function sensitivity_DDM_jac!(jac_mtx,lambda,p,t)
+    jacobian_from_sol!(p,t)
+    jac_mtx=p["jac_mtx"]
     nothing
 end
 
@@ -315,7 +308,7 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     return sol,reactants2ind,SOA_array,num_reactants,param_dict
 end
 
-function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
+function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
     sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
@@ -351,6 +344,21 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
         dSOA_mass_drate[1:num_eqns,i]=lambda' * loss_gain_drate_mtx
     end
     return dSOA_mass_drate
+end
+
+function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
+    read_configure!("Configure_aerosol.jl")
+    sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
+    num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
+    println("Preparing DDM Sensitivity Analysis")
+    param_dict["sol"]=sol
+    param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
+    param_dict["Current_iter"]=0
+    param_dict["ShowIterPeriod"]=5
+    S_init=zeros(Float64,(num_reactants+num_reactants_condensed*num_bins,num_eqns))
+    odefun_ddm=ODEFunction(sensitivity_DDM_dSdt!,jac=sensitivity_DDM_jac!)
+    prob_ddm=ODEProblem{true}(odefun_ddm,S_init,tspan,param_dict)
+    
 end
 
 function run_simulation_gas()
