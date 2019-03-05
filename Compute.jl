@@ -124,7 +124,7 @@ function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
     nothing
 end
 
-function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
+function jacobian_from_sol!(p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     time_of_day_seconds=start_time+t
@@ -144,7 +144,12 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         core_dissociation,y_core,core_mass_array,core_density_array,
         NA,sigma,R_gas,temp)
+    nothing
+end
 
+function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
+    jacobian_from_sol!(p,t)
+    jac_mtx=p["jac_mtx"]
     #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
 
@@ -154,6 +159,20 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     if citer%(p["ShowIterPeriod"])==0
         @printf("Current Iteration: %d, time_step: %e\n",citer,t)
     end
+    nothing
+end
+
+function sensitivity_DDM_dSdt!(dSdt,S,p,t)
+    jacobian_from_sol!(p,t)
+    jac_mtx=p["jac_mtx"]
+    sol=p["sol"]
+    num_reactants,num_reactants_condensed,num_eqns=[p[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
+    stoich_mtx,stoich_list,reactants_list=[p[i] for i in ["stoich_mtx","stoich_list","reactants_list"]]
+
+    y_gas=sol(t)[1:num_reactants]
+    loss_gain_drate_mtx=zeros(Float64,(num_reactants+num_bins*num_reactants_condensed,num_eqns))
+    loss_gain_drate_values!(num_reactants,num_eqns,y_gas,stoich_mtx,stoich_list,reactants_list,loss_gain_drate_mtx)
+    dSdt=jac_mtx*S+loss_gain_drate_mtx
     nothing
 end
 
@@ -293,37 +312,13 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
                                ,dims=2).*mw_array./NA)[1:end-1]#exclude H2O at the end
                   ) for i in 1:t_length]*1E12
 
-    return sol_mtx,reactants2ind,SOA_array,num_reactants
+    return sol,reactants2ind,SOA_array,num_reactants,param_dict
 end
 
 function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
-    param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
-    eval(evaluate_rates_expr)
-    num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
-    dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
-    dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
-    param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
-    param_dict["dydt"]=dy_dt
-    param_dict["Current_iter"]=0
-    y_init=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
-    for (k,v) in reactants_initial_dict
-        y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
-    end
-    y_init[num_reactants+1:num_reactants+num_bins*num_reactants_condensed]=y_cond[1:num_bins*num_reactants_condensed]
-    println("Solving ODE")
-    odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
-    prob = ODEProblem{true}(odefun,y_init,tspan,param_dict)
-    param_dict["ShowIterPeriod"]=5
-    sol = solve(prob,CVODE_BDF(linear_solver=linsolver),reltol=1e-4,abstol=1.0e-2,
-                tstops=0.:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
-                dt=1.0e-6, #Initial step-size
-                dtmax=100.0,
-                max_order = 5,
-                max_convergence_failures = 1000,
-                #callback=PositiveDomain(y_init,abstol=1.0e-2)
-                #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
-                )
+    sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
+    num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
     t0,tF=tspan
     tspan_adj=(tF,t0)
@@ -346,7 +341,6 @@ function run_simulation_aerosol_sensitivity(;linsolver::Symbol=:Dense)
     stoich_mtx=param_dict["stoich_mtx"]
     stoich_list=param_dict["stoich_list"]
     reactants_list=param_dict["reactants_list"]
-    num_eqns=param_dict["num_eqns"]
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
     for i in 1:num_tstops
         t=tstops[i]
