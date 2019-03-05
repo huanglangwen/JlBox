@@ -361,6 +361,8 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
     y_len=num_reactants+num_bins*num_reactants_condensed
     dSOA_dy=zeros(Float64,(1,y_len))
     SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
+    println(dSOA_dy)
+    println(S)
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
 
@@ -379,7 +381,7 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     prob_ddm=ODEProblem{true}(odefun_ddm,S_init,tspan,param_dict)
     dSOA_saveval=SavedValues(Float64,Array{Float64,1})
     save_callback=SavingCallback(sensitivity_mtx2dSOA,dSOA_saveval,saveat=0:batch_step:simulation_time)
-    println("Solving Sensitivity ODE (DDM)")
+    #println("Solving Sensitivity ODE (DDM)")
     solve(prob_ddm,CVODE_Adams(),reltol=1e-4,abstol=1e-2,
           callback=save_callback,
           tstops=0:batch_step:simulation_time,saveat=batch_step,#save_on=false,#saveat=batch_step,
