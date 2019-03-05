@@ -377,18 +377,18 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     S_init=zeros(Float64,(len_y,num_eqns))
     odefun_ddm=ODEFunction(sensitivity_DDM_dSdt!)#,jac=sensitivity_DDM_jac! wrong!!!
     prob_ddm=ODEProblem{true}(odefun_ddm,S_init,tspan,param_dict)
-
-    save_callback=SavingCallback(sensitivity_mtx2dSOA,SavedValues(Float64,Array{Float64,1}),saveat=0:batch_step:simulation_time)
+    dSOA_saveval=SavedValues(Float64,Array{Float64,1})
+    save_callback=SavingCallback(sensitivity_mtx2dSOA,dSOA_saveval,saveat=0:batch_step:simulation_time)
     println("Solving Sensitivity ODE (DDM)")
-    ddm_sol=solve(prob_ddm,CVODE_Adams(),reltol=1e-4,abstol=1e-2,
-                     callback=save_callback,
-                     tstops=0:batch_step:simulation_time,saveat=batch_step,
-                     dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
+    solve(prob_ddm,CVODE_Adams(),reltol=1e-4,abstol=1e-2,
+          callback=save_callback,
+          tstops=0:batch_step:simulation_time,save_on=false,#saveat=batch_step,
+          dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
     for i in 1:num_tstops
-        dSOA_mass_drate[1:num_eqns,i]=ddm_sol(tstops[i])
+        dSOA_mass_drate[1:num_eqns,i]=dSOA_saveval.saveval[i]
     end
     return dSOA_mass_drate
 end
