@@ -369,7 +369,7 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
-    S_init=zeros(Float64,(len_y,len_y))
+    S_init=zeros(Float64,(len_y,num_eqns))
     odefun_ddm=ODEFunction(sensitivity_DDM_dSdt!)#,jac=sensitivity_DDM_jac! wrong!!!
     prob_ddm=ODEProblem{true}(odefun_ddm,S_init,tspan,param_dict)
 
