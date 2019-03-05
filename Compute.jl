@@ -341,16 +341,16 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     stoich_list=param_dict["stoich_list"]
     reactants_list=param_dict["reactants_list"]
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
-    dgdt=function (t)
+    dgpdt=function (t)
         y_gas=sol(t)[1:num_reactants]
         loss_gain_drate_mtx=zeros(Float64,(num_reactants,num_eqns))
         loss_gain_drate_values!(num_reactants,num_eqns,y_gas,stoich_mtx,stoich_list,reactants_list,loss_gain_drate_mtx)
         lambda=lambda_sol(t)[1:num_reactants]
         return lambda' * loss_gain_drate_mtx
     end 
-    dSOA_mass_drate[1:num_eqns,1]=quadgk(dgdt,tstops[1],tstops[2])[1]#quadgk->(val,err) ignore error value
+    dSOA_mass_drate[1:num_eqns,1]=quadgk(dgpdt,tstops[1],tstops[2])[1]#quadgk->(val,err) ignore error value
     for i in 2:num_tstops-1
-        dSOA_mass_drate[1:num_eqns,i]=dSOA_mass_drate[1:num_eqns,i-1].+quadgk(dgdt,tstops[i],tstops[i+1])[1]
+        dSOA_mass_drate[1:num_eqns,i]=dSOA_mass_drate[1:num_eqns,i-1]+reshape(quadgk(dgdt,tstops[i],tstops[i+1])[1],(num_eqns,1))
     end
     return dSOA_mass_drate
 end
@@ -387,6 +387,7 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
+    println(dSOA_saveval.saveval)
     for i in 1:num_tstops
         dSOA_mass_drate[1:num_eqns,i]=dSOA_saveval.saveval[i]
     end
