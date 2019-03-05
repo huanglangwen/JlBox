@@ -1,6 +1,6 @@
 include("JlBoxModule.jl")
 include("Configure_aerosol.jl")
-using .Compute:run_simulation_aerosol_DDM
+using .Compute:run_simulation_aerosol_DDM,run_simulation_aerosol_adjoint
 using DataFrames
 using CSV
 
