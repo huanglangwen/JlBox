@@ -375,7 +375,7 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
 
     save_callback=SavingCallback(sensitivity_mtx2dSOA,SavedValues(Float64,Array{Float64,1}),saveat=0:batch_step:simulation_time)
     println("Solving Sensitivity ODE (DDM)")
-    ddm_sol=solve(prob_ddm,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,
+    ddm_sol=solve(prob_ddm,ABDF2(autodiff=false),reltol=1e-4,abstol=1e-2,
                      callback=save_callback,
                      tstops=0:batch_step:simulation_time,saveat=batch_step,
                      dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
