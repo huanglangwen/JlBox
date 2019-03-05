@@ -366,7 +366,7 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     println("Preparing DDM Sensitivity Analysis")
     len_y=num_reactants+num_reactants_condensed*num_bins
     param_dict["sol"]=sol
-    param_dict["jac_mtx"]=zeros(Float64,(len_y,num_eqns))
+    param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     S_init=zeros(Float64,(len_y,len_y))
