@@ -314,7 +314,7 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
 end
 
 function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
-    read_configure!("Configure_aerosol.jl")
+    #read_configure!("Configure_aerosol.jl")
     sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
@@ -360,7 +360,7 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
 end
 
 function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
-    read_configure!("Configure_aerosol.jl")
+    #read_configure!("Configure_aerosol.jl")
     sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing DDM Sensitivity Analysis")
