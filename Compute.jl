@@ -12,6 +12,7 @@ using StaticArrays
 using SparseArrays
 using Printf
 using DiffEqSensitivity
+using QuadGK
 #using Profile
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
@@ -340,13 +341,16 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     stoich_list=param_dict["stoich_list"]
     reactants_list=param_dict["reactants_list"]
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
-    for i in 1:num_tstops
-        t=tstops[i]
+    dgdt=function (t)
         y_gas=sol(t)[1:num_reactants]
         loss_gain_drate_mtx=zeros(Float64,(num_reactants,num_eqns))
         loss_gain_drate_values!(num_reactants,num_eqns,y_gas,stoich_mtx,stoich_list,reactants_list,loss_gain_drate_mtx)
         lambda=lambda_sol(t)[1:num_reactants]
-        dSOA_mass_drate[1:num_eqns,i]=lambda' * loss_gain_drate_mtx
+        return lambda' * loss_gain_drate_mtx
+    end 
+    dSOA_mass_drate[1:num_eqns,1]=quadgk(dgdt,tstops[1],tstops[2])
+    for i in 2:num_tstops-1
+        dSOA_mass_drate[1:num_eqns,i]=dSOA_mass_drate[1:num_eqns,i-1].+quadgk(dgdt,tstops[i],tstops[i+1])
     end
     return dSOA_mass_drate
 end
@@ -384,7 +388,7 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     num_tstops=length(tstops)
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
     for i in 1:num_tstops
-        dSOA_mass_drate[1:num_eqns,i]=sol(tstops[i])
+        dSOA_mass_drate[1:num_eqns,i]=ddm_sol(tstops[i])
     end
     return dSOA_mass_drate
 end
