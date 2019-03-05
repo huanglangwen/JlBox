@@ -380,7 +380,13 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
                      callback=save_callback,
                      tstops=0:batch_step:simulation_time,saveat=batch_step,
                      dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
-    return ddm_sol
+    tstops=[t for t in 0:batch_step:simulation_time]
+    num_tstops=length(tstops)
+    dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
+    for i in 1:num_tstops
+        dSOA_mass_drate[1:num_eqns,i]=sol(tstops[i])
+    end
+    return dSOA_mass_drate
 end
 
 function run_simulation_gas()
