@@ -166,6 +166,11 @@ function sensitivity_DDM_dSdt!(dSdt,S,p,t)
     loss_gain_drate_mtx=zeros(Float64,(num_reactants+num_bins*num_reactants_condensed,num_eqns))
     loss_gain_drate_values!(num_reactants,num_eqns,y_gas,stoich_mtx,stoich_list,reactants_list,loss_gain_drate_mtx)
     dSdt=jac_mtx*S+loss_gain_drate_mtx
+    p["Current_iter"]+=1
+    citer=p["Current_iter"]
+    if citer%(p["ShowIterPeriod"])==0
+        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+    end
     nothing
 end
 
