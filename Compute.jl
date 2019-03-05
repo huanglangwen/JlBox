@@ -382,7 +382,7 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     println("Solving Sensitivity ODE (DDM)")
     solve(prob_ddm,CVODE_Adams(),reltol=1e-4,abstol=1e-2,
           callback=save_callback,
-          tstops=0:batch_step:simulation_time,save_on=false,#saveat=batch_step,
+          tstops=0:batch_step:simulation_time,saveat=[simulation_time],#save_on=false,#saveat=batch_step,
           dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
