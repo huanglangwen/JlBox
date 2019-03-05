@@ -106,7 +106,7 @@ end
 
 function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
     jacobian_from_sol!(p,t)
-    jac_mtx=-1.*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
+    jac_mtx=(-1).*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
     # since dldt=g(t)-l*J, for ith element in l and jth element in dldt appears at ith line and jth col in the Jacobian matrix
     nothing
 end
