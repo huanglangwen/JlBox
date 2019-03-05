@@ -55,7 +55,8 @@ prob = ODEProblem(odefun,reactants_initial,tspan,param_dict)
             dtmax=100.0,
             max_order = 5,
             max_convergence_failures = 1000,
-            isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
+            callback=PositiveDomain(reactants_initial)
+            #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
             #progress=true
             )
 num_reactants=length(reactants2ind)
