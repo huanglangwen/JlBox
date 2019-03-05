@@ -370,12 +370,12 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     S_init=zeros(Float64,(len_y,len_y))
-    odefun_ddm=ODEFunction(sensitivity_DDM_dSdt!,jac=sensitivity_DDM_jac!)
+    odefun_ddm=ODEFunction(sensitivity_DDM_dSdt!)#,jac=sensitivity_DDM_jac! wrong!!!
     prob_ddm=ODEProblem{true}(odefun_ddm,S_init,tspan,param_dict)
 
     save_callback=SavingCallback(sensitivity_mtx2dSOA,SavedValues(Float64,Array{Float64,1}),saveat=0:batch_step:simulation_time)
     println("Solving Sensitivity ODE (DDM)")
-    ddm_sol=solve(prob_ddm,ABDF2(autodiff=false),reltol=1e-4,abstol=1e-2,
+    ddm_sol=solve(prob_ddm,CVODE_Adams(),reltol=1e-4,abstol=1e-2,
                      callback=save_callback,
                      tstops=0:batch_step:simulation_time,saveat=batch_step,
                      dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
