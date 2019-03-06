@@ -171,6 +171,7 @@ function sensitivity_DDM_dSdt!(dSdt,S,p,t)
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
         @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+        println(shape(S),shape(dSdt))
     end
     nothing
 end
@@ -361,9 +362,9 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
     y_len=num_reactants+num_bins*num_reactants_condensed
     dSOA_dy=zeros(Float64,(1,y_len))
     SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
-    println(dSOA_dy)
-    println(typeof(S))
-    println(S[1])
+    #println(dSOA_dy)
+    println(shape(S))
+    println(S[1:100])
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
 
@@ -390,7 +391,7 @@ function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
-    println(dSOA_saveval.saveval)
+    #println(dSOA_saveval.saveval)
     for i in 1:num_tstops
         dSOA_mass_drate[1:num_eqns,i]=dSOA_saveval.saveval[i]
     end
