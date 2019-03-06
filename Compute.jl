@@ -91,8 +91,12 @@ function dydt_aerosol!(dy_dt,y::Array{Float64,1},p::Dict,t::Real)
 end
 
 function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
-    gas_jac!(jac_mtx,y,p,t)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
+    time_of_day_seconds=start_time+t
+    RO2=sum(y[RO2_inds])
+    evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)
+    gas_jac!(jac_mtx,y,p,t)
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
@@ -119,25 +123,10 @@ end
 #end
 
 function jacobian_from_sol!(p::Dict,t::Real)
-    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
-    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
-    time_of_day_seconds=start_time+t
     sol=p["sol"]
     y=sol(t)
-    RO2=sum(y[RO2_inds])
-    evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)
-
     jac_mtx=p["jac_mtx"]
-    gas_jac!(jac_mtx,y,p,t)
-    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
-    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
-    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
-    C_g_i_t=y[include_inds]
-    Partition_jac!(jac_mtx,y,C_g_i_t,
-        num_bins,num_reactants,num_reactants_condensed,include_inds,
-        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
-        core_dissociation,y_core,core_mass_array,core_density_array,
-        NA,sigma,R_gas,temp)
+    aerosol_jac!(jac_mtx,y,p,t)
     nothing
 end
 
