@@ -336,6 +336,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-4,abstol=1e-2,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
                      dt=-1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
+    println("Preparing Integration")
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
     stoich_mtx=param_dict["stoich_mtx"]
@@ -349,8 +350,11 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
         lambda=lambda_sol(t)[1:num_reactants]
         return lambda' * loss_gain_drate_mtx
     end 
+    println("Strating Integration")
+    @printf("Integrating from %.0f to %.0f\n",tstops[1],tstops[2])
     dSOA_mass_drate[1:num_eqns,2]=quadgk(dgpdt,tstops[1],tstops[2])[1]#quadgk->(val,err) ignore error value
-    for i in 2:num_tstops
+    for i in 2:num_tstops-1
+        @printf("Integrating from %.0f to %.0f\n",tstops[i],tstops[i+1])
         dSOA_mass_drate[1:num_eqns,i+1]=dSOA_mass_drate[1:num_eqns,i]+reshape(quadgk(dgpdt,tstops[i],tstops[i+1])[1],(num_eqns,1))
     end
     return dSOA_mass_drate
