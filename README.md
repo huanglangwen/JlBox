@@ -17,7 +17,9 @@ Compared to PyBox, more optimizations are (going to be) added:
 - [x] constant folding for rate_values()
 - [x] caching rate_values, loss_gain matrix when solving ODE
 - [x] add jacobian for gas kinetic
-- [ ] add jacobian for partitioning process
+- [x] add jacobian for partitioning process
+- [x] adjoint sensitivity analysis
+- [ ] forward sensitivity analysis
 - [ ] parallel version of rate_values, loss_gain and jacobian
 
 ## Dependency
@@ -28,6 +30,7 @@ Compared to PyBox, more optimizations are (going to be) added:
 - Conda.jl
 - PyCall.jl
 - LightXML.jl
+- QuadGK.jl
 Install them using `include("InstallPackages.jl")`.
 
 [PyBox]: https://github.com/loftytopping/PyBox
