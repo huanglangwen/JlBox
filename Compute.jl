@@ -171,7 +171,7 @@ function sensitivity_DDM_dSdt!(dSdt,S,p,t)
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
         @printf("Current Iteration: %d, time_step: %e\n",citer,t)
-        println(shape(S),shape(dSdt))
+        println(size(S),size(dSdt))
     end
     nothing
 end
@@ -367,7 +367,7 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
     dSOA_dy=zeros(Float64,(1,y_len))
     SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
     #println(dSOA_dy)
-    println(shape(S))
+    println(size(S))
     println(S[1:100])
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
