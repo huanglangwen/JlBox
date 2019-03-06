@@ -351,11 +351,9 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
         return lambda' * loss_gain_drate_mtx
     end 
     println("Strating Integration")
-    @printf("Integrating from %.0f to %.0f\n",tstops[1],tstops[2])
-    dSOA_mass_drate[1:num_eqns,2]=quadgk(dgpdt,tstops[1],tstops[2])[1]#quadgk->(val,err) ignore error value
-    for i in 2:num_tstops-1
+    for i in 1:num_tstops-1
         @printf("Integrating from %.0f to %.0f\n",tstops[i],tstops[i+1])
-        dSOA_mass_drate[1:num_eqns,i+1]=dSOA_mass_drate[1:num_eqns,i]+reshape(quadgk(dgpdt,tstops[i],tstops[i+1])[1],(num_eqns,1))
+        dSOA_mass_drate[1:num_eqns,i+1]=dSOA_mass_drate[1:num_eqns,i]+reshape(quadgk(dgpdt,tstops[i],tstops[i+1])[1],(num_eqns,1))#quadgk->(val,err) ignore error value
     end
     return dSOA_mass_drate
 end
