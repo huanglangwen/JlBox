@@ -112,11 +112,11 @@ function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
     nothing
 end
 
-function sensitivity_DDM_jac!(jac_mtx,lambda,p,t)
-    jacobian_from_sol!(p,t)
-    jac_mtx=p["jac_mtx"]
-    nothing
-end
+#function sensitivity_DDM_jac!(jac_mtx,lambda,p,t)
+#    jacobian_from_sol!(p,t)
+#    jac_mtx=p["jac_mtx"]
+#    nothing
+#end
 
 function jacobian_from_sol!(p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
@@ -362,7 +362,8 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
     dSOA_dy=zeros(Float64,(1,y_len))
     SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
     println(dSOA_dy)
-    println(S)
+    println(typeof(S))
+    println(S[1])
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
 
