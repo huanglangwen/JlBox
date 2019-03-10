@@ -14,6 +14,5 @@ include("Jacobian.jl")
 end
 
 module Compute
-export run_simulation_gas,run_simulation_aerosol
 include("Compute.jl")
 end

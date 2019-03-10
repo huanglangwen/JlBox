@@ -79,7 +79,7 @@ function read_configure!(filename::String)
     end
 end
 
-function run_simulation_gas(solver)
+function gen_simulation_gas()
     read_configure!("Configure_gas.jl")
     reactants_init,param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
@@ -88,8 +88,8 @@ function run_simulation_gas(solver)
     param_dict["ShowIterPeriod"]=100
     odefun=ODEFunction(dydt!; jac=gas_jac!)
     prob = ODEProblem{true}(odefun,reactants_init,tspan,param_dict)
-    sol = solve(prob,solver,dense=false)#,reltol=1e-8,abstol=1.0e-8
+    #sol = solve(prob,solver,dense=false)#,reltol=1e-8,abstol=1.0e-8
                 #callback=PositiveDomain(reactants_init,abstol=1.0e-3)
                 #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
-    return sol,reactants2ind
+    return prob
 end
