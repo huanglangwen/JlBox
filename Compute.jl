@@ -1,5 +1,6 @@
 using ..Parse_eqn:parse_reactants,gen_evaluate_rates
 using ..Optimize:constant_folding!,extract_constants!,generate_loss_gain,mk_reactants_list
+using ..Jacobian:gas_jac!
 using DifferentialEquations
 using DifferentialEquations:CVODE_BDF,CVODE_Adams
 using StaticArrays
