@@ -1,6 +1,6 @@
 using ..Parse_eqn:parse_reactants,parse_init
 using ..Optimize:mk_reactants_list
-using ..Jacobian:gas_jac!
+using ..Jacobian:loss_gain_jac!
 using DifferentialEquations
 using StaticArrays
 using SparseArrays
@@ -50,6 +50,17 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
         @printf("Current Iteration: %d, time_step: %e\n",citer,t)
     end
     nothing
+end
+
+
+function gas_jac!(jac_mtx,reactants::Array{Float64,1},p::Dict,t::Real)
+    rate_values,stoich_mtx,stoich_list,reactants_list,num_eqns,num_reactants=
+        [p[ind] for ind in 
+            ["rate_values","stoich_mtx","stoich_list","reactants_list",
+             "num_eqns","num_reactants"]
+        ]
+    #Probably have to re-eval rate_values again
+    @timeit to "Jacobian eval" loss_gain_jac!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,jac_mtx)
 end
 
 function prepare_gas()

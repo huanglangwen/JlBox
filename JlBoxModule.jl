@@ -9,7 +9,7 @@ include("Parse_eqn.jl")
 end
 
 module Jacobian
-export gas_jac!
+export loss_gain_jac!
 include("Jacobian.jl")
 end
 
