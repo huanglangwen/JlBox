@@ -6,7 +6,7 @@ using StaticArrays
 using SparseArrays
 using Printf
 using TimerOutputs
-
+const to = TimerOutput()
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
                    stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
