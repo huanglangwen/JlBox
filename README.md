@@ -5,7 +5,10 @@ This is a minimal version of JlBox.
 Work on Julia v1.1.0.
 
 ## Get Started
-Simply run `Simulation_gas.jl`.
+1. run `InstallPackages.jl` at the first time
+2. Change `Configure_gas.jl` if you like
+3. run `Simulation_gas.jl`
+
 
 ## Features
 Compared to PyBox, more optimizations are (going to be) added:
