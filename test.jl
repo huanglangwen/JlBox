@@ -90,7 +90,7 @@ function test_jacobian()
     for (k,v) in reactants_initial_dict
         reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
-    time_of_day_seconds=start_time+t
+    time_of_day_seconds=start_time+0
     RO2=sum(reactants_initial[RO2_inds])
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     dydt_raw=deepcopy(loss_gain!(num_reactants,num_eqns,reactants_initial,stoich_mtx,stoich_list,reactants_list,rate_values,dydt))
