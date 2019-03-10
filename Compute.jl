@@ -34,7 +34,10 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
         end
     end
     
-    @timeit to "Dydt part2" lossgain_mtx_T=transpose(lossgain_mtx)#num_eqns*num_reactants
+    @timeit to "Dydt part2" begin
+        is,js,vs=findnz(lossgain_mtx)
+        lossgain_mtx_T=sparse(js,is,vs)
+    end#lossgain_mtx_T=transpose(lossgain_mtx)#num_eqns*num_reactants
     @timeit to "Dydt part3" begin
         for reactant_ind in 1:num_reactants
             dydt[reactant_ind]=sum(nonzeros(lossgain_mtx_T[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
