@@ -7,6 +7,6 @@ using OrdinaryDiffEq
 
 const to = TimerOutput()
 prob=gen_simulation_gas()
-reset_timer!(to); @timeit to "KenCarp4" begin sol=solve(prob,KenCarp4(),dense=false); end; show(to)
 reset_timer!(to); @timeit to "CVODE_BDF Default" begin sol=solve(prob,CVODE_BDF(),dense=false); end; show(to)
 reset_timer!(to); @timeit to "CVODE_BDF GMRES" begin sol=solve(prob,CVODE_BDF(linear_solver=:GMRES),dense=false); end; show(to)
+reset_timer!(to); @timeit to "KenCarp4" begin sol=solve(prob,KenCarp4(),dense=false); end; show(to)
