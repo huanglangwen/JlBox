@@ -9,41 +9,46 @@ using TimerOutputs
 const to = TimerOutput()
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
+                   lossgain_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
                    stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
                    stoich_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, both reac and prod
                    reactants_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, only reac
                    rate_values::Array{Float64,1},#num_eqns
                    dydt::Array{Float64,1}#num_reactants
                    )
-    lossgain_mtx=spzeros(num_reactants,num_eqns)
-    for eqn_ind in 1:num_eqns
-        prod=rate_values[eqn_ind]
-        num_reacs,stoichvec,indvec=reactants_list[eqn_ind]
-        num_stoichs,_,stoich_indvec=stoich_list[eqn_ind]
-        for i in 1:num_reacs
-            reactant_ind=indvec[i]
-            stoich=stoichvec[i]
-            prod*=reactants[reactant_ind]^stoich#reactants_list come from reactants_mtx (for catalyse A+B=A+C)
-        end
-        for i in 1:num_stoichs
-            reactant_ind=stoich_indvec[i]
-            lossgain_mtx[reactant_ind,eqn_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
+    #lossgain_mtx=spzeros(num_reactants,num_eqns)
+    @timeit to "Dydt part1" begin
+        for eqn_ind in 1:num_eqns
+            prod=rate_values[eqn_ind]
+            num_reacs,stoichvec,indvec=reactants_list[eqn_ind]
+            num_stoichs,_,stoich_indvec=stoich_list[eqn_ind]
+            for i in 1:num_reacs
+                reactant_ind=indvec[i]
+                stoich=stoichvec[i]
+                prod*=reactants[reactant_ind]^stoich#reactants_list come from reactants_mtx (for catalyse A+B=A+C)
+            end
+            for i in 1:num_stoichs
+                reactant_ind=stoich_indvec[i]
+                lossgain_mtx[reactant_ind,eqn_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
+            end
         end
     end
-    lossgain_mtx=transpose(lossgain_mtx)#num_eqns*num_reactants
-    for reactant_ind in 1:num_reactants
-        dydt[reactant_ind]=sum(nonzeros(lossgain_mtx[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
+    @timeit to "Dydt part2" begin
+        lossgain_mtx_T=transpose(lossgain_mtx)#num_eqns*num_reactants
+        for reactant_ind in 1:num_reactants
+            dydt[reactant_ind]=sum(nonzeros(lossgain_mtx_T[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
+        end
     end
-    return dydt
+    nothing
 end
 
 function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
-    rate_values,stoich_mtx,stoich_list,reactants_list,num_eqns,num_reactants=
+    rate_values,stoich_mtx,stoich_list,reactants_list,lossgain_mtx,num_eqns,num_reactants=
         [p[ind] for ind in 
-            ["rate_values","stoich_mtx","stoich_list","reactants_list",
+            ["rate_values","stoich_mtx","stoich_list","reactants_list","lossgain_mtx",
              "num_eqns","num_reactants"]
         ]
-    @timeit to "Dydt eval" loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
+    @timeit to "Dydt eval" loss_gain!(num_reactants,num_eqns,reactants,lossgain_mtx,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
@@ -71,7 +76,7 @@ function prepare_gas()
     stoich_list=mk_reactants_list(num_reactants,num_eqns,stoich_mtx)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
 
-    param_dict=Dict("rate_values"=>rate_values,"stoich_mtx"=>stoich_mtx,#"dydt"=>dydt,
+    param_dict=Dict("rate_values"=>rate_values,"stoich_mtx"=>stoich_mtx,"lossgain_mtx"=>deepcopy(stoich_mtx),#"dydt"=>dydt,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,
                     "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
     return reactants_init,param_dict,reactants2ind
