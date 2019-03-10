@@ -1,5 +1,5 @@
 using ..Parse_eqn:parse_reactants,parse_init
-using ..Optimize:constant_folding!,extract_constants!,mk_reactants_list
+using ..Optimize:mk_reactants_list
 using ..Jacobian:gas_jac!
 using DifferentialEquations
 using DifferentialEquations:CVODE_BDF,CVODE_Adams
