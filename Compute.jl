@@ -14,10 +14,6 @@ using Printf
 using DiffEqSensitivity
 using QuadGK
 #using Profile
-function sptranspose(spmtx::SparseMatrixCSC)::SparseMatrixCSC
-    is,js,vs=findnz(spmtx)
-    sparse(js,is,vs)
-end
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
@@ -48,7 +44,8 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
             lossgain_mtx[reactant_ind,eqn_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
         end
     end
-    lossgain_mtx_T=sptranspose(lossgain_mtx)#num_eqns*num_reactants
+    is,js,vs=findnz(lossgain_mtx)#num_eqns*num_reactants
+    lossgain_mtx_T=sparse(js,is,vs)
     for reactant_ind in 1:num_reactants
         dydt[reactant_ind]=sum(nonzeros(lossgain_mtx_T[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
     end #*reactants[reactant_ind]=>wrong!!!
