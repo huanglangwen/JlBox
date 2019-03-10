@@ -104,11 +104,12 @@ function gen_simulation_gas()
     num_reactants=param_dict["num_reactants"]
     println("Solving ODE")
     param_dict["Current_iter"]=0
-    param_dict["ShowIterPeriod"]=100
+    param_dict["ShowIterPeriod"]=500
     odefun=ODEFunction(dydt!; jac=gas_jac!)
-    prob = ODEProblem{true}(odefun,reactants_init,tspan,param_dict)
+    prob_jac=ODEProblem{true}(odefun,reactants_init,tspan,param_dict)
+    prob=ODEProblem{true}(dydt!,reactants_init,tspan,param_dict)
     #sol = solve(prob,solver,dense=false)#,reltol=1e-8,abstol=1.0e-8
                 #callback=PositiveDomain(reactants_init,abstol=1.0e-3)
                 #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
-    return prob
+    return prob,prob_jac
 end
