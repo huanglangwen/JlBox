@@ -52,11 +52,6 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
              "num_eqns","num_reactants"]
         ]
     @timeit to "Dydt eval" loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
-    p["Current_iter"]+=1
-    citer=p["Current_iter"]
-    if citer%(p["ShowIterPeriod"])==0
-        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
-    end
     nothing
 end
 
@@ -103,8 +98,6 @@ function gen_simulation_gas()
     reactants_init,param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     println("Solving ODE")
-    param_dict["Current_iter"]=0
-    param_dict["ShowIterPeriod"]=500
     odefun=ODEFunction(dydt!; jac=gas_jac!)
     prob_jac=ODEProblem{true}(odefun,reactants_init,tspan,param_dict)
     prob=ODEProblem{true}(dydt!,reactants_init,tspan,param_dict)
