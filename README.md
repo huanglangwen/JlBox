@@ -1,6 +1,6 @@
 # JlBox
 
-This is a minimal version of JlBox.
+This is a minimal version of JlBox for Reaction Network mechanisms.
 
 Work on Julia v1.1.0.
 

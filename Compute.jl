@@ -89,7 +89,7 @@ function run_simulation_gas()
     param_dict["ShowIterPeriod"]=100
     odefun=ODEFunction(dydt!; jac=gas_jac!)
     prob = ODEProblem{true}(odefun,reactants_init,tspan,param_dict)
-    sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-8,abstol=1.0e-8,dense=false)
+    sol = solve(prob,CVODE_BDF(linear_solver=:GMRES),dense=false)#,reltol=1e-8,abstol=1.0e-8
                 #callback=PositiveDomain(reactants_init,abstol=1.0e-3)
                 #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
     return sol,reactants2ind
