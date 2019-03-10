@@ -14,6 +14,10 @@ using Printf
 using DiffEqSensitivity
 using QuadGK
 #using Profile
+function transpose(spmtx::SparseMatrixCSC)::SparseMatrixCSC
+    is,js,vs=findnz(spmtx)
+    sparse(js,is,vs)
+end
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
