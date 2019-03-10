@@ -9,14 +9,13 @@ using TimerOutputs
 const to = TimerOutput()
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
-                   lossgain_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
                    stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
                    stoich_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, both reac and prod
                    reactants_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, only reac
                    rate_values::Array{Float64,1},#num_eqns
                    dydt::Array{Float64,1}#num_reactants
                    )
-    #lossgain_mtx=spzeros(num_reactants,num_eqns)
+    lossgain_mtx=spzeros(num_reactants,num_eqns)
     @timeit to "Dydt part1" begin
         for eqn_ind in 1:num_eqns
             prod=rate_values[eqn_ind]
@@ -36,7 +35,7 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     
     @timeit to "Dydt part2" begin
         is,js,vs=findnz(lossgain_mtx)
-        lossgain_mtx_T=sparse(js,is,vs)
+        lossgain_mtx_T=sparse(js,is,vs,num_eqns,num_reactants)
     end#lossgain_mtx_T=transpose(lossgain_mtx)#num_eqns*num_reactants
     @timeit to "Dydt part3" begin
         for reactant_ind in 1:num_reactants
@@ -47,12 +46,12 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
 end
 
 function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
-    rate_values,stoich_mtx,stoich_list,reactants_list,lossgain_mtx,num_eqns,num_reactants=
+    rate_values,stoich_mtx,stoich_list,reactants_list,num_eqns,num_reactants=
         [p[ind] for ind in 
-            ["rate_values","stoich_mtx","stoich_list","reactants_list","lossgain_mtx",
+            ["rate_values","stoich_mtx","stoich_list","reactants_list",
              "num_eqns","num_reactants"]
         ]
-    @timeit to "Dydt eval" loss_gain!(num_reactants,num_eqns,reactants,lossgain_mtx,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
+    @timeit to "Dydt eval" loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
@@ -80,7 +79,7 @@ function prepare_gas()
     stoich_list=mk_reactants_list(num_reactants,num_eqns,stoich_mtx)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
 
-    param_dict=Dict("rate_values"=>rate_values,"stoich_mtx"=>stoich_mtx,"lossgain_mtx"=>deepcopy(stoich_mtx),#"dydt"=>dydt,
+    param_dict=Dict("rate_values"=>rate_values,"stoich_mtx"=>stoich_mtx,#"dydt"=>dydt,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,
                     "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
     return reactants_init,param_dict,reactants2ind
