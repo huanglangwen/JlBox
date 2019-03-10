@@ -50,7 +50,7 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     end
     lossgain_mtx_T=sptranspose(lossgain_mtx)#num_eqns*num_reactants
     for reactant_ind in 1:num_reactants
-        dydt[reactant_ind]=sum(nonzeros(lossgain_mtx[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
+        dydt[reactant_ind]=sum(nonzeros(lossgain_mtx_T[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
     end #*reactants[reactant_ind]=>wrong!!!
     return dydt
 end
