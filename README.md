@@ -21,6 +21,7 @@ Compared to PyBox, more optimizations are (going to be) added:
 - DifferentialEquations.jl
 - StaticArrays.jl
 - TimerOutputs.jl
+- OrdinaryDiffEq.jl
 Install them using `include("InstallPackages.jl")`.
 
 [PyBox]: https://github.com/loftytopping/PyBox
