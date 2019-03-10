@@ -5,7 +5,7 @@ using DifferentialEquations
 using StaticArrays
 using SparseArrays
 using Printf
-#using Profile
+using TimerOutputs
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
@@ -43,7 +43,7 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
             ["rate_values","stoich_mtx","stoich_list","reactants_list",
              "num_eqns","num_reactants"]
         ]
-    loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
+    @timeit to "Dydt eval" loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0

@@ -1,6 +1,6 @@
 using StaticArrays
 using SparseArrays
-using LinearAlgebra
+using TimerOutputs
 function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
                        reactants::Array{Float64,1},#num_reactants
                        stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
@@ -39,5 +39,5 @@ function gas_jac!(jac_mtx,reactants::Array{Float64,1},p::Dict,t::Real)
              "num_eqns","num_reactants"]
         ]
     #Probably have to re-eval rate_values again
-    loss_gain_jac!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,jac_mtx)
+    @timeit to "Jacobian eval" loss_gain_jac!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,jac_mtx)
 end
