@@ -68,7 +68,7 @@ function gas_jac!(jac_mtx,reactants::Array{Float64,1},p::Dict,t::Real)
     @timeit to "Jacobian eval" loss_gain_jac!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,jac_mtx)
 end
 
-function prepare_gas()
+function prepare_gas(mechfile,initfile)
     println("Parsing Reactants")
     rate_values,stoich_mtx,reactants_mtx,num_eqns,num_reactants,reactants2ind=parse_reactants(mechfile)
     reactants_init=parse_init(initfile,reactants2ind,num_reactants)
@@ -87,7 +87,7 @@ function gen_simulation_gas()
     initfile="data/BCR_pop.txt"
     simulation_time= 10.0 # seconds
     tspan=(0,simulation_time)
-    reactants_init,param_dict,reactants2ind=prepare_gas()
+    reactants_init,param_dict,reactants2ind=prepare_gas(mechfile,initfile)
     num_reactants=param_dict["num_reactants"]
     println("Solving ODE")
     odefun=ODEFunction(dydt!; jac=gas_jac!)
