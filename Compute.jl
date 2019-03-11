@@ -83,10 +83,10 @@ function prepare_gas()
 end
 
 function gen_simulation_gas()
-    const mechfile="data/BCR_rxn.txt"
-    const initfile="data/BCR_pop.txt"
-    const simulation_time= 10.0 # seconds
-    const tspan=(0,simulation_time)
+    mechfile="data/BCR_rxn.txt"
+    initfile="data/BCR_pop.txt"
+    simulation_time= 10.0 # seconds
+    tspan=(0,simulation_time)
     reactants_init,param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     println("Solving ODE")
