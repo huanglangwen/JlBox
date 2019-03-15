@@ -14,6 +14,7 @@ using Printf
 #using DiffEqSensitivity
 using QuadGK
 #using Profile
+using JLD2, FileIO
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
@@ -350,7 +351,11 @@ end
 
 function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
-    sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
+    if isfile("/data/aerosol_sol.jld2")
+        @load "/data/aerosol_sol.jld2" sol param_dict
+    else
+        sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
+        @save "/data/aerosol_sol.jld2" sol param_dict
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
     t0,tF=tspan
