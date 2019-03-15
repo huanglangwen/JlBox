@@ -148,7 +148,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
-        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+        @printf("Current Iteration: %d, time_step: %e, lambda[3]: %e\n",citer,t,lambda[3])
     end
     nothing
 end
