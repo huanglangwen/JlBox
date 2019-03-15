@@ -8,6 +8,7 @@ using ..Jacobian:gas_jac!,Partition_jac!
 using ..Sensitivity:SOA_mass_jac!,loss_gain_drate_values!
 using DifferentialEquations
 using DifferentialEquations:CVODE_BDF,CVODE_Adams
+using OrdinaryDiffEq
 using StaticArrays
 using SparseArrays
 using Printf
