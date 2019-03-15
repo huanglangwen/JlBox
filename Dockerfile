@@ -35,8 +35,7 @@ ENV PYTHON=""
 ENV PATH="/Code/julia/julia-1.1.0/bin:/root/.julia/conda/3/bin:${PATH}"
 #RUN source /root/.bashrc
 RUN julia --eval 'using Pkg;Pkg.update()'
-RUN julia --eval 'using Pkg;Pkg.add("DifferentialEquations")'
-RUN julia --eval 'using Pkg;Pkg.add("Sundials")'
+RUN julia --eval 'using Pkg;Pkg.add("DifferentialEquations");Pkg.add("OrdinaryDiffEq");Pkg.add("Sundials")'
 RUN julia --eval 'using Pkg;Pkg.add("StaticArrays")'
 RUN julia --eval 'using Pkg;Pkg.add("DataFrames")'
 RUN julia --eval 'using Pkg;Pkg.add("CSV")'
@@ -46,8 +45,7 @@ RUN julia --eval 'using Pkg;Pkg.add("PyCall")'
 RUN julia --eval 'using Pkg;Pkg.build("PyCall")'
 RUN julia --eval 'using Pkg;Pkg.add("LightXML")'
 RUN julia --eval 'using Pkg;Pkg.add("QuadGK")'
-RUN julia --eval 'using Pkg;Pkg.add("JLD2")'
-RUN julia --eval 'using Pkg;Pkg.add("FileIO")'
+RUN julia --eval 'using Pkg;Pkg.add("JLD2");Pkg.add("FileIO")'
 RUN conda config --append channels conda-forge
 RUN conda install -c openbabel -y openbabel 
 RUN conda install -y flask flask-wtf xlsxwriter
