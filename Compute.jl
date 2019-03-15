@@ -157,7 +157,7 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
         if y_ind>=2
             inc_array[y_ind-1]=0
         end
-        delta=eps(y[y_ind])*2# truncate error!!! eps(1e11)~1e5
+        delta=eps(y[y_ind])*100# truncate error!!! eps(1e11)~1e5
         invdelta=1/delta
         inc_array[y_ind]=delta
         dydt_aerosol!(dydt,y.+inc_array,p,t)
