@@ -65,12 +65,12 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
     evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
-    if p["Simulation_type"]=="gas"
-        p["Current_iter"]+=1
-        citer=p["Current_iter"]
-        if citer%(p["ShowIterPeriod"])==0
-            @printf("Current Iteration: %d, time_step: %e\n",citer,t)
-        end
+    #if p["Simulation_type"]=="gas"
+    #    p["Current_iter"]+=1
+    #    citer=p["Current_iter"]
+    #    if citer%(p["ShowIterPeriod"])==0
+    #        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+    #    end
     end
     nothing#return dydt
 end
