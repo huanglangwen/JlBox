@@ -358,6 +358,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
         println("No caching, start aerosol simulation")
         sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
         @save "/data/aerosol_sol.jld2" sol param_dict
+    end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
     t0,tF=tspan
