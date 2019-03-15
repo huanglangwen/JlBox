@@ -134,6 +134,7 @@ function jacobian_from_sol!(p::Dict,t::Real)
     sol=p["sol"]
     y=sol(t)
     jac_mtx=p["jac_mtx"]
+    fill!(jac_mtx,0.)
     aerosol_jac!(jac_mtx,y,p,t)
     nothing
 end
