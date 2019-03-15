@@ -164,9 +164,9 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
         dydt_aerosol!(dydt,y.+inc_array,p,t)
         jac_mtx[:,y_ind]=(dydt.-dydt_raw).*invdelta
         if isnan(sum(jac_mtx[:,y_ind]))
-            println("Find Nan Col: ",y_ind)
-            println(dydt.-dydt_raw)
-            println(jac_mtx[:,y_ind])
+            @printf("Find Nan Col: %d, delta: %e, invdelta: %e\n",y_ind,delta,invdelta)
+            #println(dydt.-dydt_raw)
+            #println(jac_mtx[:,y_ind])
         end
     end
     nothing
