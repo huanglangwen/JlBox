@@ -88,12 +88,14 @@ function dydt_aerosol!(dy_dt,y::Array{Float64,1},p::Dict,t::Real)
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         core_dissociation,y_core,core_mass_array,core_density_array,
         NA,sigma,R_gas,temp)
-    p["Current_iter"]+=1
-    citer=p["Current_iter"]
-    if citer%(p["ShowIterPeriod"])==0
-        @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %e\n",citer,t,total_SOA_mass)
-        #println("Sum(dy_dt[num_reacs+1:end])=",sum(dy_dt[num_reactants+1:end]))
-        #println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
+    if p["Simulation_type"]=="aerosol"
+        p["Current_iter"]+=1
+        citer=p["Current_iter"]
+        if citer%(p["ShowIterPeriod"])==0
+            @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %e\n",citer,t,total_SOA_mass)
+            #println("Sum(dy_dt[num_reacs+1:end])=",sum(dy_dt[num_reactants+1:end]))
+            #println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
+        end
     end
     nothing#return dy_dt
 end
@@ -118,7 +120,7 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
 end
 
 function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
-    jacobian_from_sol!(p,t)
+    jacobian_from_sol_finitediff!(p,t)#jacobian_from_sol!(p,t)
     jac_mtx=(-1).*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
     # since dldt=g(t)-l*J, for ith element in l and jth element in dldt appears at ith line and jth col in the Jacobian matrix
     nothing
@@ -139,8 +141,31 @@ function jacobian_from_sol!(p::Dict,t::Real)
     nothing
 end
 
+function jacobian_from_sol_finitediff!(p::Dict,t::Real)
+    sol=p["sol"]
+    y=sol(t)
+    jac_mtx=p["jac_mtx"]
+    fill!(jac_mtx,0.)
+    y_len=length(y)
+    dydt_raw=zeros(Float64,y_len)
+    dydt=zeros(Float64,y_len)
+    dydt_aerosol!(dydt_raw,y,p,t)
+    delta=1E-10
+    invdelta=1E10
+    inc_array=zeros(Float64,y_len)
+    for y_ind in 1:y_len
+        if y_ind>=2
+            inc_array[y_ind-1]=0
+        end
+        inc_array[y_ind]=delta
+        dydt_aerosol!(dydt,y.+inc_array,p,t)
+        jac_mtx[:,y_ind]=(dydt.-dydt_raw).*invdelta
+    end
+    nothing
+end
+
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
-    jacobian_from_sol!(p,t)
+    jacobian_from_sol_finitediff!(p,t)#jacobian_from_sol!(p,t)
     jac_mtx=p["jac_mtx"]
     #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
@@ -279,6 +304,7 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
     param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
+    param_dict["Simulation_type"]="aerosol"
     y_init=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
     for (k,v) in reactants_initial_dict
         y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
@@ -329,6 +355,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
+    param_dict["Simulation_type"]="adjoint"
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,lambda_init,tspan_adj,param_dict)
     println("Solving Adjoint Problem")
