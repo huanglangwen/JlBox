@@ -150,13 +150,15 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
     dydt_raw=zeros(Float64,y_len)
     dydt=zeros(Float64,y_len)
     dydt_aerosol!(dydt_raw,y,p,t)
-    delta=1E-15
-    invdelta=1E15
+    #delta=1E-15
+    #invdelta=1E15
     inc_array=zeros(Float64,y_len)
     for y_ind in 1:y_len
         if y_ind>=2
             inc_array[y_ind-1]=0
         end
+        delta=eps(y[y_ind])*2# truncate error!!! eps(1e11)~1e5
+        invdelta=1/delta
         inc_array[y_ind]=delta
         dydt_aerosol!(dydt,y.+inc_array,p,t)
         jac_mtx[:,y_ind]=(dydt.-dydt_raw).*invdelta
