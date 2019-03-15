@@ -182,6 +182,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     dldt=-lambda*jac_mtx#adopting KPP paper I
     if isnan(sum(lambda))
         println(lambda)
+    end
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
