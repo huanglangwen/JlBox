@@ -11,7 +11,7 @@ using DifferentialEquations:CVODE_BDF,CVODE_Adams
 using StaticArrays
 using SparseArrays
 using Printf
-using DiffEqSensitivity
+#using DiffEqSensitivity
 using QuadGK
 #using Profile
 
