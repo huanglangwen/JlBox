@@ -159,7 +159,7 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
         if y_ind>=2
             inc_array[y_ind-1]=0
         end
-        delta=max(eps(y[y_ind])*10,1E-15)# truncate error!!! eps(1e11)~1e5, 1/eps(0.)=Inf
+        delta=max(eps(y[y_ind])*4,1E-12)# truncate error!!! eps(1e11)~1e5, 1/eps(0.)=Inf
         invdelta=1/delta
         inc_array[y_ind]=delta
         dydt_aerosol!(dydt,y.+inc_array,p,t)
@@ -387,7 +387,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     println("Solving Adjoint Problem")
     lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-8,abstol=1e-8,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
-                     dt=-1e-9,dtmax=50.0,max_order=5,max_convergence_failures=1000)
+                     dt=-1e-8,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
