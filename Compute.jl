@@ -150,8 +150,8 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
     dydt_raw=zeros(Float64,y_len)
     dydt=zeros(Float64,y_len)
     dydt_aerosol!(dydt_raw,y,p,t)
-    delta=1E-10
-    invdelta=1E10
+    delta=1E-15
+    invdelta=1E15
     inc_array=zeros(Float64,y_len)
     for y_ind in 1:y_len
         if y_ind>=2
