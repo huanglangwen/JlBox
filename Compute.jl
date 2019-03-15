@@ -364,7 +364,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     println("Solving Adjoint Problem")
     lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-8,abstol=1e-8,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
-                     dt=-1e-6,dtmax=50.0,max_order=5,max_convergence_failures=1000)
+                     dt=-1e-12,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
