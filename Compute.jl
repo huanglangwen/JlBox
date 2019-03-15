@@ -71,7 +71,7 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
     #    if citer%(p["ShowIterPeriod"])==0
     #        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
     #    end
-    end
+    #end
     nothing#return dydt
 end
 
