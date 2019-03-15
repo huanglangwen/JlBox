@@ -162,6 +162,11 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
         inc_array[y_ind]=delta
         dydt_aerosol!(dydt,y.+inc_array,p,t)
         jac_mtx[:,y_ind]=(dydt.-dydt_raw).*invdelta
+        if isnan(sum(jac_mtx[:,y_ind]))
+            println("Find Nan Col: ",y_ind)
+            println(dydt.-dydt_raw)
+            println(jac_mtx[:,y_ind])
+        end
     end
     nothing
 end
@@ -178,7 +183,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     if citer%(p["ShowIterPeriod"])==0
         num_reactants=p["num_reactants"]
         @printf("Current Iteration: %d, time_step: %e, sum(lambda_gas): %e, sum(dldt_gas): %e, sum(lambda): %e\n",citer,t,sum(lambda[1:num_reactants]),sum(dldt[1:num_reactants]),sum(lambda))
-        println(sum(jac_mtx[:,1:num_reactants],dims=1))
+        #println(sum(jac_mtx[:,1:num_reactants],dims=1))
     end
     nothing
 end
