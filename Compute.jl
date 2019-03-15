@@ -352,8 +352,10 @@ end
 function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
     if isfile("/data/aerosol_sol.jld2")
+        println("Found caching of aerosol simulation")
         @load "/data/aerosol_sol.jld2" sol param_dict
     else
+        println("No caching, start aerosol simulation")
         sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
         @save "/data/aerosol_sol.jld2" sol param_dict
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
