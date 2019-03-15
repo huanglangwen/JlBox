@@ -185,7 +185,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     if citer%(p["ShowIterPeriod"])==0
         num_reactants=p["num_reactants"]
         @printf("Current Iteration: %d, time_step: %e, sum(lambda_gas): %e, sum(dldt_gas): %e, sum(lambda): %e\n",citer,t,sum(lambda[1:num_reactants]),sum(dldt[1:num_reactants]),sum(lambda))
-        #println(sum(jac_mtx[:,1:num_reactants],dims=1))
+        println(sum(jac_mtx[:,1:num_reactants],dims=1))
     end
     nothing
 end
