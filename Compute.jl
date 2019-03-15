@@ -352,7 +352,7 @@ end
 
 function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
-    if isfile("/data/aerosol_sol.jld2")
+    if false#isfile("/data/aerosol_sol.jld2")
         read_configure!("Configure_aerosol.jl")
         _,_,evaluate_rates_expr=prepare_gas()
         eval(evaluate_rates_expr)
@@ -362,8 +362,8 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     else
         println("No caching, start aerosol simulation")
         sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
-        println("Caching solution")
-        @save "/data/aerosol_sol.jld2" sol param_dict
+        #println("Caching solution")
+        #@save "/data/aerosol_sol.jld2" sol param_dict
     end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
