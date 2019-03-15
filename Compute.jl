@@ -353,6 +353,9 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
     if isfile("/data/aerosol_sol.jld2")
         read_configure!("Configure_aerosol.jl")
+        _,_,evaluate_rates_expr=prepare_gas()
+        eval(evaluate_rates_expr)
+        odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         println("Found caching of aerosol simulation")
         @load "/data/aerosol_sol.jld2" sol param_dict
     else
