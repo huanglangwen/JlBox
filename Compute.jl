@@ -324,6 +324,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     mw_array=param_dict["y_mw"]
     lambda_init=zeros(Float64,(1,len_y))#DiffEq.jl version seems incorrect
     SOA_mass_jac!(lambda_init,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)#adopting KPP paper I
+    println(lambda_init)
     param_dict["sol"]=sol
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
