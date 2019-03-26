@@ -151,16 +151,13 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
     jac_cache=p["jac_cache"]
     fill!(jac_mtx,0.)
     y_len=length(y)
-    dydt_raw=zeros(Float64,y_len)
+    #dydt_raw=zeros(Float64,y_len)
     dydt=zeros(Float64,y_len)
-    dydt_aerosol!(dydt_raw,y,p,t)
+    #dydt_aerosol!(dydt_raw,y,p,t)
     #delta=1E-15
     #invdelta=1E15
-    inc_array=zeros(Float64,y_len)
-    yfun=function (y)
-        dydt_aerosol!(dydt,y,p,t)
-        dydt 
-    end
+    #inc_array=zeros(Float64,y_len)
+    yfun=y->(dydt_aerosol!(dydt,y,p,t);dydt)
     DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,yfun,y,jac_cache)
     #=
     for y_ind in 1:y_len
