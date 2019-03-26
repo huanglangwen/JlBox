@@ -8,6 +8,7 @@ using ..Jacobian:gas_jac!,Partition_jac!
 using ..Sensitivity:SOA_mass_jac!,loss_gain_drate_values!
 using DifferentialEquations
 using DifferentialEquations:CVODE_BDF,CVODE_Adams
+using DiffEqDiffTools
 using OrdinaryDiffEq
 using StaticArrays
 using SparseArrays
@@ -147,6 +148,7 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
     sol=p["sol"]
     y=sol(t)
     jac_mtx=p["jac_mtx"]
+    jac_cache=p["jac_cache"]
     fill!(jac_mtx,0.)
     y_len=length(y)
     dydt_raw=zeros(Float64,y_len)
@@ -155,6 +157,8 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
     #delta=1E-15
     #invdelta=1E15
     inc_array=zeros(Float64,y_len)
+    DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,y->begin dydt_aerosol!(dydt,y,p,t);dydt end,y,cache=jac_cache)
+    #=
     for y_ind in 1:y_len
         if y_ind>=2
             inc_array[y_ind-1]=0
@@ -170,6 +174,7 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
             #println(jac_mtx[:,y_ind])
         end
     end
+    =#
     nothing
 end
 
@@ -382,6 +387,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     param_dict["Simulation_type"]="adjoint"
+    param_dict["jac_cache"]=DiffEqDiffTools.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,lambda_init,tspan_adj,param_dict)
     println("Solving Adjoint Problem")
