@@ -117,9 +117,12 @@ function test_jacobian()
     df1,df2
 end
 
+using .Compute:prepare_aerosol,dydt_aerosol!
 function test_aerosol_jacobian()
     include("Configure_aerosol.jl")
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
+    eval(evaluate_rates_expr)
+    
     nothing
 end
