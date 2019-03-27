@@ -127,7 +127,7 @@ function test_aerosol_jacobian()
     param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     len_y=num_reactants+num_reactants_condensed*num_bins
-    dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
+    dy_dt_gas_matrix=zeros(Real,(num_reactants,num_bins))
     dy_dt=zeros(Float64,len_y)
     jac_mtx1=zeros(Float64,(len_y,len_y))
     jac_mtx2=zeros(Float64,(len_y,len_y))
