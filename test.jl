@@ -122,15 +122,13 @@ using DiffEqDiffTools
 function test_aerosol_jacobian()
     include("Configure_aerosol.jl")
     read_configure!("Configure_aerosol.jl")
-    param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
-    eval(evaluate_rates_expr)
+    param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     len_y=num_reactants+num_reactants_condensed*num_bins
     dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
     dy_dt=zeros(Float64,len_y)
     jac_mtx1=zeros(Float64,(len_y,len_y))
     jac_mtx2=zeros(Float64,(len_y,len_y))
-    param_dict["evaluate_rates!"]=evaluate_rates!
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
     param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
