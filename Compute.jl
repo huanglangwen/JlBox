@@ -205,7 +205,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
 
-    dldt=-lambda*jac_mtx#adopting KPP paper I
+    dldt=-lambda'*jac_mtx#adopting KPP paper I
     
     if isnan(sum(lambda))
         println("find NaN at iter: ",p["Current_iter"])
@@ -407,7 +407,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     param_dict["Simulation_type"]="adjoint"
     param_dict["jac_cache"]=DiffEqDiffTools.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
-    prob_adj=ODEProblem{true}(odefun_adj,lambda_init,tspan_adj,param_dict)
+    prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init,:),tspan_adj,param_dict)
     println("Solving Adjoint Problem")
     lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-8,abstol=1e-5,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
