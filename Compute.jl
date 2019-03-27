@@ -143,7 +143,7 @@ function aerosol_jac_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
         core_dissociation,y_core,core_mass_array,core_density_array,
         NA,sigma,R_gas,temp)
     end
-    dy_dt=zeros(Float64,length(y))
+    dy_dt=zeros(Real,length(y))
     ForwardDiff.jacobian!(jac_mtx,partition_dydt_fun, dy_dt, y)
     gas_jac!(jac_mtx,y,p,t)
     nothing
