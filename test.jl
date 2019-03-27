@@ -117,7 +117,7 @@ function test_jacobian()
     df1,df2
 end
 
-using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!
+using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!,aerosol_jac_seeding!
 using DiffEqDiffTools
 using ForwardDiff
 using ForwardDiff:JacobianConfig
@@ -131,6 +131,7 @@ function test_aerosol_jacobian()
     dy_dt=zeros(Float64,len_y)
     jac_mtx1=zeros(Float64,(len_y,len_y))
     jac_mtx2=zeros(Float64,(len_y,len_y))
+    jac_mtx3=zeros(Float64,(len_y,len_y))
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
     param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
@@ -148,7 +149,9 @@ function test_aerosol_jacobian()
     println("Doing AnalyticalDiff")
     aerosol_jac!(jac_mtx2,y_init,param_dict,t)
     println("Doing DualDiff")
-    jac_mtx3=ForwardDiff.jacobian(dydtfun, dy_dt, y_init, JacobianConfig(dydtfun, dy_dt, y_init))
+    param_dict["jac_config"]=JacobianConfig(dydtfun, dy_dt, y_init)
+    aerosol_jac_seeding!(jac_mtx3,y_init,param_dict,t)
+    #jac_mtx3=ForwardDiff.jacobian(dydtfun, dy_dt, y_init, JacobianConfig(dydtfun, dy_dt, y_init))
     df1=DataFrame(jac_mtx1)
     df2=DataFrame(jac_mtx2)
     df3=DataFrame(jac_mtx3)
