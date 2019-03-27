@@ -62,10 +62,10 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
             ["rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
              "num_eqns","num_reactants"]
         ]
-    #dy,rate_values,rate_prods,J,RO2_inds,num_eqns,num_reactants=p
+    evaluate_rates_fun=p["evaluate_rates!"]
     time_of_day_seconds=start_time+t
     RO2=sum(reactants[RO2_inds])
-    evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
+    evaluate_rates_fun(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
     #if p["Simulation_type"]=="gas"
@@ -106,9 +106,10 @@ end
 function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
+    evaluate_rates_fun=p["evaluate_rates!"]
     time_of_day_seconds=start_time+t
     RO2=sum(y[RO2_inds])
-    evaluate_rates!(time_of_day_seconds,RO2,H2O,temp,rate_values,J)
+    evaluate_rates_fun(time_of_day_seconds,RO2,H2O,temp,rate_values,J)
     gas_jac!(jac_mtx,y,p,t)
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
@@ -236,15 +237,15 @@ function prepare_gas()
     constant_folding!(evaluate_rates_expr,constantdict,rate_values);
     extract_constants!(evaluate_rates_expr);
     println("Evaluating evaluate_rates&loss_gain codes")
-    #eval(evaluate_rates_expr)
+    eval(evaluate_rates_expr)
     param_dict=Dict("rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,#"dydt"=>dydt,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
-                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants)
-    return param_dict,reactants2ind,evaluate_rates_expr
+                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants,"evaluate_rates!"=>evaluate_rates!)
+    return param_dict,reactants2ind
 end
 
 function prepare_aerosol()
-    param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
+    param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
@@ -297,7 +298,7 @@ function prepare_aerosol()
         water_moles=(y_core[step]*core_dissociation)*(RH/(1.0E0-RH))
         y_cond[step*num_reactants_condensed]=water_moles
     end
-    return param_dict,reactants2ind,y_cond,evaluate_rates_expr
+    return param_dict,reactants2ind,y_cond
 end
 
 function read_configure!(filename::String)
@@ -313,14 +314,9 @@ function read_configure!(filename::String)
     end
 end
 
-function eval_expr(expr)
-    eval(expr)
-end
-
 function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
-    param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
-    eval(evaluate_rates_expr)
+    param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
     dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
@@ -366,8 +362,6 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
     if false#isfile("/data/aerosol_sol.jld2")
         read_configure!("Configure_aerosol.jl")
-        _,_,evaluate_rates_expr=prepare_gas()
-        eval(evaluate_rates_expr)
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         println("Found caching of aerosol simulation")
         @load "/data/aerosol_sol.jld2" sol param_dict
@@ -464,8 +458,7 @@ end
 
 function run_simulation_gas()
     read_configure!("Configure_gas.jl")
-    param_dict,reactants2ind,evaluate_rates_expr=prepare_gas()
-    eval(evaluate_rates_expr)
+    param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)
     for (k,v) in reactants_initial_dict
