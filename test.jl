@@ -120,6 +120,7 @@ end
 using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!
 using DiffEqDiffTools
 using ForwardDiff
+using ForwardDiff:JacobianConfig
 function test_aerosol_jacobian()
     include("Configure_aerosol.jl")
     read_configure!("Configure_aerosol.jl")
