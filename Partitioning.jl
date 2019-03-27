@@ -7,6 +7,7 @@ function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::
     total_SOA_mass_array=zeros(Real,num_bins)
     mass_array=zeros(Real,num_reactants_condensed+1)
     density_array=zeros(Real,num_reactants_condensed+1)
+    fill!(dy_dt_gas_matrix,0.)
     #dy_dt_gas_matrix_sum=zeros(Real,num_reactants)
     for size_step=1:num_bins
         start_ind=num_reactants+1+((size_step-1)*num_reactants_condensed)

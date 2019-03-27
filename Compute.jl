@@ -207,12 +207,12 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
 
     dldt=-lambda*jac_mtx#adopting KPP paper I
     
-    if isnan(sum(dldt))
+    if isnan(sum(lambda))
         println("find NaN at iter: ",p["Current_iter"])
-        nanmask=isnan.(dldt)
-        if sum(nanmask)!=length(dldt)
+        nanmask=isnan.(lambda)
+        if sum(nanmask)!=length(lambda)
             count=0
-            for i in 1:length(dldt)
+            for i in 1:length(lambda)
                 if nanmask[i]
                     count+=1
                     println("find a nanvalue at ind: ",i)
