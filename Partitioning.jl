@@ -1,4 +1,4 @@
-function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::Array{Real,2},C_g_i_t::Array{<:Real,1},
+function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::Array{<:Real,2},C_g_i_t::Array{<:Real,1},
                     num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
                     mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{<:Real,1},
                     core_diss::Real,y_core::Array{<:Real,1},core_mass_array::Array{<:Real,1},core_density_array::Array{<:Real,1},
