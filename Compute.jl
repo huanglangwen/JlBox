@@ -77,7 +77,7 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
     nothing#return dydt
 end
 
-function dydt_aerosol!(dy_dt,y::Array{Real,1},p::Dict,t::Real)
+function dydt_aerosol!(dy_dt,y::Array{Any,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
