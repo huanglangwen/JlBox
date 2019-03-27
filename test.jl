@@ -147,5 +147,5 @@ function test_aerosol_jacobian()
     df2=DataFrame(jac_mtx2)
     CSV.write("/data/aerosol_jac1.csv",df1)
     CSV.write("/data/aerosol_jac2.csv",df2)
-    nothing
+    df1,df2
 end
