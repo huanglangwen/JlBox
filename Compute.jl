@@ -152,35 +152,13 @@ function jacobian_from_sol_finitediff!(p::Dict,t::Real)
     jac_cache=p["jac_cache"]
     fill!(jac_mtx,0.)
     y_len=length(y)
-    #dydt_raw=zeros(Float64,y_len)
     dydt=zeros(Float64,y_len)
-    #dydt_aerosol!(dydt_raw,y,p,t)
-    #delta=1E-15
-    #invdelta=1E15
-    #inc_array=zeros(Float64,y_len)
     DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
-    #=
-    for y_ind in 1:y_len
-        if y_ind>=2
-            inc_array[y_ind-1]=0
-        end
-        delta=max(abs(y[y_ind])*1E-5,1E-8)#max(eps(y[y_ind])*4,1E-12)# truncate error!!! eps(1e11)~1e5, 1/eps(0.)=Inf
-        invdelta=1/delta
-        inc_array[y_ind]=delta
-        dydt_aerosol!(dydt,y.+inc_array,p,t)
-        jac_mtx[:,y_ind]=(dydt.-dydt_raw).*invdelta
-        if isnan(sum(jac_mtx[:,y_ind]))
-            @printf("Find Nan Col: %d, delta: %e, invdelta: %e\n",y_ind,delta,invdelta)
-            #println(dydt.-dydt_raw)
-            #println(jac_mtx[:,y_ind])
-        end
-    end
-    =#
     nothing
 end
 
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
-    jacobian_from_sol_finitediff!(p,t)#jacobian_from_sol!(p,t)
+    jacobian_from_sol!(p,t)#jacobian_from_sol!(p,t)
     jac_mtx=p["jac_mtx"]
     #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
