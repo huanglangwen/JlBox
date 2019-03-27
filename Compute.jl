@@ -206,11 +206,14 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
 
     dldt=-lambda'*jac_mtx#adopting KPP paper I
+    if isnan(sum(jac_mtx))
+        println("find Nan in jac_mtx at iter:",p["Current_iter"])
+    end
     if isnan(sum(lambda))
         println("find Nan in lambda at iter: ",p["Current_iter"])
     end
     if isnan(sum(dldt))
-        println("find NaN at iter: ",p["Current_iter"])
+        println("find NaN in dldt at iter: ",p["Current_iter"])
         nanmask=isnan.(dldt)
         if sum(nanmask)!=length(dldt)
             count=0
