@@ -9,7 +9,7 @@ struct DiffCache{T, S}
     dual_du::Vector{S}
 end
 
-function DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
+function DiffCache(T, length, ::Type{Val{chunk_size}}) where chunk_size
     DiffCache(zeros(T, length), zeros(Dual{chunk_size, T}, length))
 end
 DiffCache(u::AbstractArray) = DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(u)})
