@@ -109,7 +109,7 @@ function gen_evaluate_rates(file)
     return quote
 
 
-function evaluate_rates!(ttime::Float64,RO2::Float64,H2O::Float64,temp::Float64,rate_values::Array{Float64,1},J::Array{Float64,1})
+function evaluate_rates!(ttime::Real,RO2::Real,H2O::Real,temp::Float64,rate_values::Array{<:Real,1},J::Array{<:Real,1})
     # ttime: seconds
     # RO2: sum of RO2s
     # Now cycle through all of the mcm_constants_dict values.

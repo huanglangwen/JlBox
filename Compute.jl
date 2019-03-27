@@ -18,12 +18,12 @@ using QuadGK
 using BSON: @save, @load
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
-                   reactants::Array{Float64,1},#num_reactants
+                   reactants::Array{<:Real,1},#num_reactants
                    stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
                    stoich_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, both reac and prod
                    reactants_list::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1},#num_eqns, only reac
-                   rate_values::Array{Float64,1},#num_eqns
-                   dydt::Array{Float64,1}#num_reactants
+                   rate_values::Array{<:Real,1},#num_eqns
+                   dydt::Array{<:Real,1}#num_reactants
                    )
     lossgain_mtx=spzeros(num_reactants,num_eqns)
     for eqn_ind in 1:num_eqns
@@ -54,7 +54,7 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
     return dydt
 end
 
-function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
+function dydt!(dydt,reactants::Array{<:Real,1},p::Dict,t::Real)
     #dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=p
     rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
         [p[ind] for ind in 
