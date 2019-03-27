@@ -157,12 +157,6 @@ function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
     nothing
 end
 
-#function sensitivity_DDM_jac!(jac_mtx,lambda,p,t)
-#    jacobian_from_sol!(p,t)
-#    jac_mtx=p["jac_mtx"]
-#    nothing
-#end
-
 function jacobian_from_sol!(p::Dict,t::Real)
     sol=p["sol"]
     y=sol(t)
@@ -200,26 +194,6 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
         num_reactants=p["num_reactants"]
         @printf("Current Iteration: %d, time_step: %e, sum(lambda_gas): %e, sum(dldt_gas): %e, sum(lambda): %e\n",citer,t,sum(lambda[1:num_reactants]),sum(dldt[1:num_reactants]),sum(lambda))
         #println(sum(jac_mtx[:,1:num_reactants],dims=1))
-    end
-    nothing
-end
-
-function sensitivity_DDM_dSdt!(dSdt,S,p,t)
-    jacobian_from_sol!(p,t)
-    jac_mtx=p["jac_mtx"]
-    sol=p["sol"]
-    num_reactants,num_reactants_condensed,num_eqns=[p[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
-    stoich_mtx,stoich_list,reactants_list=[p[i] for i in ["stoich_mtx","stoich_list","reactants_list"]]
-
-    y_gas=sol(t)[1:num_reactants]
-    loss_gain_drate_mtx=zeros(Float64,(num_reactants+num_bins*num_reactants_condensed,num_eqns))
-    loss_gain_drate_values!(num_reactants,num_eqns,y_gas,stoich_mtx,stoich_list,reactants_list,loss_gain_drate_mtx)
-    dSdt=jac_mtx*S+loss_gain_drate_mtx
-    p["Current_iter"]+=1
-    citer=p["Current_iter"]
-    if citer%(p["ShowIterPeriod"])==0
-        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
-        println(size(S),size(dSdt))
     end
     nothing
 end
@@ -429,36 +403,6 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
     println(size(S))
     println(S[1:100])
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
-end
-
-function run_simulation_aerosol_DDM(;linsolver::Symbol=:Dense)
-    #read_configure!("Configure_aerosol.jl")
-    sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
-    num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
-    println("Preparing DDM Sensitivity Analysis")
-    len_y=num_reactants+num_reactants_condensed*num_bins
-    param_dict["sol"]=sol
-    param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
-    param_dict["Current_iter"]=0
-    param_dict["ShowIterPeriod"]=5
-    S_init=zeros(Float64,(len_y,num_eqns))
-    odefun_ddm=ODEFunction(sensitivity_DDM_dSdt!)#,jac=sensitivity_DDM_jac! wrong!!!
-    prob_ddm=ODEProblem{true}(odefun_ddm,S_init,tspan,param_dict)
-    dSOA_saveval=SavedValues(Float64,Array{Float64,1})
-    save_callback=SavingCallback(sensitivity_mtx2dSOA,dSOA_saveval,saveat=0:batch_step:simulation_time)
-    #println("Solving Sensitivity ODE (DDM)")
-    solve(prob_ddm,CVODE_Adams(),reltol=1e-4,abstol=1e-2,
-          callback=save_callback,
-          tstops=0:batch_step:simulation_time,saveat=batch_step,#save_on=false,#saveat=batch_step,
-          dt=1e-6,dtmax=100.0,max_order=5,max_convergence_failures=1000)
-    tstops=[t for t in 0:batch_step:simulation_time]
-    num_tstops=length(tstops)
-    dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
-    #println(dSOA_saveval.saveval)
-    for i in 1:num_tstops
-        dSOA_mass_drate[1:num_eqns,i]=dSOA_saveval.saveval[i]
-    end
-    return dSOA_mass_drate
 end
 
 function run_simulation_gas()
