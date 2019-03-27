@@ -204,14 +204,19 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     jac_mtx=p["jac_mtx"]
     #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
-
-    dldt=-lambda'*jac_mtx#adopting KPP paper I
-    if isnan(sum(jac_mtx))
-        println("find Nan in jac_mtx at iter:",p["Current_iter"])
-    end
-    if isnan(sum(lambda))
-        println("find Nan in lambda at iter: ",p["Current_iter"])
-    end
+    #=
+    println("before calculating dldt")
+    println("sum jac_mtx at iter ",p["Current_iter"],":",sum(jac_mtx))
+    println("sum lambda at iter ",p["Current_iter"],":",sum(lambda))
+    println("sum dldt at iter ",p["Current_iter"],":",sum(dldt))
+    println("Calculating dldt")
+    =#
+    dldt.= reshape(- lambda' * jac_mtx, : )#adopting KPP paper I
+    #=
+    println("After calculating dldt")
+    println("sum jac_mtx at iter ",p["Current_iter"],":",sum(jac_mtx))
+    println("sum lambda at iter ",p["Current_iter"],":",sum(lambda))
+    println("sum dldt at iter ",p["Current_iter"],":",sum(dldt))
     if isnan(sum(dldt))
         println("find NaN in dldt at iter: ",p["Current_iter"])
         nanmask=isnan.(dldt)
@@ -233,6 +238,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
             println("All NaNs!")
         end
     end
+    =#
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
@@ -240,6 +246,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
         @printf("Current Iteration: %d, time_step: %e, sum(lambda_gas): %e, sum(dldt_gas): %e, sum(lambda): %e\n",citer,t,sum(lambda[1:num_reactants]),sum(dldt[1:num_reactants]),sum(lambda))
         #println(sum(jac_mtx[:,1:num_reactants],dims=1))
     end
+    #readline()
     nothing
 end
 
@@ -414,11 +421,11 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     param_dict["Simulation_type"]="adjoint"
     param_dict["jac_cache"]=DiffEqDiffTools.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
-    prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init,:),tspan_adj,param_dict)
+    prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ).*1E8,tspan_adj,param_dict)
     println("Solving Adjoint Problem")
-    lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-8,abstol=1e-5,
+    lambda_sol=solve(prob_adj,KenCarp4(autodiff=false),reltol=1e-10,abstol=1e-8,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
-                     dt=-1e-8,dtmax=50.0,max_order=5,max_convergence_failures=1000)
+                     dt=-1e-10,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
