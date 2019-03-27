@@ -157,29 +157,22 @@ function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
     nothing
 end
 
-function jacobian_from_sol!(p::Dict,t::Real)
+function jacobian_from_sol!(p::Dict,t::Real,finitediff=false)
     sol=p["sol"]
     y=sol(t)
     jac_mtx=p["jac_mtx"]
     fill!(jac_mtx,0.)
-    aerosol_jac!(jac_mtx,y,p,t)
-    nothing
-end
-
-function jacobian_from_sol_finitediff!(p::Dict,t::Real)
-    sol=p["sol"]
-    y=sol(t)
-    jac_mtx=p["jac_mtx"]
-    jac_cache=p["jac_cache"]
-    fill!(jac_mtx,0.)
-    y_len=length(y)
-    dydt=zeros(Float64,y_len)
-    DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
+    if finitediff
+        jac_cache=p["jac_cache"]
+        DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
+    else
+        aerosol_jac!(jac_mtx,y,p,t)
+    end
     nothing
 end
 
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
-    jacobian_from_sol!(p,t)#jacobian_from_sol!(p,t)
+    jacobian_from_sol!(p,t,finitediff=true)#jacobian_from_sol!(p,t)
     jac_mtx=p["jac_mtx"]
     #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
