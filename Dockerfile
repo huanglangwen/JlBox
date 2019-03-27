@@ -45,7 +45,7 @@ RUN julia --eval 'using Pkg;Pkg.add("PyCall")'
 RUN julia --eval 'using Pkg;Pkg.build("PyCall")'
 RUN julia --eval 'using Pkg;Pkg.add("LightXML")'
 RUN julia --eval 'using Pkg;Pkg.add("QuadGK")'
-RUN julia --eval 'using Pkg;Pkg.add("BSON")'
+RUN julia --eval 'using Pkg;Pkg.add("ForwardDiff")'
 RUN conda config --append channels conda-forge
 RUN conda install -c openbabel -y openbabel 
 RUN conda install -y flask flask-wtf xlsxwriter

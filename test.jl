@@ -119,6 +119,7 @@ end
 
 using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!
 using DiffEqDiffTools
+using ForwardDiff
 function test_aerosol_jacobian()
     include("Configure_aerosol.jl")
     read_configure!("Configure_aerosol.jl")
@@ -139,12 +140,20 @@ function test_aerosol_jacobian()
         y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
     t=0.0
+    dydtfun=(dydt,y)->dydt_aerosol!(dydt,y,param_dict,t)
+    println("Doing FiniteDiff")
     jac_cache=DiffEqDiffTools.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
-    DiffEqDiffTools.finite_difference_jacobian!(jac_mtx1,(dydt,y)->dydt_aerosol!(dydt,y,param_dict,t),y_init,jac_cache)
+    DiffEqDiffTools.finite_difference_jacobian!(jac_mtx1,dydtfun,y_init,jac_cache)
+    println("Doing AnalyticalDiff")
     aerosol_jac!(jac_mtx2,y_init,param_dict,t)
+    println("Doing DualDiff")
+    jac_mtx3=ForwardDiff.jacobian(dydtfun, dydt, y_init, JacobianConfig(dydtfun, dydt, y_init))
     df1=DataFrame(jac_mtx1)
     df2=DataFrame(jac_mtx2)
+    df3=DataFrame(jac_mtx3)
     CSV.write("/data/aerosol_jac1.csv",df1)
     CSV.write("/data/aerosol_jac2.csv",df2)
-    df1,df2
+    CSV.write("/data/aerosol_jac3.csv",df3)
+    #df1,df2
+    nothing
 end

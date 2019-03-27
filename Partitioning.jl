@@ -1,13 +1,13 @@
-function Partition!(y::Array{Float64,1},dy_dt::Array{Float64,1},dy_dt_gas_matrix::Array{Float64,2},C_g_i_t::Array{Float64,1},
+function Partition!(y::Array{Real,1},dy_dt::Array{Real,1},dy_dt_gas_matrix::Array{Real,2},C_g_i_t::Array{Real,1},
                     num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
-                    mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{Float64,1},
-                    core_diss::Real,y_core::Array{Float64,1},core_mass_array::Array{Float64,1},core_density_array::Array{Float64,1},
+                    mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{Real,1},
+                    core_diss::Real,y_core::Array{Real,1},core_mass_array::Array{Real,1},core_density_array::Array{Real,1},
                     NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
-    size_array=zeros(Float64,num_bins)
-    total_SOA_mass_array=zeros(Float64,num_bins)
-    mass_array=zeros(Float64,num_reactants_condensed+1)
-    density_array=zeros(Float64,num_reactants_condensed+1)
-    #dy_dt_gas_matrix_sum=zeros(Float64,num_reactants)
+    size_array=zeros(Real,num_bins)
+    total_SOA_mass_array=zeros(Real,num_bins)
+    mass_array=zeros(Real,num_reactants_condensed+1)
+    density_array=zeros(Real,num_reactants_condensed+1)
+    #dy_dt_gas_matrix_sum=zeros(Real,num_reactants)
     for size_step=1:num_bins
         start_ind=num_reactants+1+((size_step-1)*num_reactants_condensed)
         stop_ind=num_reactants+(size_step*num_reactants_condensed)
