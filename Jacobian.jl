@@ -4,7 +4,7 @@ using LinearAlgebra
 
 import ForwardDiff.Dual
 
-immutable DiffCache{T, S}
+struct DiffCache{T, S}
     du::Vector{T}
     dual_du::Vector{S}
 end
