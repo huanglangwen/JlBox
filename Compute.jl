@@ -385,7 +385,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
         println("Found caching of aerosol simulation")
         read_configure!("Configure_aerosol.jl")
         param_dict,_,_=prepare_aerosol()
-        dy_dt_gas_matrix=zeros(Real,(num_reactants,num_bins))
+        dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         sol=deserialize("/data/aerosol_sol.store")
