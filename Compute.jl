@@ -157,7 +157,7 @@ function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
     nothing
 end
 
-function jacobian_from_sol!(p::Dict,t::Real,finitediff=false)
+function jacobian_from_sol!(p::Dict,t::Real;finitediff=false)
     sol=p["sol"]
     y=sol(t)
     jac_mtx=p["jac_mtx"]
