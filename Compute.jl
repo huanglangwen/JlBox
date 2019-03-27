@@ -313,6 +313,10 @@ function read_configure!(filename::String)
     end
 end
 
+function eval_expr(expr)
+    eval(expr)
+end
+
 function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()

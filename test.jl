@@ -117,13 +117,13 @@ function test_jacobian()
     df1,df2
 end
 
-using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!
+using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!,eval_expr
 using DiffEqDiffTools
 function test_aerosol_jacobian()
     include("Configure_aerosol.jl")
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
-    eval(evaluate_rates_expr)
+    eval_expr(evaluate_rates_expr)
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     len_y=num_reactants+num_reactants_condensed*num_bins
     dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
