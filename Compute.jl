@@ -340,9 +340,9 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     dy_dt_gas_matrix=zeros(Real,(num_reactants,num_bins))
-    dy_dt=zeros(Real,num_reactants+num_reactants_condensed*num_bins)
+    #dy_dt=zeros(Real,num_reactants+num_reactants_condensed*num_bins)
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
-    param_dict["dydt"]=dy_dt
+    #param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
     param_dict["Simulation_type"]="aerosol"
     y_init=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
@@ -382,10 +382,12 @@ end
 function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
     if isfile("/data/aerosol_sol.store")
+        println("Found caching of aerosol simulation")
         read_configure!("Configure_aerosol.jl")
         param_dict,_,_=prepare_aerosol()
+        dy_dt_gas_matrix=zeros(Real,(num_reactants,num_bins))
+        param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
-        println("Found caching of aerosol simulation")
         sol=deserialize("/data/aerosol_sol.store")
     else
         println("No caching, start aerosol simulation")
