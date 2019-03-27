@@ -318,8 +318,8 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
-    dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
-    dy_dt=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
+    dy_dt_gas_matrix=zeros(Real,(num_reactants,num_bins))
+    dy_dt=zeros(Real,num_reactants+num_reactants_condensed*num_bins)
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
     param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
