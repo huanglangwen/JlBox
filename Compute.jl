@@ -137,7 +137,7 @@ function aerosol_jac_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     C_g_i_t=y[include_inds]
-    partition_dydt_fun=function (dydt,y)
+    partition_dydt_fun=function (dy_dt,y)
         Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
         num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
@@ -162,7 +162,7 @@ function aerosol_jac_mixed!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     C_g_i_t=y[include_inds]
-    partition_dydt_fun=function (dydt,y)
+    partition_dydt_fun=function (dy_dt,y)
         Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
         num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
