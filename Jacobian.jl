@@ -14,7 +14,7 @@ function DiffCache(T, length, ::Type{Val{chunk_size}}) where chunk_size
 end
 DiffCache(u::AbstractArray) = DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(u)})
 
-get_du{T<:Dual}(dc::DiffCache, ::Type{T}) = dc.dual_du
+get_du(dc::DiffCache, ::Type{T}) where T<:Dual = dc.dual_du
 get_du(dc::DiffCache, T) = dc.du
 
 function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
