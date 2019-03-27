@@ -177,7 +177,7 @@ function aerosol_jac_mixed!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
 end
 
 function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
-    jacobian_from_sol!(p,t,diff="mixed")#jacobian_from_sol!(p,t)
+    jacobian_from_sol!(p,t,diff="dual")#jacobian_from_sol!(p,t)
     jac_mtx=(-1).*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
     # since dldt=g(t)-l*J, for ith element in l and jth element in dldt appears at ith line and jth col in the Jacobian matrix
     nothing
@@ -191,8 +191,8 @@ function jacobian_from_sol!(p::Dict,t::Real;diff="finite")
     if diff=="finite"
         jac_cache=p["jac_cache"]
         DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
-    elseif diff=="mixed"
-        aerosol_jac_mixed!(jac_mtx,y,p,t)
+    elseif diff=="dual"
+        aerosol_jac_seeding!(jac_mtx,y,p,t)
     else
         aerosol_jac!(jac_mtx,y,p,t)
     end
@@ -200,7 +200,7 @@ function jacobian_from_sol!(p::Dict,t::Real;diff="finite")
 end
 
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
-    jacobian_from_sol!(p,t,diff="mixed")#jacobian_from_sol!(p,t)
+    jacobian_from_sol!(p,t,diff="dual")#jacobian_from_sol!(p,t)
     jac_mtx=p["jac_mtx"]
     #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
@@ -331,7 +331,7 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
     y_init[num_reactants+1:num_reactants+num_bins*num_reactants_condensed]=y_cond[1:num_bins*num_reactants_condensed]
     println("Solving ODE")
     if use_jacobian
-        odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
+        odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac_seeding!)
         prob = ODEProblem{true}(odefun,y_init,tspan,param_dict)
         param_dict["ShowIterPeriod"]=5
     else
