@@ -15,8 +15,7 @@ using SparseArrays
 using Printf
 #using DiffEqSensitivity
 using QuadGK
-#using Profile
-using JLD2, FileIO
+using BSON: @save, @load
 
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{Float64,1},#num_reactants
@@ -338,16 +337,16 @@ end
 
 function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
-    if false#isfile("/data/aerosol_sol.jld2")
+    if isfile("/data/aerosol_sol.bson")
         read_configure!("Configure_aerosol.jl")
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         println("Found caching of aerosol simulation")
-        @load "/data/aerosol_sol.jld2" sol param_dict
+        @load "/data/aerosol_sol.bson" sol param_dict
     else
         println("No caching, start aerosol simulation")
         sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
-        #println("Caching solution")
-        #@save "/data/aerosol_sol.jld2" sol param_dict
+        println("Caching solution")
+        @save "/data/aerosol_sol.bson" sol param_dict
     end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
