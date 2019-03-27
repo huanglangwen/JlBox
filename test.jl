@@ -117,12 +117,35 @@ function test_jacobian()
     df1,df2
 end
 
-using .Compute:prepare_aerosol,dydt_aerosol!
+using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!
+using DiffEqDiffTools
 function test_aerosol_jacobian()
     include("Configure_aerosol.jl")
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond,evaluate_rates_expr=prepare_aerosol()
     eval(evaluate_rates_expr)
-    
+    num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
+    len_y=num_reactants+num_reactants_condensed*num_bins
+    dy_dt_gas_matrix=zeros(Float64,(num_reactants,num_bins))
+    dy_dt=zeros(Float64,len_y)
+    jac_mtx1=zeros(Float64,(len_y,len_y))
+    jac_mtx2=zeros(Float64,(len_y,len_y))
+    param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
+    param_dict["dydt"]=dy_dt
+    param_dict["Current_iter"]=0
+    param_dict["ShowIterPeriod"]=500
+    param_dict["Simulation_type"]="adjoint"
+    y_init=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
+    for (k,v) in reactants_initial_dict
+        y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
+    end
+    t=0.0
+    jac_cache=DiffEqDiffTools.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
+    DiffEqDiffTools.finite_difference_jacobian!(jac_mtx1,(dydt,y)->dydt_aerosol!(dydt,y,param_dict,t),y_init,jac_cache)
+    aerosol_jac!(jac_mtx2,y_init,param_dict,t)
+    df1=DataFrame(jac_mtx1)
+    df2=DataFrame(jac_mtx2)
+    CSV.write("/data/aerosol_jac1.csv",df1)
+    CSV.write("/data/aerosol_jac2.csv",df2)
     nothing
 end
