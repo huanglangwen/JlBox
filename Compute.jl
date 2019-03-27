@@ -360,7 +360,7 @@ end
 
 function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
-    if isfile("/data/aerosol_sol.store")
+    if false#isfile("/data/aerosol_sol.store")
         read_configure!("Configure_aerosol.jl")
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         println("Found caching of aerosol simulation")
@@ -369,8 +369,8 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     else
         println("No caching, start aerosol simulation")
         sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
-        println("Caching solution")
-        serialize("/data/aerosol_sol.store",sol)
+        #println("Caching solution")
+        #serialize("/data/aerosol_sol.store",sol)
     end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
