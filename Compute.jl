@@ -65,7 +65,7 @@ function dydt!(dydt,reactants::Array{Float64,1},p::Dict,t::Real)
     evaluate_rates_fun=p["evaluate_rates!"]
     time_of_day_seconds=start_time+t
     RO2=sum(reactants[RO2_inds])
-    evaluate_rates_fun(time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
     #if p["Simulation_type"]=="gas"
@@ -109,7 +109,7 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     evaluate_rates_fun=p["evaluate_rates!"]
     time_of_day_seconds=start_time+t
     RO2=sum(y[RO2_inds])
-    evaluate_rates_fun(time_of_day_seconds,RO2,H2O,temp,rate_values,J)
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)
     gas_jac!(jac_mtx,y,p,t)
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
