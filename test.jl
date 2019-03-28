@@ -117,7 +117,7 @@ function test_jacobian()
     df1,df2
 end
 
-using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!,aerosol_jac_seeding!,aerosol_jac_mixed!
+using .Compute:prepare_aerosol,dydt_aerosol!,aerosol_jac!,aerosol_jac_seeding!
 using DiffEqDiffTools
 using ForwardDiff
 using ForwardDiff:JacobianConfig
@@ -132,7 +132,6 @@ function test_aerosol_jacobian()
     jac_mtx1=zeros(Float64,(len_y,len_y))
     jac_mtx2=zeros(Float64,(len_y,len_y))
     jac_mtx3=zeros(Float64,(len_y,len_y))
-    jac_mtx4=zeros(Float64,(len_y,len_y))
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
     param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
@@ -149,20 +148,15 @@ function test_aerosol_jacobian()
     DiffEqDiffTools.finite_difference_jacobian!(jac_mtx1,dydtfun,y_init,jac_cache)
     println("Doing AnalyticalDiff")
     aerosol_jac!(jac_mtx2,y_init,param_dict,t)
-    println("Doing MixedDiff")
-    param_dict["jac_cache"]=jac_cache
-    aerosol_jac_mixed!(jac_mtx4,y_init,param_dict,t)
     println("Doing DualDiff")
     aerosol_jac_seeding!(jac_mtx3,y_init,param_dict,t)
     #jac_mtx3=ForwardDiff.jacobian(dydtfun, dy_dt, y_init, JacobianConfig(dydtfun, dy_dt, y_init))
     df1=DataFrame(jac_mtx1)
     df2=DataFrame(jac_mtx2)
     df3=DataFrame(jac_mtx3)
-    df4=DataFrame(jac_mtx4)
     CSV.write("/data/aerosol_jac1.csv",df1)
     CSV.write("/data/aerosol_jac2.csv",df2)
     CSV.write("/data/aerosol_jac3.csv",df3)
-    CSV.write("/data/aerosol_jac4.csv",df4)
     #df1,df2
     nothing
 end

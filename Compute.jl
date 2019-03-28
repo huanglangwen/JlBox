@@ -151,31 +151,6 @@ function aerosol_jac_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     nothing
 end
 
-function aerosol_jac_mixed!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
-    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
-    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
-    evaluate_rates_fun=p["evaluate_rates!"]
-    time_of_day_seconds=start_time+t
-    RO2=sum(y[RO2_inds])
-    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)
-    
-    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
-    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
-    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
-    partition_dydt_fun=function (dy_dt,y)
-        C_g_i_t=y[include_inds]
-        Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
-        num_bins,num_reactants,num_reactants_condensed,include_inds,
-        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
-        core_dissociation,y_core,core_mass_array,core_density_array,
-        NA,sigma,R_gas,temp)
-    end
-    jac_cache=p["jac_cache"]
-    DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,partition_dydt_fun, y, jac_cache)
-    gas_jac!(jac_mtx,y,p,t)
-    nothing
-end
-
 function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
     jacobian_from_sol!(p,t,diff="dual")#jacobian_from_sol!(p,t)
     jac_mtx.=(-1).*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
