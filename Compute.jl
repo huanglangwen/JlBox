@@ -163,17 +163,18 @@ function aerosol_jac_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
 end
 
 function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
-    jacobian_from_sol!(p,t,diff="dual")#jacobian_from_sol!(p,t)
+    jacobian_from_sol!(p,t)#jacobian_from_sol!(p,t)
     jac_mtx.=(-1).*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
     # since dldt=g(t)-l*J, for ith element in l and jth element in dldt appears at ith line and jth col in the Jacobian matrix
     nothing
 end
 
-function jacobian_from_sol!(p::Dict,t::Real;diff="finite")
+function jacobian_from_sol!(p::Dict,t::Real)
     sol=p["sol"]
     y=sol(t)
     jac_mtx=p["jac_mtx"]
     fill!(jac_mtx,0.)
+    diff=p["Diff_method"]
     if diff=="finite"
         jac_cache=p["jac_cache"]
         DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
@@ -186,7 +187,7 @@ function jacobian_from_sol!(p::Dict,t::Real;diff="finite")
 end
 
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
-    jacobian_from_sol!(p,t,diff="dual")#jacobian_from_sol!(p,t)
+    jacobian_from_sol!(p,t)#jacobian_from_sol!(p,t)
     jac_mtx=p["jac_mtx"]
     dldt.= reshape(- lambda' * jac_mtx, : )#adopting KPP paper I
     p["Current_iter"]+=1
@@ -368,6 +369,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     param_dict["Simulation_type"]="adjoint"
+    param_dict["Diff_method"]="analytical"
     param_dict["jac_cache"]=DiffEqDiffTools.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
