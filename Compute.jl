@@ -180,8 +180,10 @@ function jacobian_from_sol!(p::Dict,t::Real)
         DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
     elseif diff=="dual"
         aerosol_jac_seeding!(jac_mtx,y,p,t)
-    else
+    elseif diff=="analytical"
         aerosol_jac!(jac_mtx,y,p,t)
+    else
+        println("WARNING: can't recognize diff type: ",diff)
     end
     nothing
 end
