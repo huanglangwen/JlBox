@@ -72,7 +72,6 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
     #Ddm_dt_Dy_gas_sum=spzeros(num_reactants_condensed,num_reactants)
     DC_g_i_t=zeros(num_reactants_condensed,num_reactants)
     Ddm_dt_Dy_gas_sum=zeros(num_reactants_condensed,num_reactants)
-    fill!(dy_dt_gas_matrix,0.)
     for i in 1:num_reactants_condensed
         DC_g_i_t[i,include_inds[i]]=1
     end
