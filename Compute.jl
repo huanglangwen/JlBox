@@ -80,6 +80,15 @@ function dydt!(dydt,reactants::Array{<:Real,1},p::Dict,t::Real)
     nothing#return dydt
 end
 
+function rates_from_sol!(rate_values,p::Dict,t::Real)
+    J,RO2_inds,num_eqns,num_reactants=[p[ind] for ind in ["J","RO2_inds","num_eqns","num_reactants"]]
+    evaluate_rates_fun=p["evaluate_rates!"]
+    time_of_day_seconds=start_time+t
+    RO2=sum(reactants[RO2_inds])
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
+    nothing
+end
+
 function dydt_aerosol!(dy_dt,y::Array{<:Real,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
@@ -371,6 +380,8 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     stoich_list=param_dict["stoich_list"]
     reactants_list=param_dict["reactants_list"]
     dSOA_mass_drate=zeros(Float64,(num_eqns,num_tstops))
+    dSOA_mass_percentk=zeros(Float64,(num_eqns,num_tstops))
+    rate_values=zeros(Float64,num_eqns)
     dgpdt=function (t)
         y_gas=sol(t)[1:num_reactants]
         loss_gain_drate_mtx=zeros(Float64,(num_reactants,num_eqns))
@@ -382,8 +393,10 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     for i in 1:num_tstops-1
         @printf("Integrating from %.0f to %.0f\n",tstops[i],tstops[i+1])
         dSOA_mass_drate[1:num_eqns,i+1]=dSOA_mass_drate[1:num_eqns,i]+reshape(quadgk(dgpdt,tstops[i],tstops[i+1])[1],(num_eqns,1))#quadgk->(val,err) ignore error value
+        rates_from_sol!(rate_values,param_dict,tstops[i+1])
+        dSOA_mass_percentk[1:num_eqns,i+1]=0.01*rate_values.*dSOA_mass_drate[1:num_eqns,i+1]
     end
-    return dSOA_mass_drate
+    return dSOA_mass_drate,dSOA_mass_percentk
 end
 
 function sensitivity_mtx2dSOA(S,t::Real,integrator)
