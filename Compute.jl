@@ -177,7 +177,7 @@ function aerosol_jac_mixed!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
 end
 
 function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
-    jacobian_from_sol!(p,t,diff="dual")#jacobian_from_sol!(p,t)
+    jacobian_from_sol!(p,t,diff="analytical")#jacobian_from_sol!(p,t)
     jac_mtx=(-1).*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
     # since dldt=g(t)-l*J, for ith element in l and jth element in dldt appears at ith line and jth col in the Jacobian matrix
     nothing
@@ -200,7 +200,7 @@ function jacobian_from_sol!(p::Dict,t::Real;diff="finite")
 end
 
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
-    jacobian_from_sol!(p,t,diff="dual")#jacobian_from_sol!(p,t)
+    jacobian_from_sol!(p,t,diff="analytical")#jacobian_from_sol!(p,t)
     jac_mtx=p["jac_mtx"]
     #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
     #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
@@ -423,9 +423,9 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ).*1E8,tspan_adj,param_dict)
     println("Solving Adjoint Problem")
-    lambda_sol=solve(prob_adj,CVODE_BDF(linear_solver=:Dense),reltol=1e-8,abstol=1e-6,
+    lambda_sol=solve(prob_adj,CVODE_BDF(),reltol=1e-6,abstol=1e-4,
                      tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
-                     dt=-1e-8,dtmax=50.0,max_order=5,max_convergence_failures=1000)
+                     dt=-1e-6,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")
     tstops=[t for t in 0:batch_step:simulation_time]
     num_tstops=length(tstops)
