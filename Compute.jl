@@ -202,43 +202,7 @@ end
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     jacobian_from_sol!(p,t,diff="dual")#jacobian_from_sol!(p,t)
     jac_mtx=p["jac_mtx"]
-    #dSOA_dy=zeros(Float64,(1,num_reactants+num_bins*num_reactants_condensed))
-    #SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
-    #=
-    println("before calculating dldt")
-    println("sum jac_mtx at iter ",p["Current_iter"],":",sum(jac_mtx))
-    println("sum lambda at iter ",p["Current_iter"],":",sum(lambda))
-    println("sum dldt at iter ",p["Current_iter"],":",sum(dldt))
-    println("Calculating dldt")
-    =#
     dldt.= reshape(- lambda' * jac_mtx, : )#adopting KPP paper I
-    #=
-    println("After calculating dldt")
-    println("sum jac_mtx at iter ",p["Current_iter"],":",sum(jac_mtx))
-    println("sum lambda at iter ",p["Current_iter"],":",sum(lambda))
-    println("sum dldt at iter ",p["Current_iter"],":",sum(dldt))
-    if isnan(sum(dldt))
-        println("find NaN in dldt at iter: ",p["Current_iter"])
-        nanmask=isnan.(dldt)
-        if sum(nanmask)!=length(dldt)
-            count=0
-            for i in 1:length(dldt)
-                if nanmask[i]
-                    count+=1
-                    println("find a nanvalue at ind: ",i)
-                    println("num_reactants,num_condensed:",p["num_reactants"],", ",p["num_reactants_condensed"])
-                    println("jacobian at column ",i)
-                    println(jac_mtx[:,i])
-                end
-                if count>=10
-                    break
-                end
-            end
-        else
-            println("All NaNs!")
-        end
-    end
-    =#
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
@@ -246,7 +210,6 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
         @printf("Current Iteration: %d, time_step: %e, sum(lambda_gas): %e, sum(dldt_gas): %e, sum(lambda): %e\n",citer,t,sum(lambda[1:num_reactants]),sum(dldt[1:num_reactants]),sum(lambda))
         #println(sum(jac_mtx[:,1:num_reactants],dims=1))
     end
-    #readline()
     nothing
 end
 
