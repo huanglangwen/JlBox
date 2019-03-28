@@ -371,7 +371,7 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     param_dict["Simulation_type"]="adjoint"
-    param_dict["Diff_method"]="analytical"
+    param_dict["Diff_method"]="dual"
     param_dict["jac_cache"]=DiffEqDiffTools.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
