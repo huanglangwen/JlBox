@@ -84,6 +84,8 @@ function rates_from_sol!(rate_values,p::Dict,t::Real)
     J,RO2_inds,num_eqns,num_reactants=[p[ind] for ind in ["J","RO2_inds","num_eqns","num_reactants"]]
     evaluate_rates_fun=p["evaluate_rates!"]
     time_of_day_seconds=start_time+t
+    sol=p["sol"]
+    reactants=sol(t)[1:num_reactants]
     RO2=sum(reactants[RO2_inds])
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
     nothing
