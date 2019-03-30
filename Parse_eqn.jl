@@ -383,11 +383,11 @@ function evaluate_rates!(ttime::Real,RO2::Real,H2O::Real,temp::Float64,rate_valu
     radian = 180.0/pi 
     lat = lat/radian 
     dec = dec/radian 
-    theta = acos(cos(lha)*cos(dec)*cos(lat)+sin(dec)*sin(lat)) 
+    #theta = acos(cos(lha)*cos(dec)*cos(lat)+sin(dec)*sin(lat)) 
     sinld = sin(lat)*sin(dec) 
     cosld = cos(lat)*cos(dec) 
     cosx = (cos(lha)*cosld)+sinld 
-    cosx = cos(theta) 
+    #cosx = cos(theta) 
     secx = 1.0E+0/(cosx+1.0E-30) 
 
     # Data taken from photolysis.txt. Calculations done in the form of: 
