@@ -3,6 +3,7 @@ include("Configure_aerosol.jl")
 using .Compute:run_simulation_aerosol
 using DataFrames
 using CSV
+using Serialization
 #using Profile
 
 #Profile.clear()
