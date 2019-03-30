@@ -11,6 +11,8 @@ using CSV
 #open("/data/prof.txt", "w") do s
 #    Profile.print(IOContext(s, :displaysize => (1000, 500)),format=:flat)
 #end
+println("Caching solution")
+serialize("/data/aerosol_sol.store",sol)
 sol_mtx=transpose(sol)
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[Symbol(ind2reactants[ind]) for ind in 1:num_reactants]
