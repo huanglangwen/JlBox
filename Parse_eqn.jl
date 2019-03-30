@@ -377,7 +377,7 @@ function evaluate_rates!(ttime::Real,RO2::Real,H2O::Real,temp::Float64,rate_valu
     dec = 23.79 
     # latitude 
     lat = 50.0 
-    pi = 4.0*atan(1.0) 
+    #pi = 4.0*atan(1.0) 
     # local hour angle - representing time of day 
     lha = (1.0+ttime/4.32E+4)*pi 
     radian = 180.0/pi 
@@ -386,7 +386,10 @@ function evaluate_rates!(ttime::Real,RO2::Real,H2O::Real,temp::Float64,rate_valu
     #theta = acos(cos(lha)*cos(dec)*cos(lat)+sin(dec)*sin(lat)) 
     sinld = sin(lat)*sin(dec) 
     cosld = cos(lat)*cos(dec) 
-    cosx = (cos(lha)*cosld)+sinld 
+    cosx = (cos(lha)*cosld)+sinld
+    if cosx<0
+        cosx=0.#night? otherwise J would yield complex number
+    end
     #cosx = cos(theta) 
     secx = 1.0E+0/(cosx+1.0E-30) 
 
