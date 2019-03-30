@@ -73,7 +73,7 @@ function generate_loss_gain(num_reactants::Int,num_eqns::Int,
     end
 end
 
-function constant_folding!(fun_expr::Expr,constant_list::Dict,rate_values::Array{Float64,1})
+function constant_folding!(fun_expr::Expr,constant_list::Dict,rate_values::Array{<:Real,1})
     for (key, value) in constant_list
         eval(:($key=$value))
     end
