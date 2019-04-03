@@ -416,7 +416,7 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
 
-function run_simulation_gas()
+function run_simulation_gas(;use_jacobian::Bool=true)
     read_configure!("Configure_gas.jl")
     param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
@@ -429,11 +429,15 @@ function run_simulation_gas()
     param_dict["ShowIterPeriod"]=100
     param_dict["Simulation_type"]="gas"
     #odefun=ODEFunction(dydt!; jac=gas_jac!)
-    prob = ODEProblem{true}(dydt!,reactants_initial,tspan,
-                            param_dict,
-                            #(dy,rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants)
-                            )
-    sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
+    if use_jacobian
+        odefun=ODEFunction(dydt!; jac=gas_jac!)
+        prob = ODEProblem{true}(odefun,reactants_initial,tspan,param_dict)
+        param_dict["ShowIterPeriod"]=5
+    else
+        prob = ODEProblem{true}(dydt!,reactants_initial,tspan,param_dict)
+        param_dict["ShowIterPeriod"]=500
+    end
+    @time sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
                 tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
