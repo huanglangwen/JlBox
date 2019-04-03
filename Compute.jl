@@ -420,7 +420,7 @@ function run_simulation_gas(;use_jacobian::Bool=true)
     read_configure!("Configure_gas.jl")
     param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
-    reactants_initial=zeros(Real,num_reactants)
+    reactants_initial=zeros(Float64,num_reactants)
     for (k,v) in reactants_initial_dict
         reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
     end
