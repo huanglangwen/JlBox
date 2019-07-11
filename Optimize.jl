@@ -2,7 +2,7 @@
 using StaticArrays
 using SparseArrays
 function mk_reactants_list(num_reactants::Int,num_eqns::Int,
-                           reactants_mtx::SparseMatrixCSC{Float64,Int64}#num_reactants*num_eqns
+                           reactants_mtx::SparseMatrixCSC{<:Real,Int64}#num_reactants*num_eqns
                           )::Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1}
                           #Array{Tuple{Num_(reac+prod),List_stoich,List_ind}}
     reactants_list=Array{Tuple{Int8,SVector{15,Int8},SVector{16,Int64}},1}()
