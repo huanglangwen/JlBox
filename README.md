@@ -5,12 +5,7 @@ This is a rewrite version of [PyBox].
 Work on Julia v1.1.0.
 
 ## Get Started
-It is recommended to run JlBox in Docker:
-1. Download the `Dockerfile` from this repo (in transfer branch)
-2. enter the folder of `Dockerfile` in terminal and run `docker build -t jlbox .`
-3. run `docker run --name=project_jlbox -it -v <some folder in your pc>:/data jlbox`
-4. in the container, enter the jlbox folder: `cd /Code/Git_repos/JlBox/`
-5. Run simulation with `include("Simulation_aerosol.jl")` in julia cli or `julia -O3 Simulation_aerosol.jl` in terminal.
+WIP, see `transter` branch.
 
 ## Features
 Compared to PyBox, more optimizations are (going to be) added:
