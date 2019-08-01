@@ -1,5 +1,3 @@
-using SparseArrays
-
 RO2_names=split(readline("data/RO2.csv"),",")
 
 function stoich_str2int(stoich::String)::Int

@@ -1,14 +1,3 @@
-#include("JlBoxModule.jl")
-using DiffEqDiffTools
-using ForwardDiff
-using ForwardDiff:JacobianConfig
-using OrdinaryDiffEq
-using StaticArrays
-using SparseArrays
-using Printf
-using QuadGK
-using Serialization
-
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{<:Real,1},#num_reactants
                    stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
@@ -54,9 +43,9 @@ function dydt!(dydt,reactants::Array{<:Real,1},p::Dict,t::Real)
              "num_eqns","num_reactants"]
         ]
     evaluate_rates_fun=p["evaluate_rates!"]
-    time_of_day_seconds=start_time+t
+    time_of_day_seconds=config.start_time+t
     RO2=sum(reactants[RO2_inds])
-    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
     #if p["Simulation_type"]=="gas"
@@ -72,7 +61,7 @@ end
 function rates_from_sol(p::Dict,t::Real)
     rate_values,J,RO2_inds,num_eqns,num_reactants=[p[ind] for ind in ["rate_values","J","RO2_inds","num_eqns","num_reactants"]]
     evaluate_rates_fun=p["evaluate_rates!"]
-    time_of_day_seconds=start_time+t
+    time_of_day_seconds=config.start_time+t
     sol=p["sol"]
     reactants=sol(t)[1:num_reactants]
     RO2=sum(reactants[RO2_inds])
@@ -89,10 +78,10 @@ function dydt_aerosol!(dy_dt,y::Array{<:Real,1},p::Dict,t::Real)
     dydt!(dy_dt,y_gas,p,t)
     C_g_i_t=y[include_inds]
     _,total_SOA_mass=Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
-        num_bins,num_reactants,num_reactants_condensed,include_inds,
+        config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
-        core_dissociation,y_core,core_mass_array,core_density_array,
-        NA,sigma,R_gas,temp)
+        config.core_dissociation,y_core,core_mass_array,config.core_density_array,
+        config.NA,config.sigma,config.R_gas,config.temp)
     if p["Simulation_type"]=="aerosol"
         p["Current_iter"]+=1
         citer=p["Current_iter"]
@@ -109,19 +98,19 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     evaluate_rates_fun=p["evaluate_rates!"]
-    time_of_day_seconds=start_time+t
+    time_of_day_seconds=config.start_time+t
     RO2=sum(y[RO2_inds])
-    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
     gas_jac!(jac_mtx,y,p,t)
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     C_g_i_t=y[include_inds]
     Partition_jac!(jac_mtx,y,C_g_i_t,
-        num_bins,num_reactants,num_reactants_condensed,include_inds,
+        config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
-        core_dissociation,y_core,core_mass_array,core_density_array,
-        NA,sigma,R_gas,temp)
+        config.core_dissociation,y_core,core_mass_array,config.core_density_array,
+        config.NA,config.sigma,config.R_gas,config.temp)
     nothing
 end
 
@@ -129,9 +118,9 @@ function aerosol_jac_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     evaluate_rates_fun=p["evaluate_rates!"]
-    time_of_day_seconds=start_time+t
+    time_of_day_seconds=config.start_time+t
     RO2=sum(y[RO2_inds])
-    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
     
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
@@ -140,10 +129,10 @@ function aerosol_jac_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     partition_dydt_fun=function (dy_dt,y)
         C_g_i_t=y[include_inds]
         Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
-        num_bins,num_reactants,num_reactants_condensed,include_inds,
+        config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
-        core_dissociation,y_core,core_mass_array,core_density_array,
-        NA,sigma,R_gas,temp)
+        config.core_dissociation,y_core,core_mass_array,config.core_density_array,
+        config.NA,config.sigma,config.R_gas,config.temp)
     end
     dy_dt=zeros(Real,length(y))
     ForwardDiff.jacobian!(jac_mtx,partition_dydt_fun, dy_dt, y)
@@ -180,7 +169,7 @@ end
 function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     jacobian_from_sol!(p,t)#jacobian_from_sol!(p,t)
     jac_mtx=p["jac_mtx"]
-    dldt.= reshape(- lambda' * jac_mtx, : )#adopting KPP paper I
+    dldt.= reshape(- lambda' * jac_mtx, :)#adopting KPP paper I
     p["Current_iter"]+=1
     citer=p["Current_iter"]
     if citer%(p["ShowIterPeriod"])==0
@@ -191,7 +180,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     nothing
 end
 
-function prepare_gas()
+function prepare_gas(config)
     println("Parsing Reactants")
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
@@ -199,31 +188,31 @@ function prepare_gas()
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
 
     println("Generating evaluate_rates()")
-    evaluate_rates_expr=gen_evaluate_rates(file)
+    evaluate_rates_expr=gen_evaluate_rates(config.file)
     println("Done Generation")
     rate_values=zeros(Real,num_eqns)
     #rate_prods=zeros(Float64,num_eqns)
     J=zeros(Real,62)
     #dydt=zeros(Float64,num_reactants)
     println("Performing constant folding")
-    constant_folding!(evaluate_rates_expr,constantdict,rate_values);
+    constant_folding!(evaluate_rates_expr,config.constantdict,rate_values);
     extract_constants!(evaluate_rates_expr);
     println("Evaluating evaluate_rates&loss_gain codes")
     eval(evaluate_rates_expr)
     param_dict=Dict("rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,#"dydt"=>dydt,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
-                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants,"evaluate_rates!"=>evaluate_rates!)
+                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants,"evaluate_rates!"=>config.evaluate_rates!)
     return param_dict,reactants2ind
 end
 
-function prepare_aerosol()
-    param_dict,reactants2ind=prepare_gas()
+function prepare_aerosol(config)
+    param_dict,reactants2ind=prepare_gas(config)
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
 
     println("Calculating Partitioning Properties: Part1")
-    pc1_dict=Pure_component1(num_reactants,species_names,vp_cutoff,temp,property_methods)
+    pc1_dict=Pure_component1(num_reactants,species_names,config.vp_cutoff,config.temp,config.property_methods)
     
     println("Adding H2O")
     num_reactants+=1
@@ -232,9 +221,9 @@ function prepare_aerosol()
     reactants2ind["H2O"]=num_reactants
     include_inds=pc1_dict["include_inds"]
     num_reactants_condensed=length(include_inds)
-    sat_vap_water = exp(-0.58002206E4/temp+0.13914993E1-
-        0.48640239E-1*temp+0.41764768E-4*(temp^2.0E0)-
-        0.14452093E-7*(temp^3.0E0)+0.65459673E1*log(temp))#Pa
+    sat_vap_water = exp(-0.58002206E4/config.temp+0.13914993E1-
+        0.48640239E-1*config.temp+0.41764768E-4*(config.temp^2.0E0)-
+        0.14452093E-7*(config.temp^3.0E0)+0.65459673E1*log(config.temp))#Pa
     push!(pc1_dict["y_density_array"],1000.0E0)#Append density of water to array [kg/m3]
     push!(pc1_dict["y_mw"],18.0E0)#Append mw of water to array [g/mol]
     push!(pc1_dict["Psat"],sat_vap_water*9.86923E-6)#Convert Pa to atm
@@ -244,30 +233,30 @@ function prepare_aerosol()
 
     println("Calculating Partitioning Properties: Part2")
     y_mw=pc1_dict["y_mw"]
-    pc2_dict=Pure_component2(num_reactants_condensed,y_mw,R_gas,temp)
+    pc2_dict=Pure_component2(num_reactants_condensed,y_mw,config.R_gas,config.temp)
     merge!(param_dict,pc1_dict,pc2_dict)
     param_dict["num_reactants_condensed"]=num_reactants_condensed
     println("Generating initial size distribution")
-    N_perbin,xs=lognormal(num_bins,total_conc,meansize,size_std,lowersize,uppersize)
+    N_perbin,xs=lognormal(config.num_bins,config.total_conc,config.meansize,sonfig.size_std,config.lowersize,config.uppersize)
     param_dict["N_perbin"]=N_perbin
     
     println("Calculating Dry Core Properties")
     y_core=(4.0/3.0)*pi*((xs*1.0e-6).^3.0) #4/3*pi*radius^3
-    y_core=y_core.*core_density_array #mass per particle [kg]
-    y_core=y_core./(core_mw*1.0e-3) #moles per particle, changing mw from g/mol to kg/mol
-    y_core=y_core*NA #molecules per particle
+    y_core=y_core.*config.core_density_array #mass per particle [kg]
+    y_core=y_core./(config.core_mw*1.0e-3) #moles per particle, changing mw from g/mol to kg/mol
+    y_core=y_core*config.NA #molecules per particle
     y_core=y_core.*N_perbin #molecules/cc representing each size range
     #Calculate a core mass based on the above information [converting from molecules/cc to micrograms/m3]    
-    core_mass_array=y_core./NA.*core_mw
+    core_mass_array=y_core./config.NA.*config.core_mw
     println("Dry core mass = ", sum(core_mass_array)*1E12)
     param_dict["y_core"]=y_core
     param_dict["core_mass_array"]=core_mass_array
 
     println("Configuring initial condensed phase")
-    y_cond=zeros(Float64,num_bins*num_reactants_condensed)
+    y_cond=zeros(Float64,config.num_bins*num_reactants_condensed)
     for step=1:length(xs)
         radius=xs[step]
-        water_moles=(y_core[step]*core_dissociation)*(RH/(1.0E0-RH))
+        water_moles=(y_core[step]*config.core_dissociation)*(config.RH/(1.0E0-config.RH))
         y_cond[step*num_reactants_condensed]=water_moles
     end
     return param_dict,reactants2ind,y_cond
@@ -286,32 +275,32 @@ function read_configure!(filename::String)
     end
 end
 
-function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
+function run_simulation_aerosol(config;use_jacobian::Bool,linsolver::Symbol=:Dense)
     read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond=prepare_aerosol()
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
-    dy_dt_gas_matrix=zeros(Real,(num_reactants,num_bins))
+    dy_dt_gas_matrix=zeros(Real,(num_reactants,config.num_bins))
     #dy_dt=zeros(Real,num_reactants+num_reactants_condensed*num_bins)
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
     #param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
     param_dict["Simulation_type"]="aerosol"
-    y_init=zeros(Float64,num_reactants+num_reactants_condensed*num_bins)
-    for (k,v) in reactants_initial_dict
-        y_init[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
+    y_init=zeros(Float64,num_reactants+num_reactants_condensed*config.num_bins)
+    for (k,v) in config.reactants_initial_dict
+        y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
     end
-    y_init[num_reactants+1:num_reactants+num_bins*num_reactants_condensed]=y_cond[1:num_bins*num_reactants_condensed]
+    y_init[num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]=y_cond[1:config.num_bins*num_reactants_condensed]
     println("Solving ODE")
     if use_jacobian
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac_seeding!)
-        prob = ODEProblem{true}(odefun,y_init,tspan,param_dict)
+        prob = ODEProblem{true}(odefun,y_init,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=5
     else
-        prob = ODEProblem{true}(dydt_aerosol!,y_init,tspan,param_dict)
+        prob = ODEProblem{true}(dydt_aerosol!,y_init,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=500
     end
     sol = solve(prob,CVODE_BDF(linear_solver=linsolver),reltol=1e-4,abstol=1.0e-2,
-                tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
+                tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
                 max_order = 5,
@@ -320,23 +309,23 @@ function run_simulation_aerosol(;use_jacobian::Bool,linsolver::Symbol=:Dense)
                 #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
                 )
     sol_mtx=transpose(sol)
-    aerosol_mtx=sol_mtx[1:end,num_reactants+1:num_reactants+num_bins*num_reactants_condensed]
+    aerosol_mtx=sol_mtx[1:end,num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]
     t_length=size(aerosol_mtx)[1]
     mw_array=param_dict["y_mw"]
-    SOA_array=[sum((sum(reshape(aerosol_mtx[i,1:end],(num_reactants_condensed,num_bins))
-                               ,dims=2).*mw_array./NA)[1:end-1]#exclude H2O at the end
+    SOA_array=[sum((sum(reshape(aerosol_mtx[i,1:end],(num_reactants_condensed,config.num_bins))
+                               ,dims=2).*mw_array./config.NA)[1:end-1]#exclude H2O at the end
                   ) for i in 1:t_length]*1E12
 
     return sol,reactants2ind,SOA_array,num_reactants,param_dict
 end
 
-function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
+function run_simulation_aerosol_adjoint(config;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
     if isfile("/data/aerosol_sol.store")
         println("Found caching of aerosol simulation")
         read_configure!("Configure_aerosol.jl")
         param_dict,_,_=prepare_aerosol()
-        dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],num_bins))
+        dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],config.num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         sol=deserialize("/data/aerosol_sol.store")
@@ -348,12 +337,12 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
-    t0,tF=tspan
+    t0,tF=config.tspan
     tspan_adj=(tF,t0)
-    len_y=num_reactants+num_bins*num_reactants_condensed
+    len_y=num_reactants+config.num_bins*num_reactants_condensed
     mw_array=param_dict["y_mw"]
     lambda_init=zeros(Float64,(1,len_y))#DiffEq.jl version seems incorrect
-    SOA_mass_jac!(lambda_init,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)#adopting KPP paper I
+    SOA_mass_jac!(lambda_init,mw_array,config.NA,num_reactants,num_reactants_condensed,config.num_bins)#adopting KPP paper I
     #println(lambda_init)
     param_dict["sol"]=sol
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
@@ -366,10 +355,10 @@ function run_simulation_aerosol_adjoint(;linsolver::Symbol=:Dense)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
     println("Solving Adjoint Problem")
     lambda_sol=solve(prob_adj,CVODE_BDF(),reltol=1e-8,abstol=1e-6,
-                     tstops=simulation_time:-batch_step:0.,saveat=-batch_step,
+                     tstops=config.simulation_time:-config.batch_step:0.,saveat=-config.batch_step,
                      dt=-1e-6,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")
-    tstops=[t for t in 0:batch_step:simulation_time]
+    tstops=[t for t in 0:config.batch_step:config.simulation_time]
     num_tstops=length(tstops)
     stoich_mtx=param_dict["stoich_mtx"]
     stoich_list=param_dict["stoich_list"]
@@ -395,23 +384,24 @@ end
 
 function sensitivity_mtx2dSOA(S,t::Real,integrator)
     p=integrator.p
+    config=p["config"]
     mw_array,num_reactants,num_reactants_condensed,num_eqns=[p[i] for i in ["y_mw","num_reactants","num_reactants_condensed","num_eqns"]]
-    y_len=num_reactants+num_bins*num_reactants_condensed
+    y_len=num_reactants+config.num_bins*num_reactants_condensed
     dSOA_dy=zeros(Float64,(1,y_len))
-    SOA_mass_jac!(dSOA_dy,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
+    SOA_mass_jac!(dSOA_dy,mw_array,config.NA,num_reactants,num_reactants_condensed,config.num_bins)
     #println(dSOA_dy)
     println(size(S))
     println(S[1:100])
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
 
-function run_simulation_gas(;use_jacobian::Bool=true)
+function run_simulation_gas(config;use_jacobian::Bool=true)
     read_configure!("Configure_gas.jl")
     param_dict,reactants2ind=prepare_gas()
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)
-    for (k,v) in reactants_initial_dict
-        reactants_initial[reactants2ind[k]]=v*Cfactor#pbb to molcules/cc
+    for (k,v) in config.reactants_initial_dict
+        reactants_initial[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
     end
     println("Solving ODE")
     param_dict["Current_iter"]=0
@@ -420,14 +410,14 @@ function run_simulation_gas(;use_jacobian::Bool=true)
     #odefun=ODEFunction(dydt!; jac=gas_jac!)
     if use_jacobian
         odefun=ODEFunction(dydt!; jac=gas_jac!)
-        prob = ODEProblem{true}(odefun,reactants_initial,tspan,param_dict)
+        prob = ODEProblem{true}(odefun,reactants_initial,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=5
     else
-        prob = ODEProblem{true}(dydt!,reactants_initial,tspan,param_dict)
+        prob = ODEProblem{true}(dydt!,reactants_initial,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=500
     end
     @time sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
-                tstops=0:batch_step:simulation_time,saveat=batch_step,# save_everystep=true,
+                tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
                 max_order = 5,

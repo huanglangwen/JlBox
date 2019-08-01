@@ -1,5 +1,3 @@
-using SparseArrays
-using StaticArrays
 function SOA_mass(y,mw_array,NA,num_reactants,num_reactants_condensed,num_bins)
     aerosol_mtx=reshape(y[num_reactants+1:num_reactants+num_reactants_condensed*num_bins],(num_reactants_condensed,num_bins))
     return (sum(aerosol_mtx,dims=2).*mw_array./NA)[1:num_reactants_condensed-1]*1E12

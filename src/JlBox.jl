@@ -1,5 +1,18 @@
 module JlBox
+using DiffEqDiffTools
+using ForwardDiff
+using ForwardDiff:JacobianConfig
+using OrdinaryDiffEq
+using StaticArrays
+using SparseArrays
+using Printf
+using QuadGK
+using Serialization
+using PyCall
+using LightXML
+using LinearAlgebra
 
+include("Configure.jl")
 include("Optimize.jl")
 include("Parse_eqn.jl")
 include("Size_Distributions.jl")

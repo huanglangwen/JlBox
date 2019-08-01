@@ -1,6 +1,4 @@
 #Direct Interpreted from https://github.com/loftytopping/PyBox/blob/master/Aerosol/Property_calculation.py
-using PyCall
-using LightXML
 pushfirst!(PyVector(pyimport("sys")["path"]),"../UManSysProp_public")
 boiling_points=pyimport("umansysprop.boiling_points")
 vapour_pressures=pyimport("umansysprop.vapour_pressures")
