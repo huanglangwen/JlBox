@@ -63,4 +63,4 @@ RUN cp -R * /root/.vim
 RUN echo "set nowrap\nset number\nset tabstop=4\nset shiftwidth=4\nset softtabstop=4\nset expandtab\nset smarttab" >> /root/.vimrc
 
 WORKDIR /Code/Git_repos/JlBox
-RUN git checkout transfer
+RUN git checkout master

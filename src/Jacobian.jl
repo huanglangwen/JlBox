@@ -2,21 +2,6 @@ using StaticArrays
 using SparseArrays
 using LinearAlgebra
 
-import ForwardDiff.Dual
-
-struct DiffCache{T, S}
-    du::Vector{T}
-    dual_du::Vector{S}
-end
-
-function DiffCache(T, length, ::Type{Val{chunk_size}}) where chunk_size
-    DiffCache(zeros(T, length), zeros(Dual{chunk_size, T}, length))
-end
-DiffCache(u::AbstractArray) = DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(u)})
-
-get_du(dc::DiffCache, ::Type{T}) where T<:Dual = dc.dual_du
-get_du(dc::DiffCache, T) = dc.du
-
 function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
                        reactants::Array{<:Real,1},#num_reactants
                        stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
