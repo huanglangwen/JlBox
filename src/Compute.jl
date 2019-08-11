@@ -61,17 +61,19 @@ end
 function rates_from_sol(p::Dict,t::Real)
     rate_values,J,RO2_inds,num_eqns,num_reactants=[p[ind] for ind in ["rate_values","J","RO2_inds","num_eqns","num_reactants"]]
     evaluate_rates_fun=p["evaluate_rates!"]
+    config=p["config"]
     time_of_day_seconds=config.start_time+t
     sol=p["sol"]
     reactants=sol(t)[1:num_reactants]
     RO2=sum(reactants[RO2_inds])
-    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,H2O,temp,rate_values,J)# =>ratevalues
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)# =>ratevalues
     rate_values
 end
 
 function dydt_aerosol!(dy_dt,y::Array{<:Real,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    config=p["config"]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     y_gas=y[1:num_reactants]#view(xs,lo:hi) passes ref instead of copy
@@ -98,6 +100,7 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     evaluate_rates_fun=p["evaluate_rates!"]
+    config=p["config"]
     time_of_day_seconds=config.start_time+t
     RO2=sum(y[RO2_inds])
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
@@ -118,6 +121,7 @@ function aerosol_jac_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     evaluate_rates_fun=p["evaluate_rates!"]
+    config=p["config"]
     time_of_day_seconds=config.start_time+t
     RO2=sum(y[RO2_inds])
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
@@ -201,7 +205,8 @@ function prepare_gas(config)
     eval(evaluate_rates_expr)
     param_dict=Dict("rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,#"dydt"=>dydt,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
-                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants,"evaluate_rates!"=>config.evaluate_rates!)
+                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants,"evaluate_rates!"=>config.evaluate_rates!,
+                    "config"=>config)
     return param_dict,reactants2ind
 end
 

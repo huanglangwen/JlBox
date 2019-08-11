@@ -2,7 +2,8 @@ module JlBox
 using DiffEqDiffTools
 using ForwardDiff
 using ForwardDiff:JacobianConfig
-using OrdinaryDiffEq, Sundials
+using OrdinaryDiffEq
+using Sundials: CVODE_BDF
 using StaticArrays
 using SparseArrays
 using Printf
