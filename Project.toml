@@ -1,0 +1,15 @@
+name = "JlBox"
+uuid = "45866e21-5370-5359-bc32-feafc3cfdcac"
+authors = ["Langwen Huang <huanglangwen@outlook.com>"]
+version = "1.0.0"
+
+[deps]
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+LightXML = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
+QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+Sundials = "c3572dad-4567-51f8-b174-8c6c989267f4"

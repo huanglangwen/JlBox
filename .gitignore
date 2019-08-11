@@ -3,4 +3,5 @@ prof.txt
 testpybox.txt
 generated*
 .DS*
+*.log
 .vscode
