@@ -23,4 +23,5 @@ include("Jacobian.jl")
 include("Sensitivity.jl")
 include("Compute.jl")
 
+export run_simulation_gas, run_simulation_aerosol, run_simulation_aerosol_adjoint
 end

@@ -1,8 +1,6 @@
-include("JlBoxModule.jl")
-include("Configure_aerosol.jl")
-using .Compute:run_simulation_aerosol
+using JlBox
 using DataFrames
-using CSV
+#using CSV
 
 @time sol,reactants2ind,SOA_array,num_reactants,_=run_simulation_aerosol(use_jacobian=false)
 #num_reactants=length(reactants2ind)
@@ -14,6 +12,6 @@ t_index=range(0,stop=simulation_time,length=t_length)
 df_SOA=DataFrame(Time=t_index,SOA=SOA_array)[[:Time,:SOA]]
 df=DataFrame(sol_mtx[1:end,1:num_reactants])
 names!(df,reactants)
-CSV.write("/data/jlbox_results.csv",df)
-CSV.write("/data/jlbox_SOA.csv",df_SOA)
+#CSV.write("/data/jlbox_results.csv",df)
+#CSV.write("/data/jlbox_SOA.csv",df_SOA)
 df_SOA

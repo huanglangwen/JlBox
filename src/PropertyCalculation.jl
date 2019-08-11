@@ -1,26 +1,26 @@
 #Direct Interpreted from https://github.com/loftytopping/PyBox/blob/master/Aerosol/Property_calculation.py
-pushfirst!(PyVector(pyimport("sys")["path"]),"../UManSysProp_public")
-boiling_points=pyimport("umansysprop.boiling_points")
-vapour_pressures=pyimport("umansysprop.vapour_pressures")
-critical_properties=pyimport("umansysprop.critical_properties")
-liquid_densities=pyimport("umansysprop.liquid_densities")
-partition_models=pyimport("umansysprop.partition_models")
-groups=pyimport("umansysprop.groups")
-aiomfac=pyimport("umansysprop.activity_coefficient_models_dev")
-forms=pyimport("umansysprop.forms") #need forms.CoreAbundanceField (class)
+pushfirst!(PyCall.PyVector(PyCall.pyimport("sys")["path"]),"../UManSysProp_public")
+boiling_points=PyCall.pyimport("umansysprop.boiling_points")
+vapour_pressures=PyCall.pyimport("umansysprop.vapour_pressures")
+critical_properties=PyCall.pyimport("umansysprop.critical_properties")
+liquid_densities=PyCall.pyimport("umansysprop.liquid_densities")
+partition_models=PyCall.pyimport("umansysprop.partition_models")
+groups=PyCall.pyimport("umansysprop.groups")
+aiomfac=PyCall.pyimport("umansysprop.activity_coefficient_models_dev")
+forms=PyCall.pyimport("umansysprop.forms") #need forms.CoreAbundanceField (class)
 CoreAbundanceField=forms.CoreAbundanceField
-pybel=pyimport("pybel")
+pybel=PyCall.pyimport("pybel")
 
 function readSMILESdict()
     species2SMILESdict=Dict{String,String}()
-    mcmdoc=parse_file("data/MCM.xml")
-    spnode=find_element(root(mcmdoc),"species_defs")
-    for species in child_nodes(spnode)
-        if is_elementnode(species)
-            sp_element=XMLElement(species)
-            name=attribute(sp_element,"species_name")
-            if has_children(sp_element)
-                SMILES=strip(content(sp_element))
+    mcmdoc=LightXML.parse_file("data/MCM.xml")
+    spnode=LightXML.find_element(LightXML.root(mcmdoc),"species_defs")
+    for species in LightXML.child_nodes(spnode)
+        if LightXML.is_elementnode(species)
+            sp_element=LightXML.XMLElement(species)
+            name=LightXML.attribute(sp_element,"species_name")
+            if LightXML.has_children(sp_element)
+                SMILES=strip(LightXML.content(sp_element))
                 species2SMILESdict[name]=SMILES
             end
         end
@@ -32,10 +32,10 @@ function SMILES2Pybel(smi_str)
     return pybel.readstring("smi",smi_str)
 end
 
-function compoundProperty(pybelobj::PyObject,temperature::Real,methodfuncs::Dict)
+function compoundProperty(pybelobj::PyCall.PyObject,temperature::Real,methodfuncs::Dict)
     boiling_point,vapour_pressure,critical_property,liquid_density=[methodfuncs[i] for i in ["bp","vp","critical","density"]]
     b1=boiling_points.nannoolal(pybelobj)
-    density=liquid_density(pybelobj, temperature, pycall(critical_property,PyObject,pybelobj, b1))*1.0E3
+    density=liquid_density(pybelobj, temperature, PyCall.pycall(critical_property,PyCall.PyObject,pybelobj, b1))*1.0E3
     mw=pybelobj[:molwt]
     groups_dict=groups.composition(pybelobj)
     o_c=groups_dict["O"]/groups_dict["C"]
