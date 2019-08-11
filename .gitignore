@@ -5,3 +5,4 @@ generated*
 .DS*
 *.log
 .vscode
+deps/usr/*
