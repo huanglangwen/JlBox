@@ -6,3 +6,4 @@ generated*
 *.log
 .vscode
 deps/usr/*
+*.swp

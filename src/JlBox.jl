@@ -13,6 +13,12 @@ using PyCall
 using LightXML
 using LinearAlgebra
 
+include("../deps/deps.jl")
+
+function __init__()
+    check_deps()
+end
+
 include("Configure.jl")
 include("Optimize.jl")
 include("Parse_eqn.jl")
