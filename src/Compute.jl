@@ -315,16 +315,17 @@ end
 function run_simulation_aerosol_adjoint(config)
     #read_configure!("Configure_aerosol.jl")
     if isfile("../data/aerosol_sol.store")
-        println("Found caching of aerosol simulation")
+        println("Found cached aerosol simulation result")
         #read_configure!("Configure_aerosol.jl")
         param_dict,_,_=prepare_aerosol(config)
         dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],config.num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
+        println("Loading cache")
         sol=deserialize("../data/aerosol_sol.store")
     else
         println("No caching, start aerosol simulation")
-        sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true)
+        sol,_,_,_,param_dict=run_simulation_aerosol(config,use_jacobian=true)
         println("Caching solution")
         serialize("../data/aerosol_sol.store",sol)
     end
@@ -347,7 +348,7 @@ function run_simulation_aerosol_adjoint(config)
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
     println("Solving Adjoint Problem")
-    lambda_sol=solve(prob_adj,config.solver,reltol=1e-8,abstol=1e-6,
+    lambda_sol=solve(prob_adj,config.solver,reltol=1e-8,abstol=1e-6,#Rodas5(autodiff=false)
                      tstops=config.simulation_time:-config.batch_step:0.,saveat=-config.batch_step,
                      dt=-1e-6,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")

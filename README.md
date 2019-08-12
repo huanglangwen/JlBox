@@ -4,6 +4,8 @@ This is a rewrite version of [PyBox].
 
 Work on Julia v1.1.0.
 
+![Structure](docs/Structure.png)
+
 ## Get Started
 1. Open julia console, type `]` for Pkg management state.
 2. Enter `dev https://github.com/huanglangwen/JlBox ` .
