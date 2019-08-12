@@ -15,6 +15,7 @@ struct GasConfigure
     Cfactor#ppb-to-molecules/cc
     reactants_initial_dict#ppm ["O3"=>18.0,"APINENE"=>30.0])
     constantdict
+    solver#stiff ODE solver like `CVODE_BDF()`
 end
 
 struct AerosolConfigure
@@ -54,5 +55,6 @@ struct AerosolConfigure
     NA#Avogadros number
     sigma# Assume surface tension of water (mN/m) ???
     property_methods
+    solver#stiff ODE solver like `CVODE_BDF()`
 end
 

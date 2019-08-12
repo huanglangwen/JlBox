@@ -49,13 +49,13 @@ function dydt!(dydt,reactants::Array{<:Real,1},p::Dict,t::Real)
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
-    #if p["Simulation_type"]=="gas"
-    #    p["Current_iter"]+=1
-    #    citer=p["Current_iter"]
-    #    if citer%(p["ShowIterPeriod"])==0
-    #        @printf("Current Iteration: %d, time_step: %e\n",citer,t)
-    #    end
-    #end
+    if p["Simulation_type"]=="gas"
+        p["Current_iter"]+=1
+        citer=p["Current_iter"]
+        if citer%(p["ShowIterPeriod"])==0
+            @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+        end
+    end
     nothing#return dydt
 end
 
@@ -268,7 +268,7 @@ function prepare_aerosol(config)
     return param_dict,reactants2ind,y_cond
 end
 
-function run_simulation_aerosol(config;use_jacobian::Bool,linsolver::Symbol=:Dense)
+function run_simulation_aerosol(config;use_jacobian::Bool)
     #read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond=prepare_aerosol(config)
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
@@ -292,7 +292,7 @@ function run_simulation_aerosol(config;use_jacobian::Bool,linsolver::Symbol=:Den
         prob = ODEProblem{true}(dydt_aerosol!,y_init,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=500
     end
-    sol = solve(prob,CVODE_BDF(linear_solver=linsolver),reltol=1e-4,abstol=1.0e-2,
+    sol = solve(prob,config.solver,reltol=1e-4,abstol=1.0e-2,
                 tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
@@ -312,7 +312,7 @@ function run_simulation_aerosol(config;use_jacobian::Bool,linsolver::Symbol=:Den
     return sol,reactants2ind,SOA_array,num_reactants,param_dict
 end
 
-function run_simulation_aerosol_adjoint(config;linsolver::Symbol=:Dense)
+function run_simulation_aerosol_adjoint(config)
     #read_configure!("Configure_aerosol.jl")
     if isfile("/data/aerosol_sol.store")
         println("Found caching of aerosol simulation")
@@ -324,7 +324,7 @@ function run_simulation_aerosol_adjoint(config;linsolver::Symbol=:Dense)
         sol=deserialize("/data/aerosol_sol.store")
     else
         println("No caching, start aerosol simulation")
-        sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true,linsolver=linsolver)
+        sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true)
         println("Caching solution")
         serialize("/data/aerosol_sol.store",sol)
     end
@@ -347,7 +347,7 @@ function run_simulation_aerosol_adjoint(config;linsolver::Symbol=:Dense)
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
     println("Solving Adjoint Problem")
-    lambda_sol=solve(prob_adj,CVODE_BDF(),reltol=1e-8,abstol=1e-6,
+    lambda_sol=solve(prob_adj,config.solver,reltol=1e-8,abstol=1e-6,
                      tstops=config.simulation_time:-config.batch_step:0.,saveat=-config.batch_step,
                      dt=-1e-6,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")
@@ -409,7 +409,7 @@ function run_simulation_gas(config;use_jacobian::Bool=true)
         prob = ODEProblem{true}(dydt!,reactants_initial,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=500
     end
-    @time sol = solve(prob,CVODE_BDF(linear_solver=:Dense),reltol=1e-6,abstol=1.0e-3,
+    @time sol = solve(prob,config.solver,reltol=1e-6,abstol=1.0e-3,
                 tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,

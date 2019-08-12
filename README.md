@@ -5,7 +5,11 @@ This is a rewrite version of [PyBox].
 Work on Julia v1.1.0.
 
 ## Get Started
-WIP, see `transter` branch.
+1. Open julia console, type `]` for Pkg management state.
+2. Enter `dev https://github.com/huanglangwen/JlBox ` .
+3. Enter `build JlBox` .
+4. Exit julia and `cd` into the `JlBox` package folder (normally in `.julia/dev/JlBox`).
+4. Run the example using `include("example/Simulation_gas.jl")` in julia console.
 
 ## Features
 Compared to PyBox, more optimizations are (going to be) added:
@@ -16,16 +20,5 @@ Compared to PyBox, more optimizations are (going to be) added:
 - [x] adjoint sensitivity analysis
 - [ ] forward sensitivity analysis
 - [ ] parallel version of rate_values, loss_gain and jacobian
-
-## Dependency
-- DifferentialEquations.jl
-- StaticArrays.jl
-- DataFrames.jl
-- CSV.jl
-- Conda.jl
-- PyCall.jl
-- LightXML.jl
-- QuadGK.jl
-Install them using `include("InstallPackages.jl")`.
 
 [PyBox]: https://github.com/loftytopping/PyBox

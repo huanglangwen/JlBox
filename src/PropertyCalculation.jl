@@ -1,6 +1,6 @@
 #Direct Interpreted from https://github.com/loftytopping/PyBox/blob/master/Aerosol/Property_calculation.py
 global umansysprop#<prefix>/umansysprop/__init__.py
-pushfirst!(PyCall.PyVector(PyCall.pyimport("sys")["path"]),umansysprop[1:end-23])
+pushfirst!(PyCall.PyVector(PyCall.pyimport("sys")."path"),umansysprop[1:end-23])
 boiling_points=PyCall.pyimport("umansysprop.boiling_points")
 vapour_pressures=PyCall.pyimport("umansysprop.vapour_pressures")
 critical_properties=PyCall.pyimport("umansysprop.critical_properties")
