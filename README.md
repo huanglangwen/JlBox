@@ -9,7 +9,7 @@ Work on Julia v1.1.0.
 2. Enter `dev https://github.com/huanglangwen/JlBox ` .
 3. Enter `build JlBox` .
 4. Exit julia and `cd` into the `JlBox` package folder (normally in `.julia/dev/JlBox`).
-4. Run the example using `include("example/Simulation_gas.jl")` in julia console.
+4. Run the example using `include("example/Simulation_*.jl")` in julia console.
 
 ## Features
 Compared to PyBox, more optimizations are (going to be) added:

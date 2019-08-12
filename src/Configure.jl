@@ -6,15 +6,15 @@ struct GasConfigure
     start_time# seconds, used as t0 in solver
     simulation_time# seconds
     batch_step# seconds
-    temp_celsius
-    Psat# Saturation VP of water vapour, to get concentration of H20
-    Pw
-    Wconc#kg/cm3
+    #temp_celsius
+    #Psat# Saturation VP of water vapour, to get concentration of H20
+    #Pw
+    #Wconc#kg/cm3
     H2O#Convert from kg to molecules/cc
     tspan
     Cfactor#ppb-to-molecules/cc
-    reactants_initial_dict#ppm ["O3"=>18.0,"APINENE"=>30.0])
-    constantdict
+    reactants_initial_dict::Dict#ppm ["O3"=>18.0,"APINENE"=>30.0])
+    constantdict::Dict
     solver#stiff ODE solver like `CVODE_BDF()`
 end
 
@@ -26,15 +26,15 @@ struct AerosolConfigure
     start_time# seconds, used as t0 in solver
     simulation_time# seconds
     batch_step# seconds
-    temp_celsius
-    Psat_w# Saturation VP of water vapour, to get concentration of H20
-    Pw
-    Wconc#kg/cm3
+    #temp_celsius
+    #Psat_w# Saturation VP of water vapour, to get concentration of H20
+    #Pw
+    #Wconc#kg/cm3
     H2O#Convert from kg to molecules/cc
     tspan
     Cfactor#ppb-to-molecules/cc
-    reactants_initial_dict#ppb BUT1ENE APINENE
-    constantdict
+    reactants_initial_dict::Dict#ppb BUT1ENE APINENE
+    constantdict::Dict
     
     num_bins
     #Lognormal Distribution
@@ -54,7 +54,7 @@ struct AerosolConfigure
     R_gas#Ideal gas constant [kg m2 s-2 K-1 mol-1]
     NA#Avogadros number
     sigma# Assume surface tension of water (mN/m) ???
-    property_methods
+    property_methods::Dict
     solver#stiff ODE solver like `CVODE_BDF()`
 end
 

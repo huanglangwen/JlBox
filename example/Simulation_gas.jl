@@ -22,8 +22,8 @@ function configure_gas()
     reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE
     constantdict=Dict([(:temp,temp),(:H2O,H2O)])
     solver=Sundials.CVODE_BDF()
-    JlBox.GasConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,temp_celsius,Psat,
-                       Pw,Wconc,H2O,tspan,Cfactor,reactants_initial_dict,constantdict,solver)
+    JlBox.GasConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
+                       H2O,tspan,Cfactor,reactants_initial_dict,constantdict,solver)
 end
 
 #Profile.init(n = 10^7, delay = 5.)

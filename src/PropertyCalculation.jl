@@ -1,20 +1,9 @@
 #Direct Interpreted from https://github.com/loftytopping/PyBox/blob/master/Aerosol/Property_calculation.py
-global umansysprop#<prefix>/umansysprop/__init__.py
-pushfirst!(PyCall.PyVector(PyCall.pyimport("sys")."path"),umansysprop[1:end-23])
-boiling_points=PyCall.pyimport("umansysprop.boiling_points")
-vapour_pressures=PyCall.pyimport("umansysprop.vapour_pressures")
-critical_properties=PyCall.pyimport("umansysprop.critical_properties")
-liquid_densities=PyCall.pyimport("umansysprop.liquid_densities")
-partition_models=PyCall.pyimport("umansysprop.partition_models")
-groups=PyCall.pyimport("umansysprop.groups")
-aiomfac=PyCall.pyimport("umansysprop.activity_coefficient_models_dev")
-forms=PyCall.pyimport("umansysprop.forms") #need forms.CoreAbundanceField (class)
-CoreAbundanceField=forms.CoreAbundanceField
-pybel=PyCall.pyimport("pybel")
+#global umansysprop#<prefix>/umansysprop/__init__.py
 
 function readSMILESdict()
     species2SMILESdict=Dict{String,String}()
-    mcmdoc=LightXML.parse_file("data/MCM.xml")
+    mcmdoc=LightXML.parse_file("../data/MCM.xml")
     spnode=LightXML.find_element(LightXML.root(mcmdoc),"species_defs")
     for species in LightXML.child_nodes(spnode)
         if LightXML.is_elementnode(species)
@@ -29,18 +18,18 @@ function readSMILESdict()
     return species2SMILESdict
 end
 
-function SMILES2Pybel(smi_str)
+function SMILES2Pybel(smi_str,pybel)
     return pybel.readstring("smi",smi_str)
 end
 
-function compoundProperty(pybelobj::PyCall.PyObject,temperature::Real,methodfuncs::Dict)
+function compoundProperty(pybelobj::PyCall.PyObject,temperature::Real,methodfuncs::Dict,boiling_points,groups)
     boiling_point,vapour_pressure,critical_property,liquid_density=[methodfuncs[i] for i in ["bp","vp","critical","density"]]
     b1=boiling_points.nannoolal(pybelobj)
     density=liquid_density(pybelobj, temperature, PyCall.pycall(critical_property,PyCall.PyObject,pybelobj, b1))*1.0E3
     mw=pybelobj.molwt#[:molwt]
     groups_dict=groups.composition(pybelobj)
-    o_c=groups_dict."O"/groups_dict."C"
-    h_c=groups_dict."H"/groups_dict."C"
+    o_c=groups_dict["O"]/groups_dict["C"]
+    h_c=groups_dict["H"]/groups_dict["C"]
     b=boiling_point(pybelobj)
     sat_vp=vapour_pressure(pybelobj, temperature,b)
     return density,mw,o_c,h_c,sat_vp
@@ -48,6 +37,18 @@ end
 
 function Pure_component1(num_species::Integer,species_names::Array{String,1},
                          vp_cutoff::Real,temperature::Number,methods::Dict)
+    pushfirst!(PyCall.PyVector(PyCall.pyimport("sys")."path"),umansysprop[1:end-23])
+    boiling_points=PyCall.pyimport("umansysprop.boiling_points")
+    vapour_pressures=PyCall.pyimport("umansysprop.vapour_pressures")
+    critical_properties=PyCall.pyimport("umansysprop.critical_properties")
+    liquid_densities=PyCall.pyimport("umansysprop.liquid_densities")
+    partition_models=PyCall.pyimport("umansysprop.partition_models")
+    groups=PyCall.pyimport("umansysprop.groups")
+    aiomfac=PyCall.pyimport("umansysprop.activity_coefficient_models_dev")
+    forms=PyCall.pyimport("umansysprop.forms") #need forms.CoreAbundanceField (class)
+    CoreAbundanceField=forms.CoreAbundanceField
+    pybel=PyCall.pyimport("pybel")
+
     species2inds=Dict(species_names[i]=>i for i in 1:num_species)
     bp_method,vp_method,critical_method,density_method=[methods[i] for i in ["bp","vp","critical","density"]]
     boiling_point = Dict(
@@ -94,8 +95,8 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},
     for species_ind in 1:num_species
         species_name=species_names[species_ind]
         if haskey(species2SMILESdict,species_name)
-            pybelobj=SMILES2Pybel(species2SMILESdict[species_name])
-            density,mw,o_c,h_c,sat_vp=compoundProperty(pybelobj,temperature,methodfuncs)
+            pybelobj=SMILES2Pybel(species2SMILESdict[species_name],pybel)
+            density,mw,o_c,h_c,sat_vp=compoundProperty(pybelobj,temperature,methodfuncs,boiling_points,groups)
             if (typeof(density)<:Real)&(sat_vp<=vp_cutoff)
                 push!(include_inds,species_ind)
                 y_density_array[species_ind]=density

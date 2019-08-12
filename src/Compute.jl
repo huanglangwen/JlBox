@@ -314,19 +314,19 @@ end
 
 function run_simulation_aerosol_adjoint(config)
     #read_configure!("Configure_aerosol.jl")
-    if isfile("/data/aerosol_sol.store")
+    if isfile("../data/aerosol_sol.store")
         println("Found caching of aerosol simulation")
         #read_configure!("Configure_aerosol.jl")
         param_dict,_,_=prepare_aerosol(config)
         dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],config.num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
-        sol=deserialize("/data/aerosol_sol.store")
+        sol=deserialize("../data/aerosol_sol.store")
     else
         println("No caching, start aerosol simulation")
         sol,_,_,_,param_dict=run_simulation_aerosol(use_jacobian=true)
         println("Caching solution")
-        serialize("/data/aerosol_sol.store",sol)
+        serialize("../data/aerosol_sol.store",sol)
     end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
