@@ -37,10 +37,10 @@ function compoundProperty(pybelobj::PyCall.PyObject,temperature::Real,methodfunc
     boiling_point,vapour_pressure,critical_property,liquid_density=[methodfuncs[i] for i in ["bp","vp","critical","density"]]
     b1=boiling_points.nannoolal(pybelobj)
     density=liquid_density(pybelobj, temperature, PyCall.pycall(critical_property,PyCall.PyObject,pybelobj, b1))*1.0E3
-    mw=pybelobj[:molwt]
+    mw=pybelobj.molwt#[:molwt]
     groups_dict=groups.composition(pybelobj)
-    o_c=groups_dict["O"]/groups_dict["C"]
-    h_c=groups_dict["H"]/groups_dict["C"]
+    o_c=groups_dict."O"/groups_dict."C"
+    h_c=groups_dict."H"/groups_dict."C"
     b=boiling_point(pybelobj)
     sat_vp=vapour_pressure(pybelobj, temperature,b)
     return density,mw,o_c,h_c,sat_vp

@@ -42,6 +42,7 @@ function dydt!(dydt,reactants::Array{<:Real,1},p::Dict,t::Real)
             ["rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
              "num_eqns","num_reactants"]
         ]
+    config=p["config"]
     evaluate_rates_fun=p["evaluate_rates!"]
     time_of_day_seconds=config.start_time+t
     RO2=sum(reactants[RO2_inds])
@@ -186,7 +187,7 @@ end
 
 function prepare_gas(config)
     println("Parsing Reactants")
-    stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(file)
+    stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(config.file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
     stoich_list=mk_reactants_list(num_reactants,num_eqns,stoich_mtx)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
@@ -205,7 +206,7 @@ function prepare_gas(config)
     eval(evaluate_rates_expr)
     param_dict=Dict("rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,#"dydt"=>dydt,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
-                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants,"evaluate_rates!"=>config.evaluate_rates!,
+                    "num_eqns"=>num_eqns,"num_reactants"=>num_reactants,"evaluate_rates!"=>evaluate_rates!,
                     "config"=>config)
     return param_dict,reactants2ind
 end
@@ -242,7 +243,7 @@ function prepare_aerosol(config)
     merge!(param_dict,pc1_dict,pc2_dict)
     param_dict["num_reactants_condensed"]=num_reactants_condensed
     println("Generating initial size distribution")
-    N_perbin,xs=lognormal(config.num_bins,config.total_conc,config.meansize,sonfig.size_std,config.lowersize,config.uppersize)
+    N_perbin,xs=lognormal(config.num_bins,config.total_conc,config.meansize,config.size_std,config.lowersize,config.uppersize)
     param_dict["N_perbin"]=N_perbin
     
     println("Calculating Dry Core Properties")
@@ -267,22 +268,9 @@ function prepare_aerosol(config)
     return param_dict,reactants2ind,y_cond
 end
 
-function read_configure!(filename::String)
-    @printf("Reading Config file %s\n",filename)
-    open(filename) do f
-        for s in readlines(f)
-            if (length(s)>2)
-                if s[1]!='#'
-                    eval(Meta.parse(s))#eval runs in Module scope while include runs in global scope
-                end
-            end
-        end
-    end
-end
-
 function run_simulation_aerosol(config;use_jacobian::Bool,linsolver::Symbol=:Dense)
-    read_configure!("Configure_aerosol.jl")
-    param_dict,reactants2ind,y_cond=prepare_aerosol()
+    #read_configure!("Configure_aerosol.jl")
+    param_dict,reactants2ind,y_cond=prepare_aerosol(config)
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
     dy_dt_gas_matrix=zeros(Real,(num_reactants,config.num_bins))
     #dy_dt=zeros(Real,num_reactants+num_reactants_condensed*num_bins)
@@ -328,8 +316,8 @@ function run_simulation_aerosol_adjoint(config;linsolver::Symbol=:Dense)
     #read_configure!("Configure_aerosol.jl")
     if isfile("/data/aerosol_sol.store")
         println("Found caching of aerosol simulation")
-        read_configure!("Configure_aerosol.jl")
-        param_dict,_,_=prepare_aerosol()
+        #read_configure!("Configure_aerosol.jl")
+        param_dict,_,_=prepare_aerosol(config)
         dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],config.num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
@@ -401,8 +389,8 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
 end
 
 function run_simulation_gas(config;use_jacobian::Bool=true)
-    read_configure!("Configure_gas.jl")
-    param_dict,reactants2ind=prepare_gas()
+    #read_configure!("Configure_gas.jl")
+    param_dict,reactants2ind=prepare_gas(config)
     num_reactants=param_dict["num_reactants"]
     reactants_initial=zeros(Float64,num_reactants)
     for (k,v) in config.reactants_initial_dict

@@ -3,7 +3,7 @@ using DataFrames
 #using CSV
 
 function configure_gas()
-    file="data/MCM_mixed_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
+    file="../data/MCM_mixed_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
     temp=298.15 # Kelvin
     RH=0.5 # RH/100% [0 - 0.99]
     hour_of_day=12.0 # Define a start time  24 hr format

@@ -1,5 +1,6 @@
 using Conda
 using BinaryProvider
+using Pkg
 
 Conda.add("openbabel")#,channel="conda-forge")
 Conda.add("flask")
@@ -18,3 +19,6 @@ if unsatisfied
     BinaryProvider.install(url, tarball_hash, prefix=prefix, ignore_platform=true, verbose=false)
 end
 BinaryProvider.write_deps_file(joinpath(@__DIR__, "deps.jl"), products)
+
+ENV["PYTHON"]=""
+Pkg.build("PyCall")
