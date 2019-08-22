@@ -29,7 +29,7 @@ ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[ind2reactants[ind] for ind in 1:num_reactants]
 df=DataFrames.DataFrame(transpose(sol))
 @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-2
-@test df[end,1] ≈ 4.101378622128155e11
+@test df[end,1] ≈ 4.101378622128155e11 rtol=1e-4
 end
 
 function configure_aerosol()
@@ -89,5 +89,5 @@ df=DataFrames.DataFrame(sol_mtx[1:end,1:num_reactants])
 df_SOA=DataFrames.DataFrame(Time=t_index,SOA=SOA_array)[:,[:Time,:SOA]]
 DataFrames.names!(df,reactants)
 @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-6
-@test df_SOA[13,:SOA] ≈ 9.165607888151833
+@test df_SOA[13,:SOA] ≈ 9.165607888151833 rtol=1e-4
 end
