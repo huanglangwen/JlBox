@@ -1,3 +1,13 @@
+"""
+loss_gainl!(num_reactants,num_eqns,reactants,stoich_mtx,
+            stoich_list,reactants_list,rate_values,dy_dt)
+
+This function is intended to compute the value of RHS function
+for gas kinetics and store them in `dy_dt`. `stoich_list`,
+`reactants_list` are both produced from `stoich_mtx` by
+`mk_reactants_list(...)` to reduce access overhead of CSC
+matrices. 
+"""
 function loss_gain!(num_reactants::Int,num_eqns::Int,
                    reactants::Array{<:Real,1},#num_reactants
                    stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
@@ -6,12 +16,12 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
                    rate_values::Array{<:Real,1},#num_eqns
                    dydt::Array{<:Real,1}#num_reactants
                    )
-    lossgain_mtx=spzeros(num_reactants,num_eqns)
-    for eqn_ind in 1:num_eqns
+    lossgain_mtx=similar(stoich_mtx)#spzeros(num_reactants,num_eqns)
+    @inbounds for eqn_ind in 1:num_eqns
         prod=rate_values[eqn_ind]
         num_reacs,stoichvec,indvec=reactants_list[eqn_ind]
         num_stoichs,_,stoich_indvec=stoich_list[eqn_ind]
-        for i in 1:num_reacs
+        @inbounds for i in 1:num_reacs
             reactant_ind=indvec[i]
             stoich=stoichvec[i]
             #stoich=stoich_mtx[reactant_ind,eqn_ind]
@@ -20,18 +30,24 @@ function loss_gain!(num_reactants::Int,num_eqns::Int,
             #    prod*=reactants[reactant_ind]^stoich
             #end
         end
-        #lossgain_mtx[:,eqn_ind]=stoich_mtx[:,eqn_ind]*prod #!!!!! HUGE PERFORMANCE COST
+        #lossgain_mtx[:,eqn_ind].=stoich_mtx[:,eqn_ind].*prod #!!!!! HUGE PERFORMANCE COST
         #for reactant_ind in reactant_inds
-        for i in 1:num_stoichs
+        @inbounds for i in 1:num_stoichs
             reactant_ind=stoich_indvec[i]
             lossgain_mtx[reactant_ind,eqn_ind]=stoich_mtx[reactant_ind,eqn_ind]*prod
         end
     end
-    is,js,vs=findnz(lossgain_mtx)
-    lossgain_mtx_T=sparse(js,is,vs,num_eqns,num_reactants)#num_eqns*num_reactants
-    for reactant_ind in 1:num_reactants
-        dydt[reactant_ind]=sum(nonzeros(lossgain_mtx_T[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
-    end #*reactants[reactant_ind]=>wrong!!!
+    fill!(dydt,0.)
+    @inbounds for i = 1:length(lossgain_mtx.rowval)
+        reactant_ind=lossgain_mtx.rowval[i]
+        val=lossgain_mtx.nzval[i]
+        dydt[reactant_ind]-=val
+    end
+    #is,js,vs=findnz(lossgain_mtx)
+    #lossgain_mtx_T=sparse(js,is,vs,num_eqns,num_reactants)#num_eqns*num_reactants
+    #for reactant_ind in 1:num_reactants
+    #    dydt[reactant_ind]=sum(nonzeros(lossgain_mtx_T[:,reactant_ind]))*(-1)#dydt negative for reactants, positive for products 
+    #end #*reactants[reactant_ind]=>wrong!!!
     return dydt
 end
 

@@ -1,12 +1,12 @@
 function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::Array{<:Real,2},C_g_i_t::Array{<:Real,1},
                     num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
                     mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{<:Real,1},
-                    core_diss::Real,y_core::Array{<:Real,1},core_mass_array::Array{<:Real,1},core_density_array::Array{<:Real,1},
-                    NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
-    size_array=zeros(Real,num_bins)
-    total_SOA_mass_array=zeros(Real,num_bins)
-    mass_array=zeros(Real,num_reactants_condensed+1)
-    density_array=zeros(Real,num_reactants_condensed+1)
+                    core_diss,y_core::Array{<:Real,1},core_mass_array::Array{<:Real,1},core_density_array::Array{<:Real,1},
+                    NA,sigma,R_gas,Model_temp)
+    size_array=zeros(eltype(y),num_bins)
+    total_SOA_mass_array=zeros(eltype(y),num_bins)
+    mass_array=zeros(eltype(y),num_reactants_condensed+1)
+    density_array=zeros(Float64,num_reactants_condensed+1)
     fill!(dy_dt_gas_matrix,0.)
     #dy_dt_gas_matrix_sum=zeros(Real,num_reactants)
     for size_step=1:num_bins
@@ -53,7 +53,7 @@ function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::
         #println(Pressure_eq[end],",",kelvin_factor[end],",",y_mole_fractions[end],",",Psat[end])
 
         #ASSIGN dy_dt_gas_matrix
-        for ind=1:length(include_inds)
+        @inbounds for ind=1:length(include_inds)
             #dy_dt_gas_matrix_sum[include_inds[ind]]+=dm_dt[ind]
             dy_dt_gas_matrix[include_inds[ind],size_step]=dm_dt[ind]
         end
