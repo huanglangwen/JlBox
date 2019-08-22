@@ -19,7 +19,7 @@ This should work on Windows, MacOS and Linux, but I only tested the Linux one.
 ### Option 2: Running on Docker
 This method should guarantee to run since it creates a standard Linux environment.
 1. Download the `Dockerfile` from this repo (in transfer branch)
-2. enter the folder of `Dockerfile` in terminal and run `docker build -t jlbox .`
+2. enter the folder of `Dockerfile` in terminal and run `docker build -t jlbox . `
 3. run `docker run --name=project_jlbox -it jlbox`
 4. in the container, enter the jlbox folder: `cd /root/.julia/dev/JlBox`
 5. Run simulation with `include("example/Simulation_*.jl")` in julia cli.
@@ -43,5 +43,12 @@ Compared to PyBox, more optimizations are (going to be) added:
 
 ## Internals
 ![Structure](docs/Structure.png)
+
+### How to extend processes
+1. Modify the shape of state vector `y` .
+2. Modify `dydt!` function adding new processes that effect the derivative of `y` .
+3. Choose a suitable way to make a new Jacobian function for the `dydt!` : handwritten analytical function (has the highest potential for optimization but is error prone), generated auto differentiation or finite differentiation. These approaches can be mixed together like in `aerosol_jac_seeding!` where the analytical Jacobian is used for gas kinetics part. Sometimes it is hard to write an accurate (or correct) analytical Jacobian function while generated Jacobian is at least correct and accurate (AD is more accurate than FD). An accurate Jacobian matrix can significantly reduce the iteration steps of implicit ODE solvers.
+4. Now you can run the model (remember to `using Revise` at the begining to avoid recompiling of the package everytime you change it).
+4. With the Jacobian function, you could get adjoint sensitivity analysis out of box!
 
 [PyBox]: https://github.com/loftytopping/PyBox
