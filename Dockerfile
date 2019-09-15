@@ -26,7 +26,7 @@ RUN julia --eval 'using Pkg;Pkg.add("Conda")'
 RUN julia --eval 'using Conda;Conda.update()'
 RUN julia --eval 'using Pkg;Pkg.add("PyCall")'
 RUN julia --eval 'using Pkg;Pkg.build("PyCall")'
-RUN julia --eval 'using Pkg;Pkg.dev("https://github.com/huanglangwen/JlBox");Pkg.build("JlBox")'
+RUN julia --eval 'using Pkg;Pkg.develop(PackageSpec(url="https://github.com/huanglangwen/JlBox"));Pkg.build("JlBox")'
 
 WORKDIR /root
 RUN git clone git://github.com/JuliaEditorSupport/julia-vim.git
