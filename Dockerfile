@@ -22,7 +22,7 @@ ENV PYTHON=""
 ENV PATH="/Code/julia/julia-1.1.1/bin:/root/.julia/conda/3/bin:${PATH}"
 #RUN source /root/.bashrc
 RUN julia --eval 'using Pkg;Pkg.update()'
-RUN julia --eval 'using Pkg;Pkg.add("Conda")'
+RUN julia --eval 'using Pkg;Pkg.add("Conda");Pkg.add("LanguageServer")'
 RUN julia --eval 'using Conda;Conda.update()'
 RUN julia --eval 'using Pkg;Pkg.add("PyCall")'
 RUN julia --eval 'using Pkg;Pkg.build("PyCall")'
