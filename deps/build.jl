@@ -2,9 +2,10 @@ using Conda
 using BinaryProvider
 using Pkg
 
-if Conda.exists("openbabel==2.4.1")#Conda.exists("openbabel") doesn't work now!
+#Conda.exists failed anyway
+#if Conda.exists("openbabel==2.4.1")#Conda.exists("openbabel") doesn't work now!
     Conda.add("openbabel",channel="conda-forge")
-end
+#end
 Conda.add("flask")
 Conda.add("flask-wtf")
 Conda.add("xlsxwriter")
