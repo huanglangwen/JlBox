@@ -1,4 +1,4 @@
-RO2_names=split(readline("../data/RO2.csv"),",")
+RO2_names=split(readline(joinpath(@__DIR__,"../data/RO2.csv")),",")
 
 function stoich_str2int(stoich::String)::Int
     if stoich==""

@@ -37,6 +37,14 @@ end
 
 function Pure_component1(num_species::Integer,species_names::Array{String,1},
                          vp_cutoff::Real,temperature::Number,methods::Dict)
+    py"""#set an alias for pybel
+    try:
+        import pybel
+    except ModuleNotFoundError:
+        import sys
+        from openbabel import pybel
+        sys.modules["pybel"] = pybel
+    """
     pushfirst!(PyCall.PyVector(PyCall.pyimport("sys")."path"),umansysprop[1:end-23])
     boiling_points=PyCall.pyimport("umansysprop.boiling_points")
     vapour_pressures=PyCall.pyimport("umansysprop.vapour_pressures")

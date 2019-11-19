@@ -1,14 +1,5 @@
-using Conda
 using BinaryProvider
 using Pkg
-
-#Conda.exists failed anyway
-#if Conda.exists("openbabel==2.4.1")#Conda.exists("openbabel") doesn't work now!
-    Conda.add("openbabel",channel="conda-forge")
-#end
-Conda.add("flask")
-Conda.add("flask-wtf")
-Conda.add("xlsxwriter")
 
 prefix = BinaryProvider.Prefix(get(filter(!isequal("--verbose"), ARGS), 1, joinpath(@__DIR__, "usr")))
 products = BinaryProvider.Product[
@@ -25,3 +16,12 @@ end
 
 ENV["PYTHON"]=""
 Pkg.build("PyCall")
+
+using Conda
+#Conda.exists failed anyway
+#if Conda.exists("openbabel==2.4.1")#Conda.exists("openbabel") doesn't work now!
+    Conda.add("openbabel",channel="conda-forge")
+#end
+Conda.add("flask")
+Conda.add("flask-wtf")
+Conda.add("xlsxwriter")
