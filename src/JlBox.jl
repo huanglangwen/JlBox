@@ -1,5 +1,5 @@
 module JlBox
-using DiffEqDiffTools
+using FiniteDiff
 using ForwardDiff
 using ForwardDiff:JacobianConfig
 using OrdinaryDiffEq

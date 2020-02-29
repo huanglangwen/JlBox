@@ -88,7 +88,7 @@ t_length=size(sol_mtx)[1]
 t_index=range(0,stop=config.simulation_time,length=t_length)
 df=DataFrames.DataFrame(sol_mtx[1:end,1:num_reactants])
 df_SOA=DataFrames.DataFrame(Time=t_index,SOA=SOA_array)[:,[:Time,:SOA]]
-DataFrames.names!(df,reactants)
+DataFrames.rename!(df,reactants)
 @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-6
 @test df_SOA[13,:SOA] ≈ 9.165607888151833 rtol=1e-4
 end

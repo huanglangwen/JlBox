@@ -40,6 +40,7 @@ function prepare_aerosol(config)
     reactants2ind["H2O"]=num_reactants
     include_inds=pc1_dict["include_inds"]
     num_reactants_condensed=length(include_inds)
+    @printf("num_reactants_condensed: %d\n",num_reactants_condensed)
     sat_vap_water = exp(-0.58002206E4/config.temp+0.13914993E1-
         0.48640239E-1*config.temp+0.41764768E-4*(config.temp^2.0E0)-
         0.14452093E-7*(config.temp^3.0E0)+0.65459673E1*log(config.temp))#Pa

@@ -1,18 +1,5 @@
-function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::Array{<:Real,2},C_g_i_t::Array{<:Real,1},
-                    num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
-                    mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{<:Real,1},
-                    core_diss,y_core::Array{<:Real,1},core_mass_array::Array{<:Real,1},core_density_array::Array{<:Real,1},
-                    NA,sigma,R_gas,Model_temp)
-    size_array=zeros(eltype(y),num_bins)
-    total_SOA_mass_array=zeros(eltype(y),num_bins)
-    mass_array=zeros(eltype(y),num_reactants_condensed+1)
-    density_array=zeros(Float64,num_reactants_condensed+1)
-    fill!(dy_dt_gas_matrix,0.)
-    #dy_dt_gas_matrix_sum=zeros(Real,num_reactants)
-    for size_step=1:num_bins
-        start_ind=num_reactants+1+((size_step-1)*num_reactants_condensed)
-        stop_ind=num_reactants+(size_step*num_reactants_condensed)
-        temp_array=y[start_ind:stop_ind]
+macro partition_kernel() 
+    return esc(quote
         total_moles=sum(temp_array)+y_core[size_step]*core_diss
         y_mole_fractions=temp_array./total_moles
 
@@ -21,7 +8,6 @@ function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::
         density_array[1:num_reactants_condensed]=density_input[1:num_reactants_condensed]
         density_array[num_reactants_condensed+1]=core_density_array[size_step]
         
-        total_SOA_mass_array[size_step]=sum(mass_array[1:num_reactants_condensed-1])
         #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
         total_mass=sum(mass_array)
         mass_fractions_array=mass_array./total_mass
@@ -47,6 +33,26 @@ function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::
         k_i_m_t=4.0*pi*size_array[size_step]*1.0E2*N_perbin[size_step]*k_i_m_t_part1
 
         dm_dt=k_i_m_t.*(C_g_i_t-Cstar_i_m_t)
+    end)
+end
+
+function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::Array{<:Real,2},C_g_i_t::Array{<:Real,1},
+                    num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
+                    mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{<:Real,1},
+                    core_diss,y_core::Array{<:Real,1},core_mass_array::Array{<:Real,1},core_density_array::Array{<:Real,1},
+                    NA,sigma,R_gas,Model_temp)
+    size_array=zeros(eltype(y),num_bins)
+    total_SOA_mass_array=zeros(eltype(y),num_bins)
+    mass_array=zeros(eltype(y),num_reactants_condensed+1)
+    density_array=zeros(Float64,num_reactants_condensed+1)
+    fill!(dy_dt_gas_matrix,0.)
+    #dy_dt_gas_matrix_sum=zeros(Real,num_reactants)
+    for size_step=1:num_bins
+        start_ind=num_reactants+1+((size_step-1)*num_reactants_condensed)
+        stop_ind=num_reactants+(size_step*num_reactants_condensed)
+        temp_array=y[start_ind:stop_ind]
+        @partition_kernel()
+        total_SOA_mass_array[size_step]=sum(mass_array[1:num_reactants_condensed-1])
         #println("k_i_m_t,C_g_i_t,Cstar_i_m_t,dm_dt")
         #println(k_i_m_t[end],",",C_g_i_t[end],",",Cstar_i_m_t[end],",",dm_dt[end])
         #println("Pressure_eq,kelvin_factor,y_mole_frac,Psat")

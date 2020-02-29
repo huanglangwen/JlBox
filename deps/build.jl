@@ -22,6 +22,9 @@ using Conda
 #if Conda.exists("openbabel==2.4.1")#Conda.exists("openbabel") doesn't work now!
     Conda.add("openbabel",channel="conda-forge")
 #end
+root = Conda.ROOTENV
+condaPath = Sys.iswindows() ? joinpath(root, "Scripts", "conda.exe") : joinpath(root, "Scripts", "conda")
+run(`$(condaPath) install Werkzeug=0.16.0`)
 Conda.add("flask")
 Conda.add("flask-wtf")
 Conda.add("xlsxwriter")

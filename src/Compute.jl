@@ -126,7 +126,7 @@ function aerosol_jac!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     C_g_i_t=y[include_inds]
-    Partition_jac!(jac_mtx,y,C_g_i_t,
+    Partition_jac_AD!(jac_mtx,y,C_g_i_t,
         config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         config.core_dissociation,y_core,core_mass_array,config.core_density_array,
@@ -176,7 +176,7 @@ function jacobian_from_sol!(p::Dict,t::Real)
     diff=p["Diff_method"]
     if diff=="finite"
         jac_cache=p["jac_cache"]
-        DiffEqDiffTools.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
+        FiniteDiff.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
     elseif diff=="dual"
         aerosol_jac_seeding!(jac_mtx,y,p,t)
     elseif diff=="analytical"
@@ -218,7 +218,7 @@ function run_simulation_aerosol(config;use_jacobian::Bool)
     y_init[num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]=y_cond[1:config.num_bins*num_reactants_condensed]
     println("Solving ODE")
     if use_jacobian
-        odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac_seeding!)
+        odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         prob = ODEProblem{true}(odefun,y_init,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=5
     else
@@ -277,7 +277,7 @@ function run_simulation_aerosol_adjoint(config)
     param_dict["ShowIterPeriod"]=5
     param_dict["Simulation_type"]="adjoint"
     param_dict["Diff_method"]="dual"
-    param_dict["jac_cache"]=DiffEqDiffTools.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
+    param_dict["jac_cache"]=FiniteDiff.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
     println("Solving Adjoint Problem")
