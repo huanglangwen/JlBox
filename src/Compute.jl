@@ -177,9 +177,9 @@ function jacobian_from_sol!(p::Dict,t::Real)
     if diff=="finite"
         jac_cache=p["jac_cache"]
         FiniteDiff.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
-    elseif diff=="dual"
+    elseif diff=="coarse_seeding"
         aerosol_jac_seeding!(jac_mtx,y,p,t)
-    elseif diff=="analytical"
+    elseif diff=="fine_seeding"
         aerosol_jac!(jac_mtx,y,p,t)
     else
         println("WARNING: can't recognize diff type: ",diff)
@@ -245,47 +245,50 @@ function run_simulation_aerosol(config;use_jacobian::Bool)
     return sol,reactants2ind,SOA_array,num_reactants,param_dict
 end
 
-function run_simulation_aerosol_adjoint(config)
+function run_simulation_aerosol_adjoint(aerosolconfig,adjointconfig)
     #read_configure!("Configure_aerosol.jl")
-    if isfile("../data/aerosol_sol.store")
+    if isfile("../data/aerosol_sol.store") && adjointconfig.use_cache
         println("Found cached aerosol simulation result")
         #read_configure!("Configure_aerosol.jl")
-        param_dict,_,_=prepare_aerosol(config)
-        dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],config.num_bins))
+        param_dict,_,_=prepare_aerosol(aerosolconfig)
+        dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],aerosolconfig.num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
         println("Loading cache")
         sol=deserialize("../data/aerosol_sol.store")
     else
         println("No caching, start aerosol simulation")
-        sol,_,_,_,param_dict=run_simulation_aerosol(config,use_jacobian=true)
+        sol,_,_,_,param_dict=run_simulation_aerosol(aerosolconfig,use_jacobian=true)
         println("Caching solution")
         serialize("../data/aerosol_sol.store",sol)
     end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println("Preparing Adjoint Problem")
-    t0,tF=config.tspan
+    t0,tF=aerosolconfig.tspan
     tspan_adj=(tF,t0)
-    len_y=num_reactants+config.num_bins*num_reactants_condensed
+    len_y=num_reactants+aerosolconfig.num_bins*num_reactants_condensed
     mw_array=param_dict["y_mw"]
     lambda_init=zeros(Float64,(1,len_y))#DiffEq.jl version seems incorrect
-    SOA_mass_jac!(lambda_init,mw_array,config.NA,num_reactants,num_reactants_condensed,config.num_bins)#adopting KPP paper I
+    SOA_mass_jac!(lambda_init,mw_array,aerosolconfig.NA,num_reactants,num_reactants_condensed,aerosolconfig.num_bins)#adopting KPP paper I
     #println(lambda_init)
     param_dict["sol"]=sol
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     param_dict["Simulation_type"]="adjoint"
-    param_dict["Diff_method"]="dual"
-    param_dict["jac_cache"]=FiniteDiff.JacobianCache(zeros(Float64,len_y),Val{:forward},Float64,Val{true})
+    param_dict["Diff_method"]=adjointconfig.diff_method
+    if param_dict["Diff_method"] == "finite"
+        param_dict["jac_cache"]=FiniteDiff.JacobianCache(zeros(Float64,len_y),zeros(Float64,len_y),Val{:forward},Float64,Val{true})
+    end
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
+    print("Using solver: ");println(typeof(adjointconfig.adjoint_solver))
     println("Solving Adjoint Problem")
-    lambda_sol=solve(prob_adj,config.solver,reltol=1e-8,abstol=1e-6,#Rodas5(autodiff=false)
-                     tstops=config.simulation_time:-config.batch_step:0.,saveat=-config.batch_step,
+    lambda_sol=solve(prob_adj,adjointconfig.adjoint_solver,reltol=1e-8,abstol=1e-6,#Rodas5(autodiff=false)
+                     tstops=aerosolconfig.simulation_time:-aerosolconfig.batch_step:0.,saveat=-aerosolconfig.batch_step,
                      dt=-1e-6,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")
-    tstops=[t for t in 0:config.batch_step:config.simulation_time]
+    tstops=[t for t in 0:aerosolconfig.batch_step:aerosolconfig.simulation_time]
     num_tstops=length(tstops)
     stoich_mtx=param_dict["stoich_mtx"]
     stoich_list=param_dict["stoich_list"]

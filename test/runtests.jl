@@ -1,4 +1,5 @@
 using Test, JlBox, DataFrames, Sundials
+using OrdinaryDiffEq
 using PyCall
 
 @testset "Gas Phase" begin 
@@ -75,7 +76,7 @@ function configure_aerosol()
                            H2O,tspan,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,R_gas,
-                           NA,sigma,property_methods,Sundials.CVODE_BDF())
+                           NA,sigma,property_methods,TRBDF2())
 end
 
 @testset "Mixed Phase" begin

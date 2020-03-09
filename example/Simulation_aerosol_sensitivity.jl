@@ -1,6 +1,7 @@
 using JlBox
 using DataFrames
 using Sundials
+using OrdinaryDiffEq
 #using CSV
 
 function configure_aerosol()
@@ -41,15 +42,20 @@ function configure_aerosol()
     NA=6.0221409e+23 #Avogadros number
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
-    JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
+    aerosolconfig=JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
                            H2O,tspan,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,R_gas,
-                           NA,sigma,property_methods,Sundials.CVODE_BDF())
+                           NA,sigma,property_methods,TRBDF2())
+    use_cache=true
+    diff_method="fine_seeding"
+    adjoint_solver=TRBDF2(autodiff=false)
+    adjointconfig=JlBox.AdjointConfigure(use_cache,diff_method,adjoint_solver)
+    aerosolconfig,adjointconfig
 end
 
-config=configure_aerosol()
-@time dSOA_mass_drate,dSOA_mass_percentk=JlBox.run_simulation_aerosol_adjoint(config)
+aerosolconfig,adjointconfig=configure_aerosol()
+@time dSOA_mass_drate,dSOA_mass_percentk=JlBox.run_simulation_aerosol_adjoint(aerosolconfig,adjointconfig)
 df=DataFrames.DataFrame(dSOA_mass_drate)
 df2=DataFrames.DataFrame(dSOA_mass_percentk)
 #CSV.write("/data/jlbox_sensitivity_dSOAdrate_results.csv",df)

@@ -58,3 +58,9 @@ struct AerosolConfigure
     solver#stiff ODE solver like `CVODE_BDF()`
 end
 
+struct AdjointConfigure
+    use_cache::Bool
+    diff_method::String
+    adjoint_solver
+end
+
