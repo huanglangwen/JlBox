@@ -11,6 +11,7 @@ using Serialization
 using PyCall
 using LightXML
 using LinearAlgebra
+using DiffEqCallbacks
 
 include("../deps/deps.jl")
 

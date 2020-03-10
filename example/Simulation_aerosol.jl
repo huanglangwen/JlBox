@@ -1,10 +1,11 @@
 using JlBox
 using DataFrames
+using OrdinaryDiffEq
 using Sundials
 #using CSV
 
 function configure_aerosol()
-    file="../data/MCM_APINENE.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
+    file="../data/MCM_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
     temp=288.15 # Kelvin
     RH=0.5 # RH/100% [0 - 0.99]
     hour_of_day=12.0 # Define a start time  24 hr format
@@ -18,7 +19,7 @@ function configure_aerosol()
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     tspan=(0.,simulation_time)
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
-    reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
+    reactants_initial_dict=Dict(["O3"=>18.0,"BUT1ENE"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
     constantdict=Dict([(:temp,temp)])
     num_bins=16
 
@@ -41,11 +42,14 @@ function configure_aerosol()
     NA=6.0221409e+23 #Avogadros number
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
+    reltol=1e-8
+    abstol=1.0e-6
+    positiveness=false
     JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
                            H2O,tspan,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,R_gas,
-                           NA,sigma,property_methods,Sundials.CVODE_BDF())
+                           NA,sigma,property_methods,Sundials.CVODE_BDF(),reltol,abstol,positiveness)
 end
 
 config=configure_aerosol()

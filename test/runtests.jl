@@ -21,8 +21,11 @@ function configure_gas()
     reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE
     constantdict=Dict([(:temp,temp),(:H2O,H2O)])
     solver=Sundials.CVODE_BDF()
+    reltol=1e-6
+    abstol=1.0e-3
+    positiveness=true
     JlBox.GasConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
-                       H2O,tspan,Cfactor,reactants_initial_dict,constantdict,solver)
+                       H2O,tspan,Cfactor,reactants_initial_dict,constantdict,solver,reltol,abstol,positiveness)
 end
 config=configure_gas()
 sol,reactants2ind=JlBox.run_simulation_gas(config,use_jacobian=true)
@@ -72,11 +75,14 @@ function configure_aerosol()
     NA=6.0221409e+23 #Avogadros number
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
+    reltol=1e-4
+    abstol=1.0e-2
+    positiveness=true
     JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
                            H2O,tspan,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,R_gas,
-                           NA,sigma,property_methods,TRBDF2())
+                           NA,sigma,property_methods,TRBDF2(),reltol,abstol,positiveness)
 end
 
 @testset "Mixed Phase" begin

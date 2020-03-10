@@ -216,6 +216,7 @@ function run_simulation_aerosol(config;use_jacobian::Bool)
         y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
     end
     y_init[num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]=y_cond[1:config.num_bins*num_reactants_condensed]
+    print("Using solver: ");println(typeof(config.solver))
     println("Solving ODE")
     if use_jacobian
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
@@ -225,13 +226,13 @@ function run_simulation_aerosol(config;use_jacobian::Bool)
         prob = ODEProblem{true}(dydt_aerosol!,y_init,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=500
     end
-    sol = solve(prob,config.solver,reltol=1e-4,abstol=1.0e-2,
+    sol = solve(prob,config.solver,reltol=config.reltol,abstol=config.abstol,
                 tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
                 max_order = 5,
                 max_convergence_failures = 1000,
-                #callback=PositiveDomain(y_init,abstol=1.0e-2)
+                callback=config.positiveness ? PositiveDomain(y_init) : nothing
                 #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
                 )
     sol_mtx=transpose(sol)
@@ -284,7 +285,7 @@ function run_simulation_aerosol_adjoint(aerosolconfig,adjointconfig)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
     print("Using solver: ");println(typeof(adjointconfig.adjoint_solver))
     println("Solving Adjoint Problem")
-    lambda_sol=solve(prob_adj,adjointconfig.adjoint_solver,reltol=1e-8,abstol=1e-6,#Rodas5(autodiff=false)
+    lambda_sol=solve(prob_adj,adjointconfig.adjoint_solver,reltol=adjointconfig.reltol,abstol=adjointconfig.abstol,#Rodas5(autodiff=false)
                      tstops=aerosolconfig.simulation_time:-aerosolconfig.batch_step:0.,saveat=-aerosolconfig.batch_step,
                      dt=-1e-6,dtmax=50.0,max_order=5,max_convergence_failures=1000)
     println("Preparing Integration")
@@ -346,13 +347,14 @@ function run_simulation_gas(config;use_jacobian::Bool=true)
         prob = ODEProblem{true}(dydt!,reactants_initial,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=500
     end
-    @time sol = solve(prob,config.solver,reltol=1e-6,abstol=1.0e-3,
+    @time sol = solve(prob,config.solver,reltol=config.reltol,abstol=config.abstol,
                 tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,
                 max_order = 5,
                 max_convergence_failures = 1000,
                 #callback=PositiveDomain(reactants_initial,abstol=1.0e-3)
+                callback=config.positiveness ? PositiveDomain(reactants_initial) : nothing
                 #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
                 #progress=true
                 )

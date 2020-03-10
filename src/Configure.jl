@@ -16,6 +16,9 @@ struct GasConfigure
     reactants_initial_dict::Dict#ppm ["O3"=>18.0,"APINENE"=>30.0])
     constantdict::Dict
     solver#stiff ODE solver like `CVODE_BDF()`
+    reltol::Real
+    abstol::Real
+    positiveness::Bool
 end
 
 struct AerosolConfigure
@@ -56,11 +59,16 @@ struct AerosolConfigure
     sigma# Assume surface tension of water (mN/m) ???
     property_methods::Dict
     solver#stiff ODE solver like `CVODE_BDF()`
+    reltol::Real
+    abstol::Real
+    positiveness::Bool
 end
 
 struct AdjointConfigure
     use_cache::Bool
     diff_method::String
     adjoint_solver
+    reltol::Real
+    abstol::Real
 end
 
