@@ -28,7 +28,8 @@ include("Partitioning.jl")
 include("Jacobian.jl")
 include("Sensitivity.jl")
 include("Prepare.jl")
-include("Compute.jl")
+include("RHS.jl")
+include("Simulation.jl")
 
 export run_simulation_gas, run_simulation_aerosol, run_simulation_aerosol_adjoint
 end

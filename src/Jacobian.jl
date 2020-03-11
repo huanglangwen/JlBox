@@ -241,3 +241,89 @@ function Partition_jac_AD!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
     nothing
     #return dy_dt,total_SOA_mass
 end
+
+function aerosol_jac_fine_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
+    evaluate_rates_fun=p["evaluate_rates!"]
+    config=p["config"]
+    time_of_day_seconds=config.start_time+t
+    RO2=sum(y[RO2_inds])
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
+    gas_jac!(jac_mtx,y,p,t)
+    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    C_g_i_t=y[include_inds]
+    Partition_jac!(jac_mtx,y,C_g_i_t,
+        config.num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        config.core_dissociation,y_core,core_mass_array,config.core_density_array,
+        config.NA,config.sigma,config.R_gas,config.temp)
+    nothing
+end
+
+function aerosol_jac_fine_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
+    evaluate_rates_fun=p["evaluate_rates!"]
+    config=p["config"]
+    time_of_day_seconds=config.start_time+t
+    RO2=sum(y[RO2_inds])
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
+    gas_jac!(jac_mtx,y,p,t)
+    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    C_g_i_t=y[include_inds]
+    Partition_jac_AD!(jac_mtx,y,C_g_i_t,
+        config.num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        config.core_dissociation,y_core,core_mass_array,config.core_density_array,
+        config.NA,config.sigma,config.R_gas,config.temp)
+    nothing
+end
+
+function aerosol_jac_coarse_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
+    evaluate_rates_fun=p["evaluate_rates!"]
+    config=p["config"]
+    time_of_day_seconds=config.start_time+t
+    RO2=sum(y[RO2_inds])
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
+    
+    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    
+    partition_dydt_fun=function (dy_dt,y)
+        C_g_i_t=y[include_inds]
+        Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
+        config.num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        config.core_dissociation,y_core,core_mass_array,config.core_density_array,
+        config.NA,config.sigma,config.R_gas,config.temp)
+    end
+    dy_dt=zeros(Real,length(y))
+    ForwardDiff.jacobian!(jac_mtx,partition_dydt_fun, dy_dt, y)
+    gas_jac!(jac_mtx,y,p,t)
+    nothing
+end
+
+function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
+    jacobian_from_sol!(p,t)#jacobian_from_sol!(p,t)
+    jac_mtx.=(-1).*transpose(p["jac_mtx"])#IMPORTANT jacobian should be the transpose of the original one 
+    # since dldt=g(t)-l*J, for ith element in l and jth element in dldt appears at ith line and jth col in the Jacobian matrix
+    nothing
+end
+
+function jacobian_from_sol!(p::Dict,t::Real)
+    sol = p["sol"]
+    y = sol(t)
+    jac_mtx = p["jac_mtx"]
+    fill!(jac_mtx,0.)
+    jac! = p["jacobian!"]
+    jac!(jac_mtx,y,p,t)
+    nothing
+end

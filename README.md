@@ -29,7 +29,6 @@ Compared to PyBox, more optimizations are (going to be) added:
 - [x] jacobian for gas kinetic (analytical)
 - [x] jacobian for partitioning process (fine grained AD)
 - [x] adjoint sensitivity analysis
-- [-] sparse auto-differentiation
 - [x] native ode solvers (TRBDF2)
 - [ ] forward sensitivity analysis
 - [x] parallel linear solver (for native ODE solver only)
