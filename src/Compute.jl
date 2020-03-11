@@ -169,21 +169,12 @@ function sensitivity_adjoint_jac!(jac_mtx,lambda,p,t)
 end
 
 function jacobian_from_sol!(p::Dict,t::Real)
-    sol=p["sol"]
-    y=sol(t)
-    jac_mtx=p["jac_mtx"]
+    sol = p["sol"]
+    y = sol(t)
+    jac_mtx = p["jac_mtx"]
     fill!(jac_mtx,0.)
-    diff=p["Diff_method"]
-    if diff=="finite"
-        jac_cache=p["jac_cache"]
-        FiniteDiff.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
-    elseif diff=="coarse_seeding"
-        aerosol_jac_seeding!(jac_mtx,y,p,t)
-    elseif diff=="fine_seeding"
-        aerosol_jac!(jac_mtx,y,p,t)
-    else
-        println("WARNING: can't recognize diff type: ",diff)
-    end
+    jac! = p["jacobian!"]
+    jac!(jac_mtx,y,p,t)
     nothing
 end
 
@@ -201,7 +192,7 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     nothing
 end
 
-function run_simulation_aerosol(config;use_jacobian::Bool)
+function run_simulation_aerosol(config)
     #read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond=prepare_aerosol(config)
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
@@ -211,15 +202,28 @@ function run_simulation_aerosol(config;use_jacobian::Bool)
     #param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
     param_dict["Simulation_type"]="aerosol"
-    y_init=zeros(Float64,num_reactants+num_reactants_condensed*config.num_bins)
+    len_y=num_reactants+num_reactants_condensed*config.num_bins
+    y_init=zeros(Float64,len_y)
     for (k,v) in config.reactants_initial_dict
         y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
     end
     y_init[num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]=y_cond[1:config.num_bins*num_reactants_condensed]
     print("Using solver: ");println(typeof(config.solver))
+    print("Using Jacobian: ");println(config.diff_method)
     println("Solving ODE")
-    if use_jacobian
-        odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac!)
+    if config.use_jacobian
+        if config.diff_method == "finite"
+            jac_cache = FiniteDiff.JacobianCache(zeros(Float64,len_y),zeros(Float64,len_y),Val{:forward},Float64,Val{true})
+            jac! = (jac_mtx,y,p,t)->FiniteDiff.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
+        elseif config.diff_method == "coarse_seeding"
+            jac! = aerosol_jac_seeding!
+        elseif config.diff_method == "fine_seeding"
+            jac! = aerosol_jac!
+        else
+            println("ERROR: can't recognize diff type: ",config.diff_method)
+            exit(-1)
+        end
+        odefun=ODEFunction(dydt_aerosol!; jac=jac!)
         prob = ODEProblem{true}(odefun,y_init,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=5
     else
@@ -259,7 +263,7 @@ function run_simulation_aerosol_adjoint(aerosolconfig,adjointconfig)
         sol=deserialize("../data/aerosol_sol.store")
     else
         println("No caching, start aerosol simulation")
-        sol,_,_,_,param_dict=run_simulation_aerosol(aerosolconfig,use_jacobian=true)
+        sol,_,_,_,param_dict=run_simulation_aerosol(aerosolconfig)
         println("Caching solution")
         serialize("../data/aerosol_sol.store",sol)
     end
@@ -277,13 +281,21 @@ function run_simulation_aerosol_adjoint(aerosolconfig,adjointconfig)
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     param_dict["Simulation_type"]="adjoint"
-    param_dict["Diff_method"]=adjointconfig.diff_method
-    if param_dict["Diff_method"] == "finite"
-        param_dict["jac_cache"]=FiniteDiff.JacobianCache(zeros(Float64,len_y),zeros(Float64,len_y),Val{:forward},Float64,Val{true})
+    if adjointconfig.diff_method == "finite"
+        jac_cache=FiniteDiff.JacobianCache(zeros(Float64,len_y),zeros(Float64,len_y),Val{:forward},Float64,Val{true})
+        param_dict["jacobian!"]=(jac_mtx,y,p,t)->FiniteDiff.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
+    elseif adjointconfig.diff_method == "coarse_seeding"
+        param_dict["jacobian!"]=aerosol_jac_seeding!
+    elseif adjointconfig.diff_method == "fine_seeding"
+        param_dict["jacobian!"]=aerosol_jac!
+    else
+        println("ERROR: can't recognize diff type: ",adjointconfig.diff_method)
+        exit(-1)
     end
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
     print("Using solver: ");println(typeof(adjointconfig.adjoint_solver))
+    print("Using Jacobian: ");println(adjointconfig.diff_method)
     println("Solving Adjoint Problem")
     lambda_sol=solve(prob_adj,adjointconfig.adjoint_solver,reltol=adjointconfig.reltol,abstol=adjointconfig.abstol,#Rodas5(autodiff=false)
                      tstops=aerosolconfig.simulation_time:-aerosolconfig.batch_step:0.,saveat=-aerosolconfig.batch_step,
@@ -326,7 +338,7 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
 
-function run_simulation_gas(config;use_jacobian::Bool=true)
+function run_simulation_gas(config)
     #read_configure!("Configure_gas.jl")
     param_dict,reactants2ind=prepare_gas(config)
     num_reactants=param_dict["num_reactants"]
@@ -334,12 +346,13 @@ function run_simulation_gas(config;use_jacobian::Bool=true)
     for (k,v) in config.reactants_initial_dict
         reactants_initial[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
     end
+    print("Using solver: ");println(typeof(config.solver))
     println("Solving ODE")
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=100
     param_dict["Simulation_type"]="gas"
     #odefun=ODEFunction(dydt!; jac=gas_jac!)
-    if use_jacobian
+    if config.use_jacobian
         odefun=ODEFunction(dydt!; jac=gas_jac!)
         prob = ODEProblem{true}(odefun,reactants_initial,config.tspan,param_dict)
         param_dict["ShowIterPeriod"]=5

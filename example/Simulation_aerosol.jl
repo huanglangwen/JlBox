@@ -42,18 +42,21 @@ function configure_aerosol()
     NA=6.0221409e+23 #Avogadros number
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
+    diff_method="fine_seeding"
+    solver=Sundials.CVODE_BDF()
     reltol=1e-8
     abstol=1.0e-6
     positiveness=false
+    use_jacobian=true
     JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
                            H2O,tspan,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,R_gas,
-                           NA,sigma,property_methods,Sundials.CVODE_BDF(),reltol,abstol,positiveness)
+                           NA,sigma,property_methods,diff_method,solver,reltol,abstol,positiveness,use_jacobian)
 end
 
 config=configure_aerosol()
-@time sol,reactants2ind,SOA_array,num_reactants,_=JlBox.run_simulation_aerosol(config,use_jacobian=true)
+@time sol,reactants2ind,SOA_array,num_reactants,_=JlBox.run_simulation_aerosol(config)
 #num_reactants=length(reactants2ind)
 sol_mtx=transpose(sol)
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
@@ -62,7 +65,7 @@ t_length=size(sol_mtx)[1]
 t_index=range(0,stop=config.simulation_time,length=t_length)
 df_SOA=DataFrames.DataFrame(Time=t_index,SOA=SOA_array)[:,[:Time,:SOA]]
 df=DataFrames.DataFrame(sol_mtx[1:end,1:num_reactants])
-DataFrames.names!(df,reactants)
+DataFrames.rename!(df,reactants)
 #CSV.write("/data/jlbox_results.csv",df)
 #CSV.write("/data/jlbox_SOA.csv",df_SOA)
 df_SOA

@@ -21,22 +21,23 @@ function configure_gas()
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
     reactants_initial_dict=Dict(["O3"=>18.0,"BUT1ENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE
     constantdict=Dict([(:temp,temp),(:H2O,H2O)])
-    solver=Sundials.CVODE_BDF()
+    solver=KenCarp4()#Sundials.CVODE_BDF()
     reltol=1e-6
     abstol=1.0e-3
     positiveness=true
+    use_jacobian=true
     JlBox.GasConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
-                       H2O,tspan,Cfactor,reactants_initial_dict,constantdict,solver,reltol,abstol,positiveness)
+                       H2O,tspan,Cfactor,reactants_initial_dict,constantdict,solver,reltol,abstol,positiveness,use_jacobian)
 end
 
 #Profile.init(n = 10^7, delay = 5.)
 config=configure_gas()
-sol,reactants2ind=JlBox.run_simulation_gas(config,use_jacobian=true)
+sol,reactants2ind=JlBox.run_simulation_gas(config)
 num_reactants=length(reactants2ind)
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
 reactants=[ind2reactants[ind] for ind in 1:num_reactants]
 df=DataFrames.DataFrame(transpose(sol))
-DataFrames.names!(df,[Symbol(reac) for reac in reactants])
+DataFrames.rename!(df,[Symbol(reac) for reac in reactants])
 #CSV.write("data/results_gas_jac.csv",df)
 df
 #@profile run_simulation()

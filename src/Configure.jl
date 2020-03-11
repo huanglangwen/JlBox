@@ -19,6 +19,7 @@ struct GasConfigure
     reltol::Real
     abstol::Real
     positiveness::Bool
+    use_jacobian::Bool
 end
 
 struct AerosolConfigure
@@ -58,10 +59,12 @@ struct AerosolConfigure
     NA#Avogadros number
     sigma# Assume surface tension of water (mN/m) ???
     property_methods::Dict
+    diff_method::String
     solver#stiff ODE solver like `CVODE_BDF()`
     reltol::Real
     abstol::Real
     positiveness::Bool
+    use_jacobian::Bool
 end
 
 struct AdjointConfigure

@@ -44,18 +44,20 @@ function configure_aerosol()
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
     reltol=1e-4
     abstol=1.0e-2
-    positiveness=true
+    diff_method="fine_seeding"
+    solver=TRBDF2()
+    positiveness=false
+    use_jacobian=true
     aerosolconfig=JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
                            H2O,tspan,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,R_gas,
-                           NA,sigma,property_methods,TRBDF2(),reltol,abstol,positiveness)
+                           NA,sigma,property_methods,diff_method,solver,reltol,abstol,positiveness,use_jacobian)
     use_cache=true
-    diff_method="fine_seeding"
     adjoint_solver=TRBDF2(autodiff=false)
     reltol=1e-8
     abstol=1e-6
-    adjointconfig=JlBox.AdjointConfigure(use_cache,diff_method,adjoint_solver)
+    adjointconfig=JlBox.AdjointConfigure(use_cache,diff_method,adjoint_solver,reltol,abstol)
     aerosolconfig,adjointconfig
 end
 
