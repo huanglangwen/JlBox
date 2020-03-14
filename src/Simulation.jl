@@ -35,6 +35,35 @@ function run_simulation_gas(config)
     return sol,reactants2ind
 end
 
+function run_simulation_gas_sparse(solver, config, jac_prototype, param_dict, reactants2ind)
+    num_reactants=param_dict["num_reactants"]
+    reactants_initial=zeros(Float64,num_reactants)
+    for (k,v) in config.reactants_initial_dict
+        reactants_initial[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
+    end
+    print("Using solver: ");println(typeof(solver))
+    @printf("Reltol: %.3e, Abstol: %.3e\n",config.reltol,config.abstol)
+    println("Solving ODE")
+    param_dict["Current_iter"]=0
+    param_dict["Simulation_type"]="gas"
+    param_dict["ShowIterPeriod"]=10
+    odefun=ODEFunction(dydt!; jac=gas_jac!, jac_prototype=jac_prototype)
+    #odefun=ODEFunction(dydt!; jac_prototype=DiffEqOperators.AnalyticalJacVecOperator(gas_jac_v!,reactants_initial,param_dict,0.0))
+    prob = ODEProblem{true}(odefun,reactants_initial,config.tspan,param_dict)
+    @time sol = solve(prob,solver,reltol=config.reltol,abstol=config.abstol,
+                tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
+                dt=1.0e-6, #Initial step-size
+                dtmax=100.0,
+                max_order = 5,
+                max_convergence_failures = 1000,
+                #callback=PositiveDomain(reactants_initial,abstol=1.0e-3)
+                callback=config.positiveness ? PositiveDomain(reactants_initial,abstol=1e2,scalefactor=0.9) : nothing
+                #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
+                #progress=true
+                )
+    return sol,reactants2ind
+end
+
 function select_jacobian(diff_method, len_y)
     if diff_method == "finite"
         jac_cache = FiniteDiff.JacobianCache(zeros(Float64,len_y),zeros(Float64,len_y),Val{:forward},Float64,Val{true})

@@ -2,10 +2,11 @@ using JlBox
 using DataFrames
 using OrdinaryDiffEq
 using Sundials
+using CuArrays
 #using CSV
 
 function configure_aerosol()
-    file="../data/MCM_APINENE.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
+    file="../data/MCM_BCARY.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
     temp=288.15 # Kelvin
     RH=0.5 # RH/100% [0 - 0.99]
     hour_of_day=12.0 # Define a start time  24 hr format
@@ -19,7 +20,7 @@ function configure_aerosol()
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     tspan=(0.,simulation_time)
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
-    reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
+    reactants_initial_dict=Dict(["O3"=>18.0,"BCARY"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
     constantdict=Dict([(:temp,temp)])
     num_bins=16
 
@@ -43,7 +44,7 @@ function configure_aerosol()
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
     diff_method="analytical"
-    solver=TRBDF2(autodiff=false)#Sundials.CVODE_BDF()
+    solver=TRBDF2(autodiff=false,linsolve=LinSolveGPUFactorize())#Sundials.CVODE_BDF()
     reltol=1e-4
     abstol=1.0e-2
     positiveness=false

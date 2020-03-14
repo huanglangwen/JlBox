@@ -12,6 +12,7 @@ using PyCall
 using LightXML
 using LinearAlgebra
 using DiffEqCallbacks
+using DiffEqOperators
 
 include("../deps/deps.jl")
 

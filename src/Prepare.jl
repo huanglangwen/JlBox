@@ -1,3 +1,23 @@
+function get_sparsity(param_dict,reactants2ind)
+    rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
+        [param_dict[ind] for ind in 
+            ["rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
+             "num_eqns","num_reactants"]
+        ]
+    config=param_dict["config"]
+    evaluate_rates_fun=param_dict["evaluate_rates!"]
+    time_of_day_seconds=config.start_time
+    RO2=1e5
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)# =>ratevalues
+    jac_prototype=zeros(num_reactants,num_reactants)
+    y_init=ones(num_reactants)
+    for (k,v) in config.reactants_initial_dict
+        y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
+    end
+    loss_gain_jac!(num_reactants,num_eqns,y_init,stoich_mtx,stoich_list,reactants_list,rate_values,jac_prototype)
+    sparse(jac_prototype)
+end
+
 function prepare_gas(config)
     println("Parsing Reactants")
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(config.file)
