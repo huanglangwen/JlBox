@@ -293,7 +293,7 @@ function aerosol_jac_fine_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Rea
     RO2=sum(y[RO2_inds])
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
     gas_jac!(jac_mtx,y,p,t)
-    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    include_inds,N_perbin=[p[i] for i in ["include_inds","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     C_g_i_t=y[include_inds]
@@ -314,7 +314,7 @@ function aerosol_jac_fine_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     RO2=sum(y[RO2_inds])
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
     gas_jac!(jac_mtx,y,p,t)
-    include_inds,dy_dt_gas_matrix,N_perbin=[p[i] for i in ["include_inds","dy_dt_gas_matrix","N_perbin"]]
+    include_inds,N_perbin=[p[i] for i in ["include_inds","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
     C_g_i_t=y[include_inds]

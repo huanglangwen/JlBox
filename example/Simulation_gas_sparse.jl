@@ -36,12 +36,12 @@ end
 
 config=configure_gas()
 param_dict,reactants2ind=JlBox.prepare_gas(config)
-jac_prototype=JlBox.get_sparsity(param_dict,reactants2ind)
+jac_prototype=JlBox.get_sparsity_gas(param_dict,reactants2ind)
 #pc = aspreconditioner(ruge_stuben(jac_prototype))
 pc = ilu(jac_prototype;τ=1e-6);
-#solver=TRBDF2(linsolve = LinSolveGMRES(Pl=pc))#TRBDF2(linsolve = DiffEqBase.PardisoFactorize())#, linsolve=LinSolveGMRES(Pl=pc)
-prec=(z,r,p,t,y,fy,gamma,delta,lr)->LinearAlgebra.ldiv!(z,pc,r)
-solver=Sundials.CVODE_BDF(linear_solver=:GMRES,prec=prec,prec_side=1,krylov_dim=100)#:FGMRES
+solver=TRBDF2()#linsolve = LinSolveGMRES(Pl=pc)#TRBDF2(linsolve = DiffEqBase.PardisoFactorize())#, linsolve=LinSolveGMRES(Pl=pc)
+#prec=(z,r,p,t,y,fy,gamma,delta,lr)->LinearAlgebra.ldiv!(z,pc,r)
+#solver=Sundials.CVODE_BDF(linear_solver=:GMRES,prec=prec,prec_side=1,krylov_dim=100)#:FGMRES
 sol,reactants2ind=JlBox.run_simulation_gas_sparse(solver,config,jac_prototype,param_dict,reactants2ind)
 num_reactants=length(reactants2ind)
 ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))

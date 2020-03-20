@@ -85,9 +85,7 @@ function run_simulation_aerosol(config)
     #read_configure!("Configure_aerosol.jl")
     param_dict,reactants2ind,y_cond=prepare_aerosol(config)
     num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
-    dy_dt_gas_matrix=zeros(Real,(num_reactants,config.num_bins))
     #dy_dt=zeros(Real,num_reactants+num_reactants_condensed*num_bins)
-    param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
     #param_dict["dydt"]=dy_dt
     param_dict["Current_iter"]=0
     param_dict["Simulation_type"]="aerosol"
@@ -110,6 +108,44 @@ function run_simulation_aerosol(config)
         param_dict["ShowIterPeriod"]=500
     end
     sol = solve(prob,config.solver,reltol=config.reltol,abstol=config.abstol,
+                tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
+                dt=1.0e-6, #Initial step-size
+                dtmax=100.0,
+                max_order = 5,
+                max_convergence_failures = 1000,
+                callback=config.positiveness ? PositiveDomain(y_init) : nothing
+                #isoutofdomain=(u,p,t) -> any(x -> x < 0, u)
+                )
+    sol_mtx=transpose(sol)
+    aerosol_mtx=sol_mtx[1:end,num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]
+    t_length=size(aerosol_mtx)[1]
+    mw_array=param_dict["y_mw"]
+    SOA_array=[sum((sum(reshape(aerosol_mtx[i,1:end],(num_reactants_condensed,config.num_bins))
+                               ,dims=2).*mw_array./config.NA)[1:end-1]#exclude H2O at the end
+                  ) for i in 1:t_length]*1E12
+
+    return sol,reactants2ind,SOA_array,num_reactants,param_dict
+end
+
+function run_simulation_aerosol_sparse(solver, config, jac_prototype, param_dict, reactants2ind, y_cond)
+    num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
+    #param_dict["dydt"]=dy_dt
+    param_dict["Current_iter"]=0
+    param_dict["Simulation_type"]="aerosol"
+    len_y=num_reactants+num_reactants_condensed*config.num_bins
+    y_init=zeros(Float64,len_y)
+    for (k,v) in config.reactants_initial_dict
+        y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
+    end
+    y_init[num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]=y_cond[1:config.num_bins*num_reactants_condensed]
+    print("Using solver: ");println(typeof(solver))
+    print("Using Jacobian: ");println(config.diff_method)
+    @printf("Reltol: %.3e, Abstol: %.3e\n",config.reltol,config.abstol)
+    println("Solving ODE")
+    odefun=ODEFunction(dydt_aerosol!; jac=select_jacobian(config.diff_method,len_y),jac_prototype=jac_prototype)
+    prob = ODEProblem{true}(odefun,y_init,config.tspan,param_dict)
+    param_dict["ShowIterPeriod"]=5
+    sol = solve(prob,solver,reltol=config.reltol,abstol=config.abstol,
                 tstops=0:config.batch_step:config.simulation_time,saveat=config.batch_step,# save_everystep=true,
                 dt=1.0e-6, #Initial step-size
                 dtmax=100.0,

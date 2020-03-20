@@ -10,6 +10,7 @@ macro partition_kernel()
         
         #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
         total_mass=sum(mass_array)
+        total_mass= total_mass > -1e-20 ? total_mass : core_mass_array[size_step]#fix negative size_array^3
         mass_fractions_array=mass_array./total_mass
 
         density=1.0/(sum(mass_fractions_array./density_array))

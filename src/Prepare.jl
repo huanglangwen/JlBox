@@ -1,4 +1,4 @@
-function get_sparsity(param_dict,reactants2ind)
+function get_sparsity_gas(param_dict,reactants2ind)
     rate_values,J,stoich_mtx,stoich_list,reactants_list,RO2_inds,num_eqns,num_reactants=
         [param_dict[ind] for ind in 
             ["rate_values","J","stoich_mtx","stoich_list","reactants_list","RO2_inds",
@@ -10,11 +10,25 @@ function get_sparsity(param_dict,reactants2ind)
     RO2=1e5
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)# =>ratevalues
     jac_prototype=zeros(num_reactants,num_reactants)
-    y_init=ones(num_reactants)
+    y_init=ones(Float64,num_reactants)*1.5
     for (k,v) in config.reactants_initial_dict
         y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
     end
     loss_gain_jac!(num_reactants,num_eqns,y_init,stoich_mtx,stoich_list,reactants_list,rate_values,jac_prototype)
+    sparse(jac_prototype)
+end
+
+function get_sparsity_aerosol(param_dict,reactants2ind,y_cond)
+    config,num_reactants,num_reactants_condensed=[param_dict[i] for i in ["config","num_reactants","num_reactants_condensed"]]
+    len_y=num_reactants+num_reactants_condensed*config.num_bins
+    y_init=ones(Float64,len_y)*1.5
+    for (k,v) in config.reactants_initial_dict
+        y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
+    end
+    y_init[num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]=y_cond[1:config.num_bins*num_reactants_condensed]
+    jac! = select_jacobian(config.diff_method,len_y)
+    jac_prototype=zeros(len_y,len_y)
+    jac!(jac_prototype,y_init,param_dict,0.0)
     sparse(jac_prototype)
 end
 
@@ -99,5 +113,7 @@ function prepare_aerosol(config)
         water_moles=(y_core[step]*config.core_dissociation)*(config.RH/(1.0E0-config.RH))
         y_cond[step*num_reactants_condensed]=water_moles
     end
+    dy_dt_gas_matrix=zeros(Real,(num_reactants,config.num_bins))
+    param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
     return param_dict,reactants2ind,y_cond
 end
