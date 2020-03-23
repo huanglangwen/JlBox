@@ -305,6 +305,27 @@ function aerosol_jac_fine_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Rea
     nothing
 end
 
+function aerosol_jac_coarse_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
+    evaluate_rates_fun=p["evaluate_rates!"]
+    config=p["config"]
+    time_of_day_seconds=config.start_time+t
+    RO2=sum(y[RO2_inds])
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
+    gas_jac!(jac_mtx,y,p,t)
+    include_inds,N_perbin=[p[i] for i in ["include_inds","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    C_g_i_t=y[include_inds]
+    Partition_jac_simplified!(jac_mtx,y,C_g_i_t,
+        config.num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        config.core_dissociation,y_core,core_mass_array,config.core_density_array,
+        config.NA,config.sigma,config.R_gas,config.temp)
+    nothing
+end
+
 function aerosol_jac_fine_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]

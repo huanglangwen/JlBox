@@ -10,12 +10,14 @@ macro partition_kernel()
         
         #aw_array[size_step]=temp_array[num_reactants_condensed]/total_moles
         total_mass=sum(mass_array)
-        total_mass= total_mass > -1e-20 ? total_mass : core_mass_array[size_step]#fix negative size_array^3
+        total_mass= total_mass > 0 ? total_mass : core_mass_array[size_step]#fix negative size_array^3
         mass_fractions_array=mass_array./total_mass
 
-        density=1.0/(sum(mass_fractions_array./density_array))
+        #density=1.0/(sum(mass_fractions_array./density_array))
+        invdensity=sum(mass_fractions_array./density_array)
+        invdensity= invdensity > 0 ? invdensity : 1/core_density_array[size_step]
         
-        size_array[size_step]=((3.0*((total_mass*1.0E3)/(N_perbin[size_step]*1.0E6)))/(4.0*pi*density))^(1.0/3.0)
+        size_array[size_step]=((3.0*((total_mass*1.0E3)/(N_perbin[size_step]*1.0E6)))*invdensity/(4.0*pi))^(1.0/3.0)
 
         Kn=gamma_gas./size_array[size_step]
         Inverse_Kn=1.0./Kn
@@ -24,7 +26,7 @@ macro partition_kernel()
         Correction_part3=1.0.+(Correction_part1.+Correction_part2).*Kn
         Correction=1.0./Correction_part3
 
-        kelvin_factor=exp.((4.0*mw_array*1.0E-3*sigma)/(R_gas*Model_temp*size_array[size_step]*2.0*density))
+        kelvin_factor=exp.((4.0*mw_array*1.0E-3*sigma*invdensity)/(R_gas*Model_temp*size_array[size_step]*2.0))
         
         Pressure_eq=kelvin_factor.*y_mole_fractions.*Psat*101325.0
 

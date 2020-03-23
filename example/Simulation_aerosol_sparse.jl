@@ -4,6 +4,7 @@ using OrdinaryDiffEq
 using Sundials
 using IncompleteLU
 using LinearAlgebra
+using SparseArrays
 #using CuArrays
 #using CSV
 
@@ -47,8 +48,8 @@ function configure_aerosol()
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
     diff_method="analytical"
     solver=nothing
-    reltol=1e-4
-    abstol=1.0e-2
+    reltol=1e-6
+    abstol=1.0e-4
     positiveness=false
     use_jacobian=true
     JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
@@ -60,11 +61,34 @@ end
 
 config=configure_aerosol()
 param_dict,reactants2ind,y_cond=JlBox.prepare_aerosol(config)
-jac_prototype=JlBox.get_sparsity_aerosol(param_dict,reactants2ind,y_cond)
-pc = ilu(jac_prototype;τ=1e-6);
+num_reactants,num_reactants_condensed=[param_dict[i] for i in ["num_reactants","num_reactants_condensed"]]
+len_y=num_reactants+num_reactants_condensed*config.num_bins
+#print("Retrieve sparsity pattern ...")
+#jac_prototype=JlBox.get_sparsity_aerosol(param_dict,reactants2ind,y_cond)
+#print("done.\nDoing ILU...")
+#pc = ilu(jac_prototype;τ=1e-6);
+println("done.")
+#prec=(z,r,p,t,y,fy,gamma,delta,lr)->LinearAlgebra.ldiv!(z,pc,r)
+jac_prototype=spzeros(len_y,len_y)
+param_dict["sparsity"]=jac_prototype
+param_dict["preconditioner"]=nothing#lu(jac_prototype)#pc
 #solver=TRBDF2(autodiff=false)#linsolve=LinSolveGPUFactorize()#Sundials.CVODE_BDF()
-prec=(z,r,p,t,y,fy,gamma,delta,lr)->LinearAlgebra.ldiv!(z,pc,r)
-solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,prec_side=1,krylov_dim=100)#:FGMRES
+prec=(z,r,p,t,y,fy,gamma,delta,lr)->LinearAlgebra.ldiv!(z,p["preconditioner"],r)
+psetup=function (p,t,u,du,jok,jcurPtr,gamma)
+    if p["Current_iter"]<2000
+        JlBox.aerosol_jac_fine_seeding!(p["sparsity"],u,p,t)
+        p["preconditioner"]=ilu(p["sparsity"];τ=1e-5)
+        println("PSETUP CALLED AS INIT")
+    elseif p["Current_iter"]%5000<=100
+        JlBox.aerosol_jac_coarse_analytical!(p["sparsity"],u,p,t)
+        p["preconditioner"]=ilu(p["sparsity"];τ=1e-5)
+        println("PSETUP CALLED")
+    else
+        println("PSETUP SKIPPED")
+    end
+    jcurPtr[]=false
+end
+solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=psetup,prec_side=1,krylov_dim=100)#:FGMRES
 @time sol,reactants2ind,SOA_array,num_reactants,_=JlBox.run_simulation_aerosol_sparse(solver,config,jac_prototype,param_dict,reactants2ind,y_cond)
 #num_reactants=length(reactants2ind)
 sol_mtx=transpose(sol)

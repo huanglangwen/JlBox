@@ -5,7 +5,7 @@ using Sundials
 #using CSV
 
 function configure_gas()
-    file="../data/MCM_mixed_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test.eqn.txt
+    file="../data/MCM_ISOPRENE.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test.eqn.txt
     temp=298.15 # Kelvin
     RH=0.5 # RH/100% [0 - 0.99]
     hour_of_day=12.0 # Define a start time  24 hr format
@@ -19,9 +19,9 @@ function configure_gas()
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     tspan=(0,simulation_time)
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
-    reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE
+    reactants_initial_dict=Dict(["O3"=>18.0,"C5H8"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE
     constantdict=Dict([(:temp,temp),(:H2O,H2O)])
-    solver=KenCarp4()#TRBDF2(linsolve=LinSolveGPUFactorize())
+    solver=TRBDF2()#TRBDF2(linsolve=LinSolveGPUFactorize())
     #solver=Sundials.CVODE_BDF()#:FGMRES
     reltol=1e-6
     abstol=1.0e-4
