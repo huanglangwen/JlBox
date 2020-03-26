@@ -23,7 +23,7 @@ using Conda
     Conda.add("openbabel",channel="conda-forge")
 #end
 root = Conda.ROOTENV
-condaPath = Sys.iswindows() ? joinpath(root, "Scripts", "conda.exe") : joinpath(root, "Scripts", "conda")
+condaPath = Sys.iswindows() ? joinpath(root, "Scripts", "conda.exe") : joinpath(root, "bin", "conda")
 run(`$(condaPath) install Werkzeug=0.16.0`)
 Conda.add("flask")
 Conda.add("flask-wtf")
