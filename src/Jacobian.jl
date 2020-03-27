@@ -128,6 +128,7 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
             Dmass_array[1:num_reactants_condensed,:]=(mw_array./NA).*Dtemp_array
             Dtotal_mass=sum(Dmass_array,dims=1)#1*num_condensed
             Dmass_fractions_array=Dmass_array./total_mass-(mass_array./(total_mass^2)).*Dtotal_mass#(num_condensed+1)*num_condensed
+            density=1/invdensity
             Ddensity=-(density^2).*sum(Dmass_fractions_array./density_array,dims=1)#1*num_condensed
             Dsize=1/3*size_array[size_step]^(-2)*3.0*1E3/(N_perbin[size_step]*1E6*4*pi)*(Dtotal_mass./density.-total_mass/(density^2).*Ddensity)#1*num_condensed
             DKn=-gamma_gas./(size_array[size_step]^2).*Dsize#num_condensed*num_condensed
