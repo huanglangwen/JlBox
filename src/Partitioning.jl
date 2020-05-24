@@ -43,7 +43,7 @@ function Partition!(y::Array{<:Real,1},dy_dt::Array{<:Real,1},dy_dt_gas_matrix::
                     num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
                     mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{<:Real,1},
                     core_diss,y_core::Array{<:Real,1},core_mass_array::Array{<:Real,1},core_density_array::Array{<:Real,1},
-                    NA,sigma,R_gas,Model_temp)
+                    sigma,Model_temp)
     size_array=zeros(eltype(y),num_bins)
     total_SOA_mass_array=zeros(eltype(y),num_bins)
     mass_array=zeros(eltype(y),num_reactants_condensed+1)

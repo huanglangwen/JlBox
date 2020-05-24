@@ -65,7 +65,7 @@ function dydt!(dydt,reactants::Array{<:Real,1},p::Dict,t::Real)
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)# =>ratevalues
     loss_gain!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,dydt)
     #loss_gain_static!(num_reactants,num_eqns,reactants,rate_values,rate_prods,dy)
-    if p["Simulation_type"]=="gas"
+    if config isa GasConfig
         p["Current_iter"]+=1
         citer=p["Current_iter"]
         if citer%(p["ShowIterPeriod"])==0
@@ -88,8 +88,8 @@ function dydt_aerosol!(dy_dt,y::Array{<:Real,1},p::Dict,t::Real)
         config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         config.core_dissociation,y_core,core_mass_array,config.core_density_array,
-        config.NA,config.sigma,config.R_gas,config.temp)
-    if p["Simulation_type"]=="aerosol"
+        config.sigma,config.temp)
+    if config isa AerosolConfig
         p["Current_iter"]+=1
         citer=p["Current_iter"]
         if citer%(p["ShowIterPeriod"])==0

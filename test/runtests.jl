@@ -1,8 +1,9 @@
 using Test, JlBox, DataFrames, Sundials
 using OrdinaryDiffEq
 using PyCall
+using LinearAlgebra
+using IncompleteLU
 
-@testset "Gas Phase" begin 
 function configure_gas()
     file=joinpath(@__DIR__,"../data/MCM_APINENE.eqn.txt")#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test.eqn.txt
     temp=298.15 # Kelvin
@@ -16,26 +17,57 @@ function configure_gas()
     Pw=RH*Psat
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
-    tspan=(0,simulation_time)
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
     reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE
     constantdict=Dict([(:temp,temp),(:H2O,H2O)])
+    config=JlBox.GasConfig(file,temp,RH,start_time,simulation_time,batch_step,
+                       H2O,Cfactor,reactants_initial_dict,constantdict)
+    config
+end
+
+function configure_gas_solver_dense()
     solver=Sundials.CVODE_BDF()
+    sparse=false
     reltol=1e-6
     abstol=1.0e-3
+    dtinit=1e-6
+    dtmax=100.0
     positiveness=false
-    use_jacobian=true
-    JlBox.GasConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
-                       H2O,tspan,Cfactor,reactants_initial_dict,constantdict,solver,reltol,abstol,positiveness,use_jacobian)
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
+    solverconfig
 end
-config=configure_gas()
-sol,reactants2ind=JlBox.run_simulation_gas(config)
-num_reactants=length(reactants2ind)
-ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
-reactants=[ind2reactants[ind] for ind in 1:num_reactants]
-df=DataFrames.DataFrame(transpose(sol))
-@test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-2
-@test df[end,1] ≈ 4.101378622128155e11 rtol=1e-4
+
+function configure_gas_solver_sparse()
+    prec = JlBox.default_prec()
+    psetup = JlBox.default_psetup("gas", 20)
+    ndim=100
+    solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=psetup,prec_side=2,krylov_dim=ndim)
+    sparse=true
+    reltol=1e-6
+    abstol=1.0e-3
+    dtinit=1e-6
+    dtmax=100.0
+    positiveness=false
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
+    solverconfig
+end
+
+@testset "Gas Phase Dense" begin 
+    config = configure_gas()
+    solverconfig = configure_gas_solver_dense()
+    sol, reactants2ind, _ = JlBox.run_simulation(config, solverconfig)
+    df = JlBox.postprocess_gas(sol, reactants2ind)
+    @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-2
+    @test df[end,1] ≈ 4.101378622128155e11 rtol=1e-4
+end
+
+@testset "Gas Phase Sparse" begin 
+    config = configure_gas()
+    solverconfig = configure_gas_solver_sparse()
+    sol, reactants2ind, _ = JlBox.run_simulation(config, solverconfig)
+    df = JlBox.postprocess_gas(sol, reactants2ind)
+    @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-2
+    @test df[end,1] ≈ 4.101378622128155e11 rtol=1e-4
 end
 
 function configure_aerosol()
@@ -51,7 +83,6 @@ function configure_aerosol()
     Pw=RH*Psat_w
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
-    tspan=(0.,simulation_time)
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
     reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
     constantdict=Dict([(:temp,temp)])
@@ -72,34 +103,60 @@ function configure_aerosol()
     core_dissociation=3.0 #Define this according to choice of core type. Please note this value might change
 
     vp_cutoff=-6.0
-    R_gas=8.3144598 #Ideal gas constant [kg m2 s-2 K-1 mol-1]
-    NA=6.0221409e+23 #Avogadros number
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
     diff_method="fine_seeding"
-    solver=TRBDF2()
-    reltol=1e-4
-    abstol=1.0e-2
-    positiveness=false
-    use_jacobian=true
-    JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
-                           H2O,tspan,Cfactor,reactants_initial_dict,constantdict,num_bins,
+    config=JlBox.AerosolConfig(file,temp,RH,start_time,simulation_time,batch_step,
+                           H2O,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
-                           core_density_array,core_mw,core_dissociation,vp_cutoff,R_gas,
-                           NA,sigma,property_methods,diff_method,solver,reltol,abstol,positiveness,use_jacobian)
+                           core_density_array,core_mw,core_dissociation,vp_cutoff,
+                           sigma,property_methods,diff_method)
+    config
 end
 
-@testset "Mixed Phase" begin
-config=configure_aerosol()
-@time sol,reactants2ind,SOA_array,num_reactants,_=JlBox.run_simulation_aerosol(config)
-sol_mtx=transpose(sol)
-ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
-reactants=[Symbol(ind2reactants[ind]) for ind in 1:num_reactants]
-t_length=size(sol_mtx)[1]
-t_index=range(0,stop=config.simulation_time,length=t_length)
-df=DataFrames.DataFrame(sol_mtx[1:end,1:num_reactants])
-df_SOA=DataFrames.DataFrame(Time=t_index,SOA=SOA_array)[:,[:Time,:SOA]]
-DataFrames.rename!(df,reactants)
-@test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-6
-@test df_SOA[13,:SOA] ≈ 9.165607888151833 rtol=1e-4
+function configure_aerosol_solver_dense()
+    solver=TRBDF2()
+    sparse=false
+    reltol=1e-4
+    abstol=1.0e-2
+    dtinit=1e-6
+    dtmax=100.0
+    positiveness=false
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
+    solverconfig
+end
+
+function configure_aerosol_solver_sparse()
+    prec = JlBox.default_prec()
+    psetup = JlBox.default_psetup("fine_seeding","fine_analytical", 20)
+    ndim=500
+    solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=psetup,prec_side=2,krylov_dim=ndim)
+    sparse=true
+    reltol=1e-6
+    abstol=1.0e-3
+    dtinit=1e-6
+    dtmax=100.0
+    positiveness=false
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
+    solverconfig
+end
+
+@testset "Mixed Phase Dense" begin
+    config = configure_aerosol()
+    solverconfig = configure_aerosol_solver_dense()
+    @time sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
+    df = JlBox.postprocess_gas(sol, reactants2ind)
+    df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config.simulation_time)
+    @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-6
+    @test df_SOA[13,:SOA] ≈ 9.165607888151833 rtol=1e-4
+end
+
+@testset "Mixed Phase Sparse" begin
+    config = configure_aerosol()
+    solverconfig = configure_aerosol_solver_sparse()
+    @time sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
+    df = JlBox.postprocess_gas(sol, reactants2ind)
+    df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config.simulation_time)
+    @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-6
+    @test df_SOA[13,:SOA] ≈ 9.165607888151833 rtol=1e-4
 end

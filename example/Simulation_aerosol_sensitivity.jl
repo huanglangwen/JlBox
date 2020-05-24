@@ -17,7 +17,6 @@ function configure_aerosol()
     Pw=RH*Psat_w
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
-    tspan=(0.,simulation_time)
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
     reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
     constantdict=Dict([(:temp,temp)])
@@ -38,33 +37,34 @@ function configure_aerosol()
     core_dissociation=3.0 #Define this according to choice of core type. Please note this value might change
 
     vp_cutoff=-6.0
-    R_gas=8.3144598 #Ideal gas constant [kg m2 s-2 K-1 mol-1]
-    NA=6.0221409e+23 #Avogadros number
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
+    diff_method="fine_seeding"
+    aerosolconfig=JlBox.AerosolConfig(file,temp,RH,start_time,simulation_time,batch_step,
+                           H2O,Cfactor,reactants_initial_dict,constantdict,num_bins,
+                           total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
+                           core_density_array,core_mw,core_dissociation,vp_cutoff,
+                           sigma,property_methods,diff_method)
+    solver=TRBDF2(autodiff=false)
     reltol=1e-4
     abstol=1.0e-2
-    diff_method="fine_seeding"
-    solver=TRBDF2()
+    sparse=false
+    dtinit=1e-6
+    dtmax=100.0
     positiveness=false
-    use_jacobian=true
-    aerosolconfig=JlBox.AerosolConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
-                           H2O,tspan,Cfactor,reactants_initial_dict,constantdict,num_bins,
-                           total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
-                           core_density_array,core_mw,core_dissociation,vp_cutoff,R_gas,
-                           NA,sigma,property_methods,diff_method,solver,reltol,abstol,positiveness,use_jacobian)
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
     use_cache=true
     adjoint_solver=TRBDF2(autodiff=false)
     reltol=1e-8
     abstol=1e-6
-    adjointconfig=JlBox.AdjointConfigure(use_cache,diff_method,adjoint_solver,reltol,abstol)
-    aerosolconfig,adjointconfig
+    adjointconfig=JlBox.AdjointConfig(use_cache,diff_method,adjoint_solver,reltol,abstol)
+    aerosolconfig,solverconfig,adjointconfig
 end
 
-aerosolconfig,adjointconfig=configure_aerosol()
-@time dSOA_mass_drate,dSOA_mass_percentk=JlBox.run_simulation_aerosol_adjoint(aerosolconfig,adjointconfig)
-df=DataFrames.DataFrame(dSOA_mass_drate)
-df2=DataFrames.DataFrame(dSOA_mass_percentk)
+aerosolconfig,solverconfig,adjointconfig=configure_aerosol()
+@time dSOA_mass_drate,dSOA_mass_percentk=JlBox.run_simulation_aerosol_adjoint(aerosolconfig,solverconfig,adjointconfig)
+df=DataFrames.DataFrame(transpose(dSOA_mass_drate))
+df2=DataFrames.DataFrame(transpose(dSOA_mass_percentk))
 #CSV.write("/data/jlbox_sensitivity_dSOAdrate_results.csv",df)
 #CSV.write("/data/jlbox_sensitivity_dSOApercentk_results.csv",df2)
 df2

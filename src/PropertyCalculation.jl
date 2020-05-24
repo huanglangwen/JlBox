@@ -96,10 +96,10 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},
     Delta_H=zeros(Float64,num_species)#Ignored
     Latent_heat_gas=zeros(Float64,num_species)#Ignored
 
-    println("Reading SMILES definitions")
+    @debug "Reading SMILES definitions"
     species2SMILESdict=readSMILESdict()
 
-    println("Calculating component properties using UManSysProp")
+    @debug "Calculating component properties using UManSysProp"
     for species_ind in 1:num_species
         species_name=species_names[species_ind]
         if haskey(species2SMILESdict,species_name)
@@ -129,7 +129,7 @@ function Pure_component1(num_species::Integer,species_names::Array{String,1},
     )
 end
 
-function Pure_component2(num_species_condensed::Integer,y_mw::Array{Float64,1},R_gas::Real,temperature::Real)::Dict{String,Array{Real,1}}
+function Pure_component2(num_species_condensed::Integer,y_mw::Array{Float64,1},temperature::Real)::Dict{String,Array{Real,1}}
     alpha_d_org=zeros(Float64,num_species_condensed).+0.1
     DStar_org=1.9E0*(y_mw.^(-2.0E0/3.0E0))
     mean_them_vel=sqrt.((8.0E0*R_gas*temperature)./(pi*y_mw*1.0E-3))

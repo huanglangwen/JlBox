@@ -1,3 +1,24 @@
+function select_jacobian(diff_method, len_y)
+    if diff_method == "finite"
+        jac_cache = FiniteDiff.JacobianCache(zeros(Float64,len_y),zeros(Float64,len_y),Val{:forward},Float64,Val{true})
+        jac! = (jac_mtx,y,p,t)->FiniteDiff.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
+    elseif diff_method == "coarse_seeding"
+        jac! = aerosol_jac_coarse_seeding!
+    elseif diff_method == "fine_seeding"
+        jac! = aerosol_jac_fine_seeding!
+    elseif diff_method == "fine_analytical"
+        jac! = aerosol_jac_fine_analytical!
+    elseif diff_method == "coarse_analytical"
+        jac! = aerosol_jac_coarse_analytical!
+    elseif diff_method == "gas"
+        jac! = gas_jac!
+    else
+        println("ERROR: can't recognize diff type: ",diff_method)
+        exit(-1)
+    end
+    jac!
+end
+
 function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
                        reactants::Array{<:Real,1},#num_reactants
                        stoich_mtx::SparseMatrixCSC{Float64,Int64},#num_reactants*num_eqns
@@ -85,7 +106,7 @@ function Partition_jac!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
                         num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
                         mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{Float64,1},
                         core_diss::Real,y_core::Array{Float64,1},core_mass_array::Array{Float64,1},core_density_array::Array{Float64,1},
-                        NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
+                        sigma::Real,Model_temp::Real)
     #y_jac: Jacobian matrix (num_output*num_input) num_output==num_input==num_reactants+num_bins*num_reactants_condensed
     size_array=zeros(Float64,num_bins)
     #total_SOA_mass_array=zeros(Float64,num_bins)
@@ -160,7 +181,7 @@ function Partition_jac_simplified!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Floa
                         num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
                         mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{Float64,1},
                         core_diss::Real,y_core::Array{Float64,1},core_mass_array::Array{Float64,1},core_density_array::Array{Float64,1},
-                        NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
+                        sigma::Real,Model_temp::Real)
     #y_jac: Jacobian matrix (num_output*num_input) num_output==num_input==num_reactants+num_bins*num_reactants_condensed
     size_array=zeros(Float64,num_bins)
     #total_SOA_mass_array=zeros(Float64,num_bins)
@@ -236,7 +257,7 @@ function Partition_jac_AD!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
                         num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
                         mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{Float64,1},
                         core_diss::Real,y_core::Array{Float64,1},core_mass_array::Array{Float64,1},core_density_array::Array{Float64,1},
-                        NA::Real,sigma::Real,R_gas::Real,Model_temp::Real)
+                        sigma::Real,Model_temp::Real)
     #y_jac: Jacobian matrix (num_output*num_input) num_output==num_input==num_reactants+num_bins*num_reactants_condensed
     size_array=zeros(Real,num_bins)
     #total_SOA_mass_array=zeros(Float64,num_bins)
@@ -302,7 +323,7 @@ function aerosol_jac_fine_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Rea
         config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         config.core_dissociation,y_core,core_mass_array,config.core_density_array,
-        config.NA,config.sigma,config.R_gas,config.temp)
+        config.sigma,config.temp)
     nothing
 end
 
@@ -323,7 +344,7 @@ function aerosol_jac_coarse_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::R
         config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         config.core_dissociation,y_core,core_mass_array,config.core_density_array,
-        config.NA,config.sigma,config.R_gas,config.temp)
+        config.sigma,config.temp)
     nothing
 end
 
@@ -344,7 +365,7 @@ function aerosol_jac_fine_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
         config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         config.core_dissociation,y_core,core_mass_array,config.core_density_array,
-        config.NA,config.sigma,config.R_gas,config.temp)
+        config.sigma,config.temp)
     nothing
 end
 
@@ -367,7 +388,7 @@ function aerosol_jac_coarse_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real
         config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         config.core_dissociation,y_core,core_mass_array,config.core_density_array,
-        config.NA,config.sigma,config.R_gas,config.temp)
+        config.sigma,config.temp)
     end
     dy_dt=zeros(Real,length(y))
     ForwardDiff.jacobian!(jac_mtx,partition_dydt_fun, dy_dt, y)

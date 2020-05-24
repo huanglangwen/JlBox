@@ -1,13 +1,9 @@
 using JlBox
-using DataFrames
 using OrdinaryDiffEq
 using Sundials
-using IncompleteLU
 using LinearAlgebra
-#using AlgebraicMultigrid
 #using DiffEqBase
 #using Pardiso
-#using CSV
 function configure_gas()
     file="../data/MCM_mixed_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test.eqn.txt
     temp=298.15 # Kelvin
@@ -21,33 +17,33 @@ function configure_gas()
     Pw=RH*Psat
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
-    tspan=(0,simulation_time)
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
     reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE
     constantdict=Dict([(:temp,temp),(:H2O,H2O)])
-    solver=nothing
-    reltol=1e-6
-    abstol=1.0e-4
-    positiveness=false
-    use_jacobian=true
-    JlBox.GasConfigure(file,temp,RH,hour_of_day,start_time,simulation_time,batch_step,
-                       H2O,tspan,Cfactor,reactants_initial_dict,constantdict,solver,reltol,abstol,positiveness,use_jacobian)
+    config=JlBox.GasConfig(file,temp,RH,start_time,simulation_time,batch_step,
+                       H2O,Cfactor,reactants_initial_dict,constantdict)
+    config
 end
 
-config=configure_gas()
-param_dict,reactants2ind=JlBox.prepare_gas(config)
-jac_prototype=JlBox.get_sparsity_gas(param_dict,reactants2ind)
-#pc = aspreconditioner(ruge_stuben(jac_prototype))
-pc = ilu(jac_prototype;τ=1e-6);
-solver=TRBDF2()#linsolve = LinSolveGMRES(Pl=pc)#TRBDF2(linsolve = DiffEqBase.PardisoFactorize())#, linsolve=LinSolveGMRES(Pl=pc)
-#prec=(z,r,p,t,y,fy,gamma,delta,lr)->LinearAlgebra.ldiv!(z,pc,r)
-#solver=Sundials.CVODE_BDF(linear_solver=:GMRES,prec=prec,prec_side=1,krylov_dim=100)#:FGMRES
-sol,reactants2ind=JlBox.run_simulation_gas_sparse(solver,config,jac_prototype,param_dict,reactants2ind)
-num_reactants=length(reactants2ind)
-ind2reactants=Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
-reactants=[ind2reactants[ind] for ind in 1:num_reactants]
-df=DataFrames.DataFrame(transpose(sol))
-DataFrames.rename!(df,[Symbol(reac) for reac in reactants])
+function configure_gas_solver_sparse()
+    prec = JlBox.default_prec()
+    psetup = JlBox.default_psetup("gas", 20)
+    ndim=1000
+    solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=psetup,prec_side=2,krylov_dim=ndim)
+    sparse=true
+    reltol=1e-6
+    abstol=1.0e-3
+    dtinit=1e-6
+    dtmax=100.0
+    positiveness=false
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
+    solverconfig
+end
+
+config = configure_gas()
+solverconfig = configure_gas_solver_sparse()
+sol, reactants2ind, _ = JlBox.run_simulation(config, solverconfig)
+df = JlBox.postprocess_gas(sol, reactants2ind)
 #CSV.write("data/results_gas_jac.csv",df)
 df
 #@profile run_simulation()

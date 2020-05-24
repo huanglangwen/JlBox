@@ -32,24 +32,22 @@ function get_sparsity_aerosol(param_dict,reactants2ind,y_cond)
     sparse(jac_prototype)
 end
 
-function prepare_gas(config)
-    println("Parsing Reactants")
+function prepare_gas(config::JlBoxConfig)
+    @debug "Parsing Reactants"
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(config.file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
     stoich_list=mk_reactants_list(num_reactants,num_eqns,stoich_mtx)
     @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
 
-    println("Generating evaluate_rates()")
+    @debug "Generating evaluate_rates()"
     evaluate_rates_expr=gen_evaluate_rates(config.file)
-    println("Done Generation")
+    @debug "Done Generation"
     rate_values=zeros(Real,num_eqns)
-    #rate_prods=zeros(Float64,num_eqns)
     J=zeros(Real,62)
-    #dydt=zeros(Float64,num_reactants)
-    println("Performing constant folding")
+    @debug "Performing constant folding"
     constant_folding!(evaluate_rates_expr,config.constantdict,rate_values);
     extract_constants!(evaluate_rates_expr);
-    println("Evaluating evaluate_rates&loss_gain codes")
+    @debug "Evaluating evaluate_rates&loss_gain codes"
     eval(evaluate_rates_expr)
     param_dict=Dict("rate_values"=>rate_values,"J"=>J,"stoich_mtx"=>stoich_mtx,#"dydt"=>dydt,
                     "stoich_list"=>stoich_list,"reactants_list"=>reactants_list,"RO2_inds"=>RO2_inds,
@@ -58,16 +56,15 @@ function prepare_gas(config)
     return param_dict,reactants2ind
 end
 
-function prepare_aerosol(config)
-    param_dict,reactants2ind=prepare_gas(config)
+function prepare_aerosol(config::JlBoxConfig,param_dict::Dict,reactants2ind)
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
 
-    println("Calculating Partitioning Properties: Part1")
+    @debug "Calculating Partitioning Properties: Part1"
     pc1_dict=Pure_component1(num_reactants,species_names,config.vp_cutoff,config.temp,config.property_methods)
     
-    println("Adding H2O")
+    @debug "Adding H2O"
     num_reactants+=1
     param_dict["num_reactants"]=num_reactants#not pc1_dict
     push!(pc1_dict["include_inds"],num_reactants)
@@ -85,28 +82,28 @@ function prepare_aerosol(config)
     Lv_water_vapour=2.5e3 # Latent heat of vapourisation of water [J/g] 
     push!(pc1_dict["Latent_heat_gas"],Lv_water_vapour)#Water vapour, taken from Paul Connolly's parcel model ACPIM
 
-    println("Calculating Partitioning Properties: Part2")
+    @debug "Calculating Partitioning Properties: Part2"
     y_mw=pc1_dict["y_mw"]
-    pc2_dict=Pure_component2(num_reactants_condensed,y_mw,config.R_gas,config.temp)
+    pc2_dict=Pure_component2(num_reactants_condensed,y_mw,config.temp)
     merge!(param_dict,pc1_dict,pc2_dict)
     param_dict["num_reactants_condensed"]=num_reactants_condensed
-    println("Generating initial size distribution")
+    @debug "Generating initial size distribution"
     N_perbin,xs=lognormal(config.num_bins,config.total_conc,config.meansize,config.size_std,config.lowersize,config.uppersize)
     param_dict["N_perbin"]=N_perbin
     
-    println("Calculating Dry Core Properties")
+    @debug "Calculating Dry Core Properties"
     y_core=(4.0/3.0)*pi*((xs*1.0e-6).^3.0) #4/3*pi*radius^3
     y_core=y_core.*config.core_density_array #mass per particle [kg]
     y_core=y_core./(config.core_mw*1.0e-3) #moles per particle, changing mw from g/mol to kg/mol
-    y_core=y_core*config.NA #molecules per particle
+    y_core=y_core*NA #molecules per particle
     y_core=y_core.*N_perbin #molecules/cc representing each size range
     #Calculate a core mass based on the above information [converting from molecules/cc to micrograms/m3]    
-    core_mass_array=y_core./config.NA.*config.core_mw
+    core_mass_array=y_core./NA.*config.core_mw
     println("Dry core mass = ", sum(core_mass_array)*1E12)
     param_dict["y_core"]=y_core
     param_dict["core_mass_array"]=core_mass_array
 
-    println("Configuring initial condensed phase")
+    @debug "Configuring initial condensed phase"
     y_cond=zeros(Float64,config.num_bins*num_reactants_condensed)
     for step=1:length(xs)
         radius=xs[step]
@@ -115,5 +112,33 @@ function prepare_aerosol(config)
     end
     dy_dt_gas_matrix=zeros(Real,(num_reactants,config.num_bins))
     param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
-    return param_dict,reactants2ind,y_cond
+    #set initial value
+    len_y=num_reactants+num_reactants_condensed*config.num_bins
+    y_init=zeros(Float64,len_y)
+    for (k,v) in config.reactants_initial_dict
+        y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
+    end
+    y_init[num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]=y_cond[1:config.num_bins*num_reactants_condensed]
+    return param_dict,reactants2ind,y_init
+end
+
+function prepare(config::JlBoxConfig, solverconfig::SolverConfig)
+    if config isa GasConfig
+        param_dict, reactants2ind = prepare_gas(config)
+        param_dict["ShowIterPeriod"] = 100
+        #Set initial value
+        y_init = zeros(Float64,param_dict["num_reactants"])
+        for (k,v) in config.reactants_initial_dict
+            y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
+        end
+    elseif config isa AerosolConfig
+        param_dict, reactants2ind = prepare_gas(config)
+        param_dict, reactants2ind, y_init = prepare_aerosol(config, param_dict, reactants2ind)
+        param_dict["ShowIterPeriod"] = 10
+    end
+    param_dict["Current_iter"] = 0
+    len_y = length(y_init)
+    jac_prototype = solverconfig.sparse ? spzeros(len_y, len_y) : nothing
+    param_dict["sparsity"] = jac_prototype
+    return param_dict, reactants2ind, y_init
 end
