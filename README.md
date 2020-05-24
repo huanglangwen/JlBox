@@ -2,7 +2,8 @@
 
 The `JlBox` is a julia package that simulates the evolution of chemicals in the atmosphere using
 box model where advection effect is ignored. It is heavily inspired by Dr. David Topping's [PyBox]
-and the two models could produce identical results, but JlBox is ~10x faster than PyBox.
+and the two models could produce identical results, but JlBox is ~10x faster
+than PyBox. It could handle *full MCM* mechanism (>10k eqns, 5k species) for both gas and mixed phase simulation.
 
 This package works on Julia v1.4 .
 
@@ -18,9 +19,12 @@ Work on Windows, MacOS and Linux.
 6. Run the example using `include("example/Simulation_*.jl")` in julia console.
 
 ### Custom Simulation
-The `JlBox` package exposes functions like `run_simulation_*(config)`. Indicated by the function
-name, there are three simulation types: gas only simulation (only gas kinetics process), gas-aerosol simulation (gas kinetics+gas-aerosol partitioning) and adjoint sensitivity analysis for the gas-aerosol
-simulation. Users could tweak some parameters by changing the `config` as is illustrated in the examples.
+The `JlBox` package exposes functions like `run_simulation` and
+`run_simulation_aerosol_adjoint`. There are three simulation types: gas only
+simulation (only gas kinetics process) by passing `GasConfig` to
+`run_simulation`, gas-aerosol simulation (gas kinetics+gas-aerosol partitioning)
+by passing `AerosolConfig` to `run_simulation` and adjoint sensitivity analysis for the gas-aerosol
+simulation. Users could tweak some parameters by changing the Config object as is illustrated in the examples.
 
 ## Features
 Compared to PyBox, more optimizations are (going to be) added:
@@ -36,7 +40,7 @@ Compared to PyBox, more optimizations are (going to be) added:
 - [x] parallel linear solver (for native ODE solver only)
 - [ ] parallel version of rate_values, loss_gain and jacobian
 
-# Solver Options
+## Solver Options
 There are two stiff solvers that are practical for solving this model: CVODE_BDF
 from Sundials.jl and TRBDF2 from OrdinaryDiffEq.jl. Users have to carefully
 choose linear solvers used by them to achieve optimal performance.
@@ -56,12 +60,61 @@ choose linear solvers used by them to achieve optimal performance.
     2. `TRBDF2(linsolve=LinSolveGMRES())` : (not recommended) hard to update
        preconditioners during simulation
 
-For medium to large simulations (states >= 500), iterative methods (currently
+For medium to large simulations (num_states >= 500), iterative methods (currently
 only FGMRES in CVODE_BDF is available) generally outperform direct methods. So
 for mixed phase simulations, we suggest to use iterative methods with ILU for
 initial preconditioning and LU of Tridiagonal for following preconditioning. For
 gas only simulations, direct solvers (default in CVODE_BDF and TRBDF2) usually
 run faster on small mechanisms like alpha-pinene mechanism.
+
+## Jacobian Options
+The `diff_method` in `AerosolConfig` are eventually passed to
+`select_jacobian(diff_method, ...)` to select the intended jacobian for stiff
+ODE solvers. `default_psetup(diff_method1, diff_method2, krylov_dim)` use the
+same procedure to determine which jacobian to use when updating preconditioners.
+We suggest to use accurate jacobian including coarse/fine-seeding,
+fine_analytical for better performance except the second diff_method in psetup
+where Tridiagonal preconditioner is less sensitive to the accuracy of jacobian.
+However, it is recommended to use "fine_seeding" in adjoint sensitive analysis
+as the result depends on the accuracy of Jacobian (explicitly included).
+1. "coarse_seeding": `aerosol_jac_coarse_seeding!` naiive implementation of
+    automatic differentiation of RHS function, the correctness and accuracy is
+    guaranteed natually but memory use and performance is not optimal.
+2. "fine_seeding": `aerosol_jac_fine_seeding!` carefully crafted implementation
+    only use automatic differentiation in subblocks. It produces identical
+    results as the coarse one, but has better performance and uses less
+    memory.
+3. "fine_analytical": `aerosol_jac_fine_analytical!` implementation of
+   analytical solution of Jacobian. It is power and memory efficient. Its
+   accuracy is not highly guaranteed but the number of convergence is similar
+   to those with automatic difference.
+4. "coarse_analytical": `aerosol_jac_coarse_analytical!` highly simplified
+   version of analytical solution. It is NOT accurate, only suitable for
+   preconditioners.
+5. "finite": finite differencing of RHS using FiniteDiff.jl. Slow, not very
+   accurate, just for comparison.
+
+There's only one option for gas phase jacobian: `gas_jac!` and all
+methods except "finite" one calls `gas_jac!` for analytical solution in gas-only
+block.
+
+## Performance tips
+- lower tolerance of accuracy gives higher performance
+- check accuracy of Jacobian (finitediff vs autodiff vs analytical)
+    - Note that coarse_seeding and fine_seeding has the same accuracy, but
+      fine_seeding consumes less memory, while coarse_analytical is a very rough
+      (and fast) estimation of fine_analytical, the latter is supposed to be accurate.
+- or switch to ODE solvers that are less sensitive to the accuracy of Jacobian
+    - Low sensitivity: CVODE_BDF, TRBDF2, ABDF
+    - Medium sensitivity: KenCarp4, Rosenbrock23 and other Rosenbrock-W methods
+    - High sensitivity: Rodas and other Rosenbrock methods
+- use parallel linear solvers
+    - like default linearsolvers in OrdinaryDiffEq.jl (LinSolveFactorize())
+    - or utilise GPU: LinSolveGPUFactorize()
+- or use iterative sparse linear solvers (introduced previously)
+- use higher krylov dimension when using iterative solvers (~0.1\*num_states,num_states <= num_species\*(1+num_bin))
+- use better Preconditioner, but currently ILU and LU of Tridiagonal is
+  generally good
 
 ## Internals
 ![Structure](docs/Structure.png)

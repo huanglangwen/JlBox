@@ -4,7 +4,7 @@ using Sundials
 #using CSV
 
 function configure_aerosol()
-    file="../data/MCM_BCARY.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
+    file="../data/MCM_mixed_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txtMCM_BCARY.eqn.txt
     temp=288.15 # Kelvin
     RH=0.5 # RH/100% [0 - 0.99]
     hour_of_day=12.0 # Define a start time  24 hr format
@@ -17,7 +17,7 @@ function configure_aerosol()
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
-    reactants_initial_dict=Dict(["O3"=>18.0,"BCARY"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
+    reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
     constantdict=Dict([(:temp,temp)])
     num_bins=16
 
@@ -50,7 +50,7 @@ end
 function configure_aerosol_solver_sparse()
     prec = JlBox.default_prec()
     psetup = JlBox.default_psetup("fine_seeding","fine_analytical", 20)
-    ndim=500
+    ndim=5000
     solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=psetup,prec_side=2,krylov_dim=ndim)
     sparse=true
     reltol=1e-6
