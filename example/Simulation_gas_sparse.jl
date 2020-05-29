@@ -27,7 +27,7 @@ end
 
 function configure_gas_solver_sparse()
     prec = JlBox.default_prec()
-    psetup = JlBox.default_psetup("gas", 20)
+    psetup = JlBox.default_psetup_gas()
     ndim=1000
     solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=psetup,prec_side=2,krylov_dim=ndim)
     sparse=true

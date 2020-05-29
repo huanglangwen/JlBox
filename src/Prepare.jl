@@ -18,7 +18,7 @@ function get_sparsity_gas(param_dict,reactants2ind)
     sparse(jac_prototype)
 end
 
-function get_sparsity_aerosol(param_dict,reactants2ind,y_cond)
+function get_sparsity_aerosol(solverconfig::SolverConfig,param_dict,reactants2ind,y_cond)
     config,num_reactants,num_reactants_condensed=[param_dict[i] for i in ["config","num_reactants","num_reactants_condensed"]]
     len_y=num_reactants+num_reactants_condensed*config.num_bins
     y_init=ones(Float64,len_y)*1.5
@@ -26,7 +26,7 @@ function get_sparsity_aerosol(param_dict,reactants2ind,y_cond)
         y_init[reactants2ind[k]]=v*config.Cfactor#pbb to molcules/cc
     end
     y_init[num_reactants+1:num_reactants+config.num_bins*num_reactants_condensed]=y_cond[1:config.num_bins*num_reactants_condensed]
-    jac! = select_jacobian(config.diff_method,len_y)
+    jac! = select_jacobian(solverconfig.diff_method,len_y)
     jac_prototype=zeros(len_y,len_y)
     jac!(jac_prototype,y_init,param_dict,0.0)
     sparse(jac_prototype)

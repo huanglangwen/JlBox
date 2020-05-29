@@ -49,7 +49,6 @@ struct AerosolConfig <: JlBoxConfig
     vp_cutoff
     sigma# Assume surface tension of water (mN/m) ???
     property_methods::Dict
-    diff_method::String
 end
 
 struct AdjointConfig
@@ -68,6 +67,11 @@ struct SolverConfig
     dtinit::Real
     dtmax::Real
     positiveness::Bool
+    diff_method::String
+end
+
+function SolverConfig(solver, sparse, reltol, abstol, dtinit, dtmax, positiveness)
+   return SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness,"gas") 
 end
 
 function showconfig(config::SolverConfig)
@@ -75,16 +79,17 @@ function showconfig(config::SolverConfig)
     println("Using solver: $(config.solver)")
     println("Using sparse jacobian: $(config.sparse)")
     println("Reltol: $(config.reltol), Abstol: $(config.abstol)")
-    println("DtInit: $(config.dtinit), DtMax: $(config.dtmax)")
+    println("DtInit: $(config.dtinit) s, DtMax: $(config.dtmax) s")
     println("Positiveness detection: $(config.positiveness)")
+    println("Jacobian method: $(config.diff_method)")
     println("===================================================")
 end
 
 function showconfig(config::GasConfig)
     println("===============Gas Simulation Config===============")
     println("Mechanism file: $(config.file)")
-    println("Start time t0(s): $(config.start_time), Simulation time (s): $(config.simulation_time), Saving interval(s): $(config.batch_step)")
-    println("Temperature (K): $(config.temp), Relative Humidity (%): $(config.RH)")
+    println("Start time t0: $(config.start_time) s, Simulation time: $(config.simulation_time) s, Saving interval: $(config.batch_step) s")
+    println("Temperature: $(config.temp) K, Relative Humidity: $(config.RH*100) %")
     println("Initial Condition (ppm): $(config.reactants_initial_dict)")
     #println("===================================================")
 end
@@ -92,11 +97,10 @@ end
 function showconfig(config::AerosolConfig)
     println("=============Aerosol Simulation Config=============")
     println("Mechanism file: $(config.file)")
-    println("Start time t0 (s): $(config.start_time), Simulation time (s): $(config.simulation_time), Saving interval (s): $(config.batch_step)")
-    println("Temperature (K): $(config.temp), Relative Humidity (%): $(config.RH)")
+    println("Start time t0: $(config.start_time) s, Simulation time: $(config.simulation_time) s, Saving interval: $(config.batch_step) s")
+    println("Temperature: $(config.temp) K, Relative Humidity: $(config.RH*100) %")
     println("Initial Condition (ppm): $(config.reactants_initial_dict)")
-    println("Num_bins: $(config.num_bins), Vp_cutoff (log10(Pa)): $(config.vp_cutoff)")
+    println("Num_bins: $(config.num_bins), Vp_cutoff: $(config.vp_cutoff) log10(Pa)")
     println("Property methods: $(config.property_methods)")
-    println("Jacobian method: $(config.diff_method)")
     #println("===================================================")
 end

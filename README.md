@@ -36,6 +36,7 @@ Compared to PyBox, more optimizations are (going to be) added:
 - [x] native ode solvers (TRBDF2)
 - [x] sparse iterative solver (CVODE_BDF with FGMRES)
 - [x] preconditioner (ILU & Tribanded)
+- [x] matrix free operator
 - [ ] forward sensitivity analysis
 - [x] parallel linear solver (for native ODE solver only)
 - [ ] parallel version of rate_values, loss_gain and jacobian
@@ -57,7 +58,9 @@ choose linear solvers used by them to achieve optimal performance.
     1. `CVODE_BDF(linear_solver=:FGMRES,prec=...,psetup=...,prec_side=2,krylov_dim=...)`:
        FGMRES with right side preconditioner, krylov_dim is suggested to be
        0.1*num_states
-    2. `TRBDF2(linsolve=LinSolveGMRES())` : (not recommended) hard to update
+    2. `:FGMRES` could be replaced with `:GMRES` or `:BCG` for non-flexible
+       GMRES or Bi-Conjugate Gradient Stabilized method but (maybe) with inferior performance.
+    3. `TRBDF2(linsolve=LinSolveGMRES())` : (not recommended) hard to update
        preconditioners during simulation
 
 For medium to large simulations (num_states >= 500), iterative methods (currently
@@ -68,7 +71,7 @@ gas only simulations, direct solvers (default in CVODE_BDF and TRBDF2) usually
 run faster on small mechanisms like alpha-pinene mechanism.
 
 ## Jacobian Options
-The `diff_method` in `AerosolConfig` are eventually passed to
+The `diff_method` in `SolverConfig` are eventually passed to
 `select_jacobian(diff_method, ...)` to select the intended jacobian for stiff
 ODE solvers. `default_psetup(diff_method1, diff_method2, krylov_dim)` use the
 same procedure to determine which jacobian to use when updating preconditioners.
@@ -93,6 +96,9 @@ as the result depends on the accuracy of Jacobian (explicitly included).
    preconditioners.
 5. "finite": finite differencing of RHS using FiniteDiff.jl. Slow, not very
    accurate, just for comparison.
+6. "gas_v" and "fine_seeding_v": Matrix-free operator version of the respective
+   jacobian. Not recommended, as CVODE itself could approximate such operator
+   using finite differencing.
 
 There's only one option for gas phase jacobian: `gas_jac!` and all
 methods except "finite" one calls `gas_jac!` for analytical solution in gas-only

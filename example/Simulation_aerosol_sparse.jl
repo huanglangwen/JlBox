@@ -17,7 +17,7 @@ function configure_aerosol()
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
-    reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
+    reactants_initial_dict=Dict(["O3"=>30.0,"APINENE"=>30.0,"BPINENE"=>8.0,"LIMONENE"=>11.0,"BCARY"=>7.0,"BUT1ENE"=>5.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
     constantdict=Dict([(:temp,temp)])
     num_bins=16
 
@@ -38,27 +38,27 @@ function configure_aerosol()
     vp_cutoff=-6.0
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
-    diff_method="fine_seeding"
     config=JlBox.AerosolConfig(file,temp,RH,start_time,simulation_time,batch_step,
                            H2O,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,
-                           sigma,property_methods,diff_method)
+                           sigma,property_methods)
     config
 end
 
 function configure_aerosol_solver_sparse()
     prec = JlBox.default_prec()
-    psetup = JlBox.default_psetup("fine_seeding","fine_analytical", 20)
+    psetup = JlBox.default_psetup("fine_seeding","fine_analytical", 200)
     ndim=5000
     solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=psetup,prec_side=2,krylov_dim=ndim)
     sparse=true
     reltol=1e-6
     abstol=1.0e-3
-    dtinit=1e-6
+    dtinit=1e-8
     dtmax=100.0
     positiveness=false
-    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
+    diff_method="fine_seeding"
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness,diff_method)
     solverconfig
 end
 

@@ -1,7 +1,12 @@
 function select_jacobian(diff_method, len_y)
     if diff_method == "finite"
         jac_cache = FiniteDiff.JacobianCache(zeros(Float64,len_y),zeros(Float64,len_y),Val{:forward},Float64,Val{true})
-        jac! = (jac_mtx,y,p,t)->FiniteDiff.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
+        jac! = (jac_mtx,y,p,t,fillzero::Bool=true)-> begin
+            if fillzero
+                fill!(jac_mtx,0.0)
+            end
+            FiniteDiff.finite_difference_jacobian!(jac_mtx,(dydt,y)->dydt_aerosol!(dydt,y,p,t),y,jac_cache)
+        end
     elseif diff_method == "coarse_seeding"
         jac! = aerosol_jac_coarse_seeding!
     elseif diff_method == "fine_seeding"
@@ -50,13 +55,16 @@ function loss_gain_jac!(num_reactants::Int,num_eqns::Int,
     nothing
 end
 
-function gas_jac!(jac_mtx,reactants::Array{<:Real,1},p::Dict,t::Real)
+function gas_jac!(jac_mtx,reactants::Array{<:Real,1},p::Dict,t::Real,fillzero::Bool=true)
     rate_values,stoich_mtx,stoich_list,reactants_list,num_eqns,num_reactants=
         [p[ind] for ind in 
             ["rate_values","stoich_mtx","stoich_list","reactants_list",
              "num_eqns","num_reactants"]
         ]
     #Probably have to re-eval rate_values again
+    if fillzero
+        fill!(jac_mtx,0.0)
+    end
     loss_gain_jac!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,jac_mtx)
 end
 
@@ -92,13 +100,16 @@ function loss_gain_jac_v!(num_reactants::Int,num_eqns::Int,
     nothing
 end
 
-function gas_jac_v!(jac_v::Array{Float64,1},v::Array{Float64,1},reactants::Array{Float64,1},p::Dict,t::Float64)
+function gas_jac_v!(jac_v::Array{Float64,1},v::Array{Float64,1},reactants::Array{Float64,1},p::Dict,t::Float64,fillzero::Bool=true)
     rate_values,stoich_mtx,stoich_list,reactants_list,num_eqns,num_reactants=
         [p[ind] for ind in 
             ["rate_values","stoich_mtx","stoich_list","reactants_list",
              "num_eqns","num_reactants"]
         ]
     #Probably have to re-eval rate_values again
+    if fillzero
+        fill!(jac_v,0.0)
+    end
     loss_gain_jac_v!(num_reactants,num_eqns,reactants,stoich_mtx,stoich_list,reactants_list,rate_values,v,jac_v)
 end
 
@@ -306,7 +317,65 @@ function Partition_jac_AD!(y_jac,y::Array{Float64,1},C_g_i_t::Array{Float64,1},
     #return dy_dt,total_SOA_mass
 end
 
-function aerosol_jac_fine_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+#https://github.com/SciML/DiffEqOperators.jl/blob/master/src/jacvec_operators.jl
+struct JacVecTag end
+function auto_jacvec!(du, f, x, v,
+                 cache1 = ForwardDiff.Dual{JacVecTag}.(x, x), # this won't alias
+                 cache2 = similar(cache1))
+    cache1 .= ForwardDiff.Dual{JacVecTag}.(x, reshape(v, size(x)))
+    f(cache2,cache1)
+    du .= vec(ForwardDiff.partials.(cache2, 1))
+end
+
+function Partition_jac_v_AD!(y_jac_v,v::Array{Float64,1},y::Array{Float64,1},C_g_i_t::Array{Float64,1},
+                        num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
+                        mw_array,density_input,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin::Array{Float64,1},
+                        core_diss::Real,y_core::Array{Float64,1},core_mass_array::Array{Float64,1},core_density_array::Array{Float64,1},
+                        sigma::Real,Model_temp::Real)
+    size_array=zeros(Real,num_bins)
+    mass_array=zeros(Real,num_reactants_condensed+1)
+    density_array=zeros(Real,num_reactants_condensed+1)
+    DC_g_i_t=zeros(num_reactants_condensed,num_reactants)
+    Ddm_dt_v_Dy_gas_sum=zeros(num_reactants_condensed)
+    Ddm_dt_v_Dy_bin=zeros(num_reactants_condensed)
+    dm_dt_arr=zeros(num_reactants_condensed)
+    cache1=ForwardDiff.Dual{JacVecTag}.(Ddm_dt_v_Dy_bin, Ddm_dt_v_Dy_bin)
+    cache2=similar(cache1)
+    for i in 1:num_reactants_condensed
+        DC_g_i_t[i,include_inds[i]]=1
+    end
+    for size_step=1:num_bins
+        start_ind=num_reactants+1+((size_step-1)*num_reactants_condensed)
+        stop_ind=num_reactants+(size_step*num_reactants_condensed)
+        temp_array=y[start_ind:stop_ind]
+        #=================Jacobian, Input=y_gas======================#
+        begin
+            @partition_kernel()
+            #k_i_m_t: num_reactants_condensed
+            Ddm_dt_v_Dy_gas = k_i_m_t.*(DC_g_i_t*v[1:num_reactants])#num_reactants_condensed
+            y_jac_v[start_ind:stop_ind] .+= Ddm_dt_v_Dy_gas
+            Ddm_dt_v_Dy_gas_sum .+= Ddm_dt_v_Dy_gas
+        end
+        #=================Jacobian, Input=y_bin======================#
+        begin
+            function dm_dt_func(dm_dt_arr::Array{<:Real,1}, temp_array::Array{<:Real,1})
+                @partition_kernel()#captures temp_array
+                dm_dt_arr .= dm_dt
+                nothing
+            end
+            auto_jacvec!(Ddm_dt_v_Dy_bin,dm_dt_func,temp_array,v[start_ind:stop_ind],cache1,cache2)
+            y_jac_v[start_ind:stop_ind] .+= Ddm_dt_v_Dy_bin
+            y_jac_v[1:num_reactants] .+= -transpose(DC_g_i_t)*Ddm_dt_v_Dy_bin
+        end
+    end
+    #Jacobian
+    y_jac_v[1:num_reactants] .+= -transpose(DC_g_i_t)*Ddm_dt_v_Dy_gas_sum
+
+    nothing
+    #return dy_dt,total_SOA_mass
+end
+
+function aerosol_jac_fine_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real,fillzero::Bool=true)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     evaluate_rates_fun=p["evaluate_rates!"]
@@ -314,7 +383,10 @@ function aerosol_jac_fine_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Rea
     time_of_day_seconds=config.start_time+t
     RO2=sum(y[RO2_inds])
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
-    gas_jac!(jac_mtx,y,p,t)
+    if fillzero
+        fill!(jac_mtx,0.0)
+    end
+    gas_jac!(jac_mtx,y,p,t,false)
     include_inds,N_perbin=[p[i] for i in ["include_inds","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
@@ -327,7 +399,7 @@ function aerosol_jac_fine_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Rea
     nothing
 end
 
-function aerosol_jac_coarse_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+function aerosol_jac_coarse_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real,fillzero::Bool=true)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     evaluate_rates_fun=p["evaluate_rates!"]
@@ -335,7 +407,10 @@ function aerosol_jac_coarse_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::R
     time_of_day_seconds=config.start_time+t
     RO2=sum(y[RO2_inds])
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
-    gas_jac!(jac_mtx,y,p,t)
+    if fillzero
+        fill!(jac_mtx,0.0)
+    end
+    gas_jac!(jac_mtx,y,p,t,false)
     include_inds,N_perbin=[p[i] for i in ["include_inds","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
@@ -348,7 +423,7 @@ function aerosol_jac_coarse_analytical!(jac_mtx,y::Array{Float64,1},p::Dict,t::R
     nothing
 end
 
-function aerosol_jac_fine_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+function aerosol_jac_fine_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real,fillzero::Bool=true)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     evaluate_rates_fun=p["evaluate_rates!"]
@@ -356,7 +431,10 @@ function aerosol_jac_fine_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     time_of_day_seconds=config.start_time+t
     RO2=sum(y[RO2_inds])
     Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
-    gas_jac!(jac_mtx,y,p,t)
+    if fillzero
+        fill!(jac_mtx,0.0)
+    end
+    gas_jac!(jac_mtx,y,p,t,false)
     include_inds,N_perbin=[p[i] for i in ["include_inds","N_perbin"]]
     mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
     y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
@@ -369,7 +447,7 @@ function aerosol_jac_fine_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
     nothing
 end
 
-function aerosol_jac_coarse_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real)
+function aerosol_jac_coarse_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real,fillzero::Bool=true)
     num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
     rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
     evaluate_rates_fun=p["evaluate_rates!"]
@@ -391,8 +469,35 @@ function aerosol_jac_coarse_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real
         config.sigma,config.temp)
     end
     dy_dt=zeros(Real,length(y))
+    if fillzero
+        fill!(jac_mtx,0.0)
+    end
     ForwardDiff.jacobian!(jac_mtx,partition_dydt_fun, dy_dt, y)
-    gas_jac!(jac_mtx,y,p,t)
+    gas_jac!(jac_mtx,y,p,t,false)
+    nothing
+end
+
+function aerosol_jac_v_fine_seeding!(jac_v::Array{Float64,1},v::Array{Float64,1},y::Array{Float64,1},p::Dict,t::Real,fillzero::Bool=true)
+    num_reactants,num_reactants_condensed=[p[i] for i in ["num_reactants","num_reactants_condensed"]]
+    rate_values,J,RO2_inds=[p[i] for i in ["rate_values","J","RO2_inds"]]
+    evaluate_rates_fun=p["evaluate_rates!"]
+    config=p["config"]
+    time_of_day_seconds=config.start_time+t
+    RO2=sum(y[RO2_inds])
+    Base.invokelatest(evaluate_rates_fun,time_of_day_seconds,RO2,config.H2O,config.temp,rate_values,J)
+    if fillzero
+        fill!(jac_v,0.0)
+    end
+    gas_jac_v!(jac_v,v,y,p,t,false)
+    include_inds,N_perbin=[p[i] for i in ["include_inds","N_perbin"]]
+    mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat=[p[i] for i in ["y_mw","y_density_array","gamma_gas","alpha_d_org","DStar_org","Psat"]]
+    y_core,core_mass_array=[p[i] for i in ["y_core","core_mass_array"]]
+    C_g_i_t=y[include_inds]
+    Partition_jac_v_AD!(jac_v,v,y,C_g_i_t,
+        config.num_bins,num_reactants,num_reactants_condensed,include_inds,
+        mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
+        config.core_dissociation,y_core,core_mass_array,config.core_density_array,
+        config.sigma,config.temp)
     nothing
 end
 
@@ -407,8 +512,7 @@ function jacobian_from_sol!(p::Dict,t::Real)
     sol = p["sol"]
     y = sol(t)
     jac_mtx = p["jac_mtx"]
-    fill!(jac_mtx,0.)
     jac! = p["jacobian!"]
-    jac!(jac_mtx,y,p,t)
+    jac!(jac_mtx,y,p,t,true)
     nothing
 end

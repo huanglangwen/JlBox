@@ -38,12 +38,11 @@ function configure_aerosol()
     vp_cutoff=-6.0
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
-    diff_method="fine_seeding"
     config=JlBox.AerosolConfig(file,temp,RH,start_time,simulation_time,batch_step,
                            H2O,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,
-                           sigma,property_methods,diff_method)
+                           sigma,property_methods)
     config
 end
 
@@ -55,7 +54,8 @@ function configure_aerosol_solver_dense()
     dtinit=1e-6
     dtmax=100.0
     positiveness=false
-    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
+    diff_method="fine_seeding"
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness,diff_method)
     solverconfig
 end
 

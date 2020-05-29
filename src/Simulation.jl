@@ -1,9 +1,19 @@
-function make_odefun(config::GasConfig, len_y::Int, jac_prototype)
-    return DiffEqBase.ODEFunction(dydt!; jac = gas_jac!, jac_prototype = jac_prototype)
+function make_odefun(::GasConfig, solverconfig::SolverConfig, len_y::Int, jac_prototype)
+    if solverconfig.diff_method == "gas_v"
+        u = zeros(len_y)
+        return DiffEqBase.ODEFunction(dydt!; jac_prototype = DiffEqOperators.AnalyticalJacVecOperator(gas_jac_v!, u))
+    else
+        return DiffEqBase.ODEFunction(dydt!; jac = gas_jac!, jac_prototype = jac_prototype)
+    end
 end
 
-function make_odefun(config::AerosolConfig, len_y::Int, jac_prototype)
-    return DiffEqBase.ODEFunction(dydt_aerosol!; jac = select_jacobian(config.diff_method, len_y), jac_prototype = jac_prototype)
+function make_odefun(::AerosolConfig, solverconfig::SolverConfig, len_y::Int, jac_prototype)
+    if solverconfig.diff_method == "fine_seeding_v"
+        u = zeros(len_y)
+        return DiffEqBase.ODEFunction(dydt_aerosol!; jac_prototype = DiffEqOperators.AnalyticalJacVecOperator(aerosol_jac_v_fine_seeding!, u))
+    else
+        return DiffEqBase.ODEFunction(dydt_aerosol!; jac = select_jacobian(solverconfig.diff_method, len_y), jac_prototype = jac_prototype)
+    end
 end
 
 function run_simulation(config::JlBoxConfig, solverconfig::SolverConfig)
@@ -11,7 +21,7 @@ function run_simulation(config::JlBoxConfig, solverconfig::SolverConfig)
     showconfig(config)
     showconfig(solverconfig)
     len_y = length(y_init)
-    odefun = make_odefun(config, len_y, param_dict["sparsity"])
+    odefun = make_odefun(config, solverconfig, len_y, param_dict["sparsity"])
     odeprob = DiffEqBase.ODEProblem{true}(odefun,y_init,(0.,config.simulation_time),param_dict)
     @time sol = DiffEqBase.solve(odeprob, solverconfig.solver, reltol = solverconfig.reltol, abstol = solverconfig.abstol,
         tstops = 0:config.batch_step:config.simulation_time, saveat = config.batch_step, # save_everystep=true,

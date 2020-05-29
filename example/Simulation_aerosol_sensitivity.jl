@@ -44,7 +44,7 @@ function configure_aerosol()
                            H2O,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,
-                           sigma,property_methods,diff_method)
+                           sigma,property_methods)
     solver=TRBDF2(autodiff=false)
     reltol=1e-4
     abstol=1.0e-2
@@ -52,7 +52,7 @@ function configure_aerosol()
     dtinit=1e-6
     dtmax=100.0
     positiveness=false
-    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness)
+    solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness,diff_method)
     use_cache=true
     adjoint_solver=TRBDF2(autodiff=false)
     reltol=1e-8
