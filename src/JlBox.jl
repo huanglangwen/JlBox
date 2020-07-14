@@ -15,6 +15,7 @@ using LinearAlgebra
 using DiffEqCallbacks
 using DiffEqOperators
 using Logging
+using Requires
 
 include("../deps/deps.jl")
 
@@ -36,6 +37,10 @@ include("RHS.jl")
 include("Preconditioning.jl")
 include("Simulation.jl")
 include("PostProcessing.jl")
+
+function __init__()
+    @require Plots="91a5bcdd-55d7-5caf-9e0b-520d859cae80" include("Plot.jl")
+end
 
 export run_simulation, run_simulation_aerosol_adjoint
 end
