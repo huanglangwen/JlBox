@@ -1,15 +1,5 @@
-using JlBox
-using Sundials
-import MPI
-using DataFrames
-using CSV
 
-MPI.Init()
-
-comm = MPI.COMM_WORLD
-MPI.Barrier(comm)
-
-function configure_aerosol(time_hour, temp, RH, reactants_initial_dict)
+function configure_aerosol(time_hour, temp, RH, reactants_initial_dict, io)
     file="../data/MCM_mixed_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txtMCM_BCARY.eqn.txt
     hour_of_day=12.0 # Define a start time  24 hr format
     start_time=hour_of_day*60*60 # seconds, used as t0 in solver
@@ -45,11 +35,11 @@ function configure_aerosol(time_hour, temp, RH, reactants_initial_dict)
                            H2O,Cfactor,reactants_initial_dict,constantdict,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,
-                           sigma,property_methods)
+                           sigma,property_methods, io)
     config
 end
 
-function experiment_b(time_hour)
+function experiment_b(time_hour, i, io::Base.IO = open("results/log_Experiment_B_rank"*string(i)*".log", "w"))
     isoprene = [107, 92, 122, 0, 99, 87, 55] #C5H8
     apinene = [66, 50, 71, 63, 59, 50, 79] #APINENE
     limonene = [58, 50, 40, 65, 53, 51, 76] #LIMONENE
@@ -61,14 +51,17 @@ function experiment_b(time_hour)
     Thi = [307, 300, 300, 298, 297, 300, 305]
     RHlo = [0.5, 26, 19, 8, 8, 15, 20] ./ 100.0
     RHhi = [3, 30, 22, 13, 11, 19, 30] ./ 100.0
-    return [configure_aerosol(time_hour, (Tlo[i]+Thi[i])/2, (RHlo[i]+RHhi[i])/2, 
-            Dict("C5H8"=>isoprene[i], "APINENE"=>apinene[i],
-                 "LIMONENE"=>limonene[i], "NO"=>NO[i],
-                 "NO2"=>NO2[i], "HONO"=>HONO[i], "SO2"=>SO2[i])) 
-            for i in 1:7]
+    configure_aerosol(time_hour, (Tlo[i]+Thi[i])/2, (RHlo[i]+RHhi[i])/2, 
+        Dict("C5H8"=>isoprene[i], "APINENE"=>apinene[i],
+            "LIMONENE"=>limonene[i], "NO"=>NO[i],
+            "NO2"=>NO2[i], "HONO"=>HONO[i], "SO2"=>SO2[i]),
+        io) 
+end
+function experiment_b(time_hour)
+    [experiment_b(time_hour, i) for i in 1:7]
 end
 
-function experiment_a(time_hour)
+function experiment_a(time_hour, i, io::Base.IO = open("results/log_Experiment_A_rank$(i).log", "w"))
     toluene = [102, 200, 48, 98, 97, 93, 107, 116, 81] #TOLUENE
     oxylene = [22, 49, 11, 24, 21, 22, 26, 29, 21] #OXYL
     TMB = [153, 300, 106, 160, 146, 146, 160, 19, 118] #TM135B
@@ -80,11 +73,14 @@ function experiment_a(time_hour)
     Thi = [305, 305, 307, 307, 308, 308, 309, 305, 303]
     RHlo = [10, 9, 6, 6, 7, 0.4, 7, 15, 28] ./ 100.0
     RHhi = [16, 18, 14, 13, 14, 0.4, 10, 18, 37] ./ 100.0
-    return [configure_aerosol(time_hour, (Tlo[i]+Thi[i])/2, (RHlo[i]+RHhi[i])/2, 
-            Dict("TOLUENE"=>toluene[i], "OXYL"=>oxylene[i],
-                 "TM135B"=>TMB[i], "NO"=>NO[i],
-                 "NO2"=>NO2[i], "HONO"=>HONO[i], "NC8H18"=>Octane[i])) 
-            for i in 1:9]
+    configure_aerosol(time_hour, (Tlo[i]+Thi[i])/2, (RHlo[i]+RHhi[i])/2, 
+        Dict("TOLUENE"=>toluene[i], "OXYL"=>oxylene[i],
+            "TM135B"=>TMB[i], "NO"=>NO[i],
+            "NO2"=>NO2[i], "HONO"=>HONO[i], "NC8H18"=>Octane[i]),
+        io) 
+end
+function experiment_a(time_hour)
+    [experiment_a(time_hour, i) for i in 1:9]
 end
 
 function configure_aerosol_solver_sparse()
@@ -102,30 +98,3 @@ function configure_aerosol_solver_sparse()
     solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness,diff_method)
     solverconfig
 end
-
-rank = MPI.Comm_rank(comm)
-nrank = MPI.Comm_size(comm)
-
-time_hour = 1.0
-#configs = vcat(experiment_a(time_hour), experiment_b(time_hour))
-if nrank == 7:
-    configs = experiment_b(time_hour)
-    name = "Experiment_B_rank" * rank
-else if nrank == 9:
-    configs = experiment_a(time_hour)
-    name = "Experiment_A_rank" * rank
-else
-    exit(-1)
-end
-
-config = configs[rank]
-solverconfig = configure_aerosol_solver_sparse()
-#rets = [remotecall((i-1)%nranks, JlBox.run_simulation, configs[i], solverconfig) for i in 1:16]
-JlBox.run_simulation(config, solverconfig)
-df = JlBox.postprocess_gas(sol, reactants2ind)
-df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config.simulation_time)
-CSV.write("result/"*name*"_results.csv",df)
-CSV.write("result/"*name*"_SOA.csv",df_SOA)
-
-# using MPI; MPI.install_mpiexecjl()
-# mpiexecjl --output-filename result/log -n 7 julia Simulation_fullscale.jl

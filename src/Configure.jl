@@ -1,6 +1,6 @@
 abstract type JlBoxConfig end
 struct GasConfig <: JlBoxConfig
-    file#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
+    file::String#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
     temp# Kelvin
     RH# RH/100% [0 - 0.99]
     start_time# seconds, used as t0 in solver
@@ -14,6 +14,13 @@ struct GasConfig <: JlBoxConfig
     Cfactor#ppb-to-molecules/cc
     reactants_initial_dict::Dict#ppm ["O3"=>18.0,"APINENE"=>30.0])
     constantdict::Dict
+    io::Base.IO
+end
+
+function GasConfig(file, temp, RH, start_time, simulation_time, batch_step, H2O, Cfactor,
+                   reactants_initial_dict, constantdict)
+    GasConfig(file, temp, RH, start_time, simulation_time, batch_step, H2O, Cfactor,
+              reactants_initial_dict, constantdict, Base.stdout)
 end
 
 struct AerosolConfig <: JlBoxConfig
@@ -49,6 +56,17 @@ struct AerosolConfig <: JlBoxConfig
     vp_cutoff
     sigma# Assume surface tension of water (mN/m) ???
     property_methods::Dict
+    io::Base.IO
+end
+
+function AerosolConfig(file, temp, RH, start_time, simulation_time, batch_step, H2O, Cfactor,
+                       reactants_initial_dict, constantdict, num_bins, total_conc, size_std,
+                       lowersize, uppersize, meansize, y_core_init, core_density_array, core_mw,
+                       core_dissociation, vp_cutoff, sigma, property_methods)
+    AerosolConfig(file, temp, RH, start_time, simulation_time, batch_step, H2O, Cfactor,
+                  reactants_initial_dict, constantdict, num_bins, total_conc, size_std,
+                  lowersize, uppersize, meansize, y_core_init, core_density_array, core_mw,
+                  core_dissociation, vp_cutoff, sigma, property_methods, Base.stdout)
 end
 
 struct AdjointConfig
@@ -57,6 +75,11 @@ struct AdjointConfig
     adjoint_solver
     reltol::Real
     abstol::Real
+    io::Base.IO
+end
+
+function AdjointConfig(use_cache, diff_method, adjoint_solver, reltol, abstol)
+    AdjointConfig(use_cache, diff_method, adjoint_solver, reltol, abstol, Base.stdout)
 end
 
 struct SolverConfig
@@ -74,33 +97,38 @@ function SolverConfig(solver, sparse, reltol, abstol, dtinit, dtmax, positivenes
    return SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness,"gas") 
 end
 
-function showconfig(config::SolverConfig)
-    println("===================Solver Config===================")
-    println("Using solver: $(config.solver)")
-    println("Using sparse jacobian: $(config.sparse)")
-    println("Reltol: $(config.reltol), Abstol: $(config.abstol)")
-    println("DtInit: $(config.dtinit) s, DtMax: $(config.dtmax) s")
-    println("Positiveness detection: $(config.positiveness)")
-    println("Jacobian method: $(config.diff_method)")
-    println("===================================================")
+function showconfig(config::SolverConfig, io::Base.IO = Base.stdout)
+    println(io, "===================Solver Config===================")
+    println(io, "Using solver: $(config.solver)")
+    println(io, "Using sparse jacobian: $(config.sparse)")
+    println(io, "Reltol: $(config.reltol), Abstol: $(config.abstol)")
+    println(io, "DtInit: $(config.dtinit) s, DtMax: $(config.dtmax) s")
+    println(io, "Positiveness detection: $(config.positiveness)")
+    println(io, "Jacobian method: $(config.diff_method)")
+    println(io, "===================================================")
+    flush(io)
 end
 
 function showconfig(config::GasConfig)
-    println("===============Gas Simulation Config===============")
-    println("Mechanism file: $(config.file)")
-    println("Start time t0: $(config.start_time) s, Simulation time: $(config.simulation_time) s, Saving interval: $(config.batch_step) s")
-    println("Temperature: $(config.temp) K, Relative Humidity: $(config.RH*100) %")
-    println("Initial Condition (ppm): $(config.reactants_initial_dict)")
-    #println("===================================================")
+    io = config.io
+    println(io, "===============Gas Simulation Config===============")
+    println(io, "Mechanism file: $(config.file)")
+    println(io, "Start time t0: $(config.start_time) s, Simulation time: $(config.simulation_time) s, Saving interval: $(config.batch_step) s")
+    println(io, "Temperature: $(config.temp) K, Relative Humidity: $(config.RH*100) %")
+    println(io, "Initial Condition (ppm): $(config.reactants_initial_dict)")
+    #println(io, "===================================================")
+    flush(io)
 end
 
 function showconfig(config::AerosolConfig)
-    println("=============Aerosol Simulation Config=============")
-    println("Mechanism file: $(config.file)")
-    println("Start time t0: $(config.start_time) s, Simulation time: $(config.simulation_time) s, Saving interval: $(config.batch_step) s")
-    println("Temperature: $(config.temp) K, Relative Humidity: $(config.RH*100) %")
-    println("Initial Condition (ppm): $(config.reactants_initial_dict)")
-    println("Num_bins: $(config.num_bins), Vp_cutoff: $(config.vp_cutoff) log10(Pa)")
-    println("Property methods: $(config.property_methods)")
-    #println("===================================================")
+    io = config.io
+    println(io, "=============Aerosol Simulation Config=============")
+    println(io, "Mechanism file: $(config.file)")
+    println(io, "Start time t0: $(config.start_time) s, Simulation time: $(config.simulation_time) s, Saving interval: $(config.batch_step) s")
+    println(io, "Temperature: $(config.temp) K, Relative Humidity: $(config.RH*100) %")
+    println(io, "Initial Condition (ppm): $(config.reactants_initial_dict)")
+    println(io, "Num_bins: $(config.num_bins), Vp_cutoff: $(config.vp_cutoff) log10(Pa)")
+    println(io, "Property methods: $(config.property_methods)")
+    #println(io, "===================================================")
+    flush(io)
 end

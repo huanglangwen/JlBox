@@ -1,32 +1,19 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 #MAINTAINER Langwen Huang (huanglangwen@outlook.com)
-#forked from https://github.com/loftytopping/PyBox/blob/master/Dockerfile
-
-RUN apt-get update 
-RUN apt-get install -y build-essential \
-    apt-utils \
-    wget \
-    vim \
-    git \
-    tmux \
-    curl
-
 RUN mkdir -p /Code
 RUN mkdir -p /Code/julia
 
 WORKDIR /Code/julia
-RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.1-linux-x86_64.tar.gz
-RUN tar xf julia-1.1.1-linux-x86_64.tar.gz
-RUN echo "export PATH=/Code/julia/julia-1.1.1/bin:/root/.julia/conda/3/bin:$PATH" >> /root/.bashrc
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y wget git && \
+    wget -q https://julialang-s3.julialang.org/bin/linux/x64/1.5/julia-1.5.0-linux-x86_64.tar.gz && \
+    tar xf julia-1.5.0-linux-x86_64.tar.gz && \
+    rm julia-1.5.0-linux-x86_64.tar.gz && \
+    echo "export PATH=/Code/julia/julia-1.5.0/bin:/root/.julia/conda/3/bin:$PATH" >> /root/.bashrc
 ENV PYTHON=""
-ENV PATH="/Code/julia/julia-1.1.1/bin:/root/.julia/conda/3/bin:${PATH}"
-#RUN source /root/.bashrc
-RUN julia --eval 'using Pkg;Pkg.update()'
-RUN julia --eval 'using Pkg;Pkg.add("Conda");Pkg.add("LanguageServer")'
-RUN julia --eval 'using Conda;Conda.update()'
-RUN julia --eval 'using Pkg;Pkg.add("PyCall")'
-RUN julia --eval 'using Pkg;Pkg.build("PyCall")'
-RUN julia --eval 'using Pkg;Pkg.develop(PackageSpec(url="https://github.com/huanglangwen/JlBox"));Pkg.build("JlBox")'
+ENV PATH="/Code/julia/julia-1.5.0/bin:/root/.julia/conda/3/bin:${PATH}"
+ADD . /Code/julia/JlBox
+RUN julia --eval 'using Pkg;Pkg.develop(PackageSpec(path="/Code/julia/JlBox"));Pkg.build("JlBox")'
 
 WORKDIR /root
 RUN git clone git://github.com/JuliaEditorSupport/julia-vim.git
@@ -35,5 +22,5 @@ RUN mkdir -p /root/.vim
 RUN cp -R * /root/.vim
 RUN echo "set nowrap\nset number\nset tabstop=4\nset shiftwidth=4\nset softtabstop=4\nset expandtab\nset smarttab" >> /root/.vimrc
 
-WORKDIR /root/.julia/dev/JlBox
-RUN git checkout master
+WORKDIR /Code/julia/JlBox
+RUN julia example/Install_package.jl

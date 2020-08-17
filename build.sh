@@ -1,0 +1,1 @@
+docker build -t jlbox_image .

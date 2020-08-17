@@ -69,7 +69,8 @@ function dydt!(dydt,reactants::Array{<:Real,1},p::Dict,t::Real)
         p["Current_iter"]+=1
         citer=p["Current_iter"]
         if citer%(p["ShowIterPeriod"])==0
-            @printf("Current Iteration: %d, time_step: %e\n",citer,t)
+            println(config.io, "Current Iteration: $(citer), time_step: $(t)")
+            flush(config.io)
         end
     end
     nothing#return dydt
@@ -93,9 +94,8 @@ function dydt_aerosol!(dy_dt,y::Array{<:Real,1},p::Dict,t::Real)
         p["Current_iter"]+=1
         citer=p["Current_iter"]
         if citer%(p["ShowIterPeriod"])==0
-            @printf("Current Iteration: %d, time_step: %e, SOA(ug/m3): %e\n",citer,t,total_SOA_mass)
-            #println("Sum(dy_dt[num_reacs+1:end])=",sum(dy_dt[num_reactants+1:end]))
-            #println("Sum(y[num_reacs+1:end])=",sum(y[num_reactants+1:end]))
+            println(config.io, "Current Iteration: $(citer), time_step: $(t), SOA(ug/m3): $(total_SOA_mass)")
+            flush(config.io)
         end
     end
     nothing#return dy_dt
@@ -107,10 +107,10 @@ function sensitivity_adjoint_dldt!(dldt,lambda,p,t)
     dldt.= reshape(- lambda' * jac_mtx, :)#adopting KPP paper I
     p["Current_iter"]+=1
     citer=p["Current_iter"]
+    adjointconfig = p["adjointconfig"]
     if citer%(p["ShowIterPeriod"])==0
         num_reactants=p["num_reactants"]
-        @printf("Current Iteration: %d, time_step: %e, sum(lambda_gas): %e, sum(dldt_gas): %e, sum(lambda): %e\n",citer,t,sum(lambda[1:num_reactants]),sum(dldt[1:num_reactants]),sum(lambda))
-        #println(sum(jac_mtx[:,1:num_reactants],dims=1))
+        println(adjointconfig.io, "Current Iteration: $(citer), time_step: $(t), sum(lambda_gas): $(sum(lambda[1:num_reactants])), sum(dldt_gas): $(sum(dldt[1:num_reactants])), sum(lambda): $(sum(lambda))")
     end
     nothing
 end

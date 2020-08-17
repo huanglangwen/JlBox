@@ -56,8 +56,6 @@ function parse_reactants(file::String)#,RO2_names::Array{String,1}
                 end
                 push!(reactants_dict[reac],(ind,num_stoich))
             end
-            #println(reacs)
-            #println(prods)
         end
     end
 
@@ -85,7 +83,6 @@ end
 
 function gen_evaluate_rates(file)
     rate_expr=quote end
-    #file="MCM_test.eqn.txt"
     open(file,"r") do f
         for line in eachline(f)
             line_parts=split(strip(line)[1:end-1],":")
@@ -97,13 +94,11 @@ function gen_evaluate_rates(file)
             spd_exprs=replace(spd_exprs,"EXP"=>"exp")
             spd_exprs=replace(spd_exprs,"**"=>"^")
             spd_exprs=replace(spd_exprs,r"J\(([0-9]+)\)"=>s"J[\1]")
-            #println(spd_expr)
             spd_expr=Meta.parse(spd_exprs)
             ind = parse(Int,match(r"\{([0-9]+)\.\}",line,1).captures[1])
             push!(rate_expr.args,:(rate_values[$ind]=$spd_expr))
         end
     end
-    #op=Meta.parse(expr)
     return quote
 
 

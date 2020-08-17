@@ -6,7 +6,6 @@ using DiffEqBase
 using OrdinaryDiffEq
 using StaticArrays
 using SparseArrays
-using Printf
 using QuadGK
 using Serialization
 using PyCall

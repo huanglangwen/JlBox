@@ -33,11 +33,12 @@ function get_sparsity_aerosol(solverconfig::SolverConfig,param_dict,reactants2in
 end
 
 function prepare_gas(config::JlBoxConfig)
+    io = config.io
     @debug "Parsing Reactants"
     stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind=parse_reactants(config.file)
     reactants_list=mk_reactants_list(num_reactants,num_eqns,reactants_mtx)
     stoich_list=mk_reactants_list(num_reactants,num_eqns,stoich_mtx)
-    @printf("num_eqns: %d, num_reactants: %d\n",num_eqns,num_reactants)
+    println(io, "num_eqns: $(num_eqns), num_reactants: $(num_reactants)")
 
     @debug "Generating evaluate_rates()"
     evaluate_rates_expr=gen_evaluate_rates(config.file)
@@ -57,6 +58,7 @@ function prepare_gas(config::JlBoxConfig)
 end
 
 function prepare_aerosol(config::JlBoxConfig,param_dict::Dict,reactants2ind)
+    io = config.io
     num_reactants=param_dict["num_reactants"]
     ind2reactants=Dict(reactants2ind[reac]=>reac for reac in keys(reactants2ind))
     species_names=[ind2reactants[ind] for ind=1:num_reactants]
@@ -71,7 +73,7 @@ function prepare_aerosol(config::JlBoxConfig,param_dict::Dict,reactants2ind)
     reactants2ind["H2O"]=num_reactants
     include_inds=pc1_dict["include_inds"]
     num_reactants_condensed=length(include_inds)
-    @printf("num_reactants_condensed: %d\n",num_reactants_condensed)
+    println(io, "num_reactants_condensed: $(num_reactants_condensed)")
     sat_vap_water = exp(-0.58002206E4/config.temp+0.13914993E1-
         0.48640239E-1*config.temp+0.41764768E-4*(config.temp^2.0E0)-
         0.14452093E-7*(config.temp^3.0E0)+0.65459673E1*log(config.temp))#Pa
@@ -99,7 +101,7 @@ function prepare_aerosol(config::JlBoxConfig,param_dict::Dict,reactants2ind)
     y_core=y_core.*N_perbin #molecules/cc representing each size range
     #Calculate a core mass based on the above information [converting from molecules/cc to micrograms/m3]    
     core_mass_array=y_core./NA.*config.core_mw
-    println("Dry core mass = ", sum(core_mass_array)*1E12)
+    println(io, "Dry core mass = ", sum(core_mass_array)*1E12)
     param_dict["y_core"]=y_core
     param_dict["core_mass_array"]=core_mass_array
 

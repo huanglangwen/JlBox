@@ -19,7 +19,7 @@ end
 function run_simulation(config::JlBoxConfig, solverconfig::SolverConfig)
     param_dict, reactants2ind, y_init = prepare(config, solverconfig)
     showconfig(config)
-    showconfig(solverconfig)
+    showconfig(solverconfig, config.io)
     len_y = length(y_init)
     odefun = make_odefun(config, solverconfig, len_y, param_dict["sparsity"])
     odeprob = DiffEqBase.ODEProblem{true}(odefun,y_init,(0.,config.simulation_time),param_dict)
@@ -49,40 +49,41 @@ function rates_from_sol(p::Dict,t::Real)
 end
 
 function run_simulation_aerosol_adjoint(aerosolconfig::AerosolConfig,aerosolsolverconfig::SolverConfig,adjointconfig::AdjointConfig)
+    io = adjointconfig.io
     if isfile("../data/aerosol_sol.store") && adjointconfig.use_cache
-        println("Found cached aerosol simulation result")
+        println(io, "Found cached aerosol simulation result")
         param_dict,_,_=prepare(aerosolconfig, aerosolsolverconfig)
         dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],aerosolconfig.num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac_fine_seeding!)
-        println("Loading cache")
+        println(io, "Loading cache")
         sol=deserialize("../data/aerosol_sol.store")
     else
-        println("No caching, start aerosol simulation")
+        println(io, "No caching, start aerosol simulation")
         sol,_,param_dict=run_simulation(aerosolconfig, aerosolsolverconfig)
-        println("Caching solution")
+        println(io, "Caching solution")
         serialize("../data/aerosol_sol.store",sol)
     end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
-    println("Preparing Adjoint Problem")
+    println(io, "Preparing Adjoint Problem")
     t0,tF=(0.,aerosolconfig.simulation_time)
     tspan_adj=(tF,t0)
     len_y=num_reactants+aerosolconfig.num_bins*num_reactants_condensed
     mw_array=param_dict["y_mw"]
     lambda_init=zeros(Float64,(1,len_y))#DiffEq.jl version seems incorrect
     SOA_mass_jac!(lambda_init,mw_array,num_reactants,num_reactants_condensed,aerosolconfig.num_bins)#adopting KPP paper I
-    #println(lambda_init)
     param_dict["sol"]=sol
     param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     param_dict["Simulation_type"]="adjoint"
     param_dict["jacobian!"]=select_jacobian(adjointconfig.diff_method,len_y)
+    param_dict["adjointconfig"] = adjointconfig
     odefun_adj=ODEFunction(sensitivity_adjoint_dldt!,jac=sensitivity_adjoint_jac!)
     prob_adj=ODEProblem{true}(odefun_adj,reshape(lambda_init, : ),tspan_adj,param_dict)
-    print("Using solver: ");println(typeof(adjointconfig.adjoint_solver))
-    print("Using Jacobian: ");println(adjointconfig.diff_method)
-    @printf("Reltol: %.3e, Abstol: %.3e\n",adjointconfig.reltol,adjointconfig.abstol)
+    println(io, "Using solver: $(typeof(adjointconfig.adjoint_solver))")
+    println(io, "Using Jacobian: $(adjointconfig.diff_method)")
+    println(io, "Reltol: $(adjointconfig.reltol), Abstol: $(adjointconfig.abstol)")
     @debug "Solving Adjoint Problem"
     lambda_sol=solve(prob_adj,adjointconfig.adjoint_solver,reltol=adjointconfig.reltol,abstol=adjointconfig.abstol,#Rodas5(autodiff=false)
                      tstops=aerosolconfig.simulation_time:-aerosolconfig.batch_step:0.,saveat=-aerosolconfig.batch_step,
@@ -104,7 +105,7 @@ function run_simulation_aerosol_adjoint(aerosolconfig::AerosolConfig,aerosolsolv
     end 
     @debug "Strating Integration"
     for i in 1:num_tstops-1
-        @printf("Integrating from %.0f to %.0f\n",tstops[i],tstops[i+1])
+        println(io, "Integrating from $(tstops[i]) to $(tstops[i+1])")
         dSOA_mass_drate[1:num_eqns,i+1]=dSOA_mass_drate[1:num_eqns,i]+reshape(quadgk(dgpdt,tstops[i],tstops[i+1])[1],(num_eqns,1))#quadgk->(val,err) ignore error value
         rate_values=rates_from_sol(param_dict,tstops[i+1])
         dSOA_mass_percentk[1:num_eqns,i+1]=0.01*rate_values.*dSOA_mass_drate[1:num_eqns,i+1]
@@ -119,8 +120,5 @@ function sensitivity_mtx2dSOA(S,t::Real,integrator)
     y_len=num_reactants+config.num_bins*num_reactants_condensed
     dSOA_dy=zeros(Float64,(1,y_len))
     SOA_mass_jac!(dSOA_dy,mw_array,num_reactants,num_reactants_condensed,config.num_bins)
-    #println(dSOA_dy)
-    println(size(S))
-    println(S[1:100])
     return reshape(dSOA_dy * reshape(S,(y_len,num_eqns)),num_eqns)
 end
