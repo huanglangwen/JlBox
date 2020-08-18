@@ -53,6 +53,7 @@ elseif ~(parsed_args["experiment-a"] isa Nothing)
     i = parsed_args["experiment-a"]
     config = experiment_a(time_hour, i, io)
 elseif ~(parsed_args["experiment-b"] isa Nothing)
+    time_hour = parsed_args["time"]
     i = parsed_args["experiment-b"]
     name_pre = "Experiment_B"
     config = experiment_b(time_hour, i, io)
