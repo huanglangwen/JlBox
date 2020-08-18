@@ -28,6 +28,9 @@ function parse_cmd()
             help = "Specify path prefix for data output default to './results/'"
             arg_type = String
             default = "results/"
+        "--logcpuinfo", "-i"
+            help = "Log CPU info using `lscpu`"
+            action = :store_true
     end
     return parse_args(s)
 end
@@ -38,6 +41,10 @@ println(parsed_args)
 iostr = parsed_args["verbose-output"]
 path_pre = parsed_args["output"]
 io = iostr == "stdout" ? Base.stdout : open(iostr, "w")
+if parsed_args["logcpuinfo"]
+    info_out = read(`lscpu`, String)
+    println(io, info_out)
+end
 if ~xor(parsed_args["experiment-a"] isa Nothing, parsed_args["experiment-b"] isa Nothing)
     exit(-1)
 elseif ~(parsed_args["experiment-a"] isa Nothing)
