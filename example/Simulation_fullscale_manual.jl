@@ -61,13 +61,13 @@ end
 println("Running Simulations for $i -th setting of $name_pre")
 
 solverconfig = configure_aerosol_solver_sparse()
-sol, reactants2ind = JlBox.run_simulation(config, solverconfig)
+sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
 if config.io != Base.stdout
     close(config.io)
 end
 df = JlBox.postprocess_gas(sol, reactants2ind)
 df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config.simulation_time)
-CSV.write("$(path_pre)$(name_pre)_$(rank)_results.csv",df)
-CSV.write("$(path_pre)$(name_pre)_$(rank)_SOA.csv",df_SOA)
+CSV.write("$(path_pre)$(name_pre)_$(i)_results.csv",df)
+CSV.write("$(path_pre)$(name_pre)_$(i)_SOA.csv",df_SOA)
 
 #julia Simulation_fullscale_manual.jl --experiment-a 1 --time 1.0

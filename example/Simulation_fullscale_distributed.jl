@@ -8,7 +8,7 @@ using CSV
 include("Generate_config.jl")
 
 @everywhere function execute_rank_n(config, solverconfig, rank, name_pre)
-    sol, reactants2ind = JlBox.run_simulation(config, solverconfig)
+    sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
     if config.io != Base.stdout
         close(config.io)
     end
