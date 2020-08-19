@@ -19,9 +19,12 @@ function configure_gas()
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
     reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE
-    constantdict=Dict([(:temp,temp),(:H2O,H2O)])
+    constant_dict=Dict([(:temp,temp),(:H2O,H2O)])
+    dec=23.79
+    lat=50.0
+    photolysis_config=JlBox.DiurnalPhotolysisConfig(dec, lat)
     config=JlBox.GasConfig(file,temp,RH,start_time,simulation_time,batch_step,
-                       H2O,Cfactor,reactants_initial_dict,constantdict)
+                       H2O,Cfactor,reactants_initial_dict,constant_dict,photolysis_config)
     config
 end
 

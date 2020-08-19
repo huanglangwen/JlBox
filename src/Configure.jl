@@ -1,4 +1,12 @@
 abstract type JlBoxConfig end
+abstract type PhotolysisConfig end
+struct DiurnalPhotolysisConfig{T1<:Real, T2<:Real} <: PhotolysisConfig
+    declination::T1
+    latitude::T2
+end
+struct FixedPhotolysisConfig{T1<:Real} <: PhotolysisConfig
+    cos_zenith::T1
+end
 struct GasConfig <: JlBoxConfig
     file::String#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt
     temp# Kelvin
@@ -13,14 +21,15 @@ struct GasConfig <: JlBoxConfig
     H2O#Convert from kg to molecules/cc
     Cfactor#ppb-to-molecules/cc
     reactants_initial_dict::Dict#ppm ["O3"=>18.0,"APINENE"=>30.0])
-    constantdict::Dict
+    constant_dict::Dict
+    photolysis_config::PhotolysisConfig
     io::Base.IO
 end
 
 function GasConfig(file, temp, RH, start_time, simulation_time, batch_step, H2O, Cfactor,
-                   reactants_initial_dict, constantdict)
+                   reactants_initial_dict, constant_dict, photolysis_config)
     GasConfig(file, temp, RH, start_time, simulation_time, batch_step, H2O, Cfactor,
-              reactants_initial_dict, constantdict, Base.stdout)
+              reactants_initial_dict, constant_dict, photolysis_config, Base.stdout)
 end
 
 struct AerosolConfig <: JlBoxConfig
@@ -37,7 +46,8 @@ struct AerosolConfig <: JlBoxConfig
     H2O#Convert from kg to molecules/cc
     Cfactor#ppb-to-molecules/cc
     reactants_initial_dict::Dict#ppb BUT1ENE APINENE
-    constantdict::Dict
+    constant_dict::Dict
+    photolysis_config::PhotolysisConfig
     
     num_bins
     #Lognormal Distribution
@@ -60,11 +70,11 @@ struct AerosolConfig <: JlBoxConfig
 end
 
 function AerosolConfig(file, temp, RH, start_time, simulation_time, batch_step, H2O, Cfactor,
-                       reactants_initial_dict, constantdict, num_bins, total_conc, size_std,
+                       reactants_initial_dict, constant_dict, photolysis_config, num_bins, total_conc, size_std,
                        lowersize, uppersize, meansize, y_core_init, core_density_array, core_mw,
                        core_dissociation, vp_cutoff, sigma, property_methods)
     AerosolConfig(file, temp, RH, start_time, simulation_time, batch_step, H2O, Cfactor,
-                  reactants_initial_dict, constantdict, num_bins, total_conc, size_std,
+                  reactants_initial_dict, constant_dict, photolysis_config, num_bins, total_conc, size_std,
                   lowersize, uppersize, meansize, y_core_init, core_density_array, core_mw,
                   core_dissociation, vp_cutoff, sigma, property_methods, Base.stdout)
 end

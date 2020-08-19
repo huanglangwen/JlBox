@@ -81,7 +81,35 @@ function parse_reactants(file::String)#,RO2_names::Array{String,1}
     return (stoich_mtx,reactants_mtx,RO2_inds,num_eqns,num_reactants,reactants2ind)
 end
 
-function gen_evaluate_rates(file)
+function gen_evaluate_rates(config::JlBoxConfig)
+    file = config.file
+    photolysis_config = config.photolysis_config
+    if photolysis_config isa DiurnalPhotolysisConfig
+        zenith_expr = quote
+                # solar declination angle  
+                dec = $(photolysis_config.declination)
+                # latitude 
+                lat = $(photolysis_config.latitude)
+                #pi = 4.0*atan(1.0) 
+                # local hour angle - representing time of day 
+                lha = (1.0+ttime/4.32E+4)*pi 
+                radian = 180.0/pi 
+                lat = lat/radian 
+                dec = dec/radian 
+                #theta = acos(cos(lha)*cos(dec)*cos(lat)+sin(dec)*sin(lat)) 
+                sinld = sin(lat)*sin(dec) 
+                cosld = cos(lat)*cos(dec) 
+                cosx = (cos(lha)*cosld)+sinld
+                if cosx < 0
+                    cosx = 0.#night? otherwise J would yield complex number
+                end
+        end
+    elseif photolysis_config isa FixedPhotolysisConfig
+        zenith_expr = quote cosx = $(photolysis_config.cos_zenith) end
+    else
+        println(config.io, "Error in Photolysis Config")
+        exit(-1)
+    end
     rate_expr=quote end
     open(file,"r") do f
         for line in eachline(f)
@@ -366,23 +394,7 @@ function evaluate_rates!(ttime::FT,RO2::FT,H2O::FT,temp::FT,rate_values::Array{F
     # define photolysis reaction rates using derwent method from mcm2box.fac 
     # ************************************************************************ 
 
-    # solar declination angle  
-    dec = 23.79 
-    # latitude 
-    lat = 50.0 
-    #pi = 4.0*atan(1.0) 
-    # local hour angle - representing time of day 
-    lha = (1.0+ttime/4.32E+4)*pi 
-    radian = 180.0/pi 
-    lat = lat/radian 
-    dec = dec/radian 
-    #theta = acos(cos(lha)*cos(dec)*cos(lat)+sin(dec)*sin(lat)) 
-    sinld = sin(lat)*sin(dec) 
-    cosld = cos(lat)*cos(dec) 
-    cosx = (cos(lha)*cosld)+sinld
-    if cosx<0
-        cosx=0.#night? otherwise J would yield complex number
-    end
+    $(zenith_expr.args...)
     #cosx = cos(theta) 
     secx = 1.0E+0/(cosx+1.0E-30) 
 

@@ -1,4 +1,6 @@
 #https://www.atmos-chem-phys.net/18/15743/2018/acp-18-15743-2018.pdf
+#https://www.sciencedirect.com/science/article/pii/S1352231010008459
+#https://www.sciencedirect.com/science/article/pii/S0187623613710622
 using JlBox
 using Sundials
 using DataFrames

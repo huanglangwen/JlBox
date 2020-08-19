@@ -41,12 +41,12 @@ function prepare_gas(config::JlBoxConfig)
     println(io, "num_eqns: $(num_eqns), num_reactants: $(num_reactants)")
 
     @debug "Generating evaluate_rates()"
-    evaluate_rates_expr=gen_evaluate_rates(config.file)
+    evaluate_rates_expr=gen_evaluate_rates(config)
     @debug "Done Generation"
     rate_values=zeros(Real,num_eqns)
     J=zeros(Real,62)
     @debug "Performing constant folding"
-    constant_folding!(evaluate_rates_expr,config.constantdict,rate_values);
+    constant_folding!(evaluate_rates_expr,config.constant_dict,rate_values);
     extract_constants!(evaluate_rates_expr);
     @debug "Evaluating evaluate_rates&loss_gain codes"
     eval(evaluate_rates_expr)

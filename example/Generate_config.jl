@@ -1,7 +1,10 @@
 
+#https://www.atmos-chem-phys.net/18/15743/2018/acp-18-15743-2018.pdf
+#https://www.sciencedirect.com/science/article/pii/S1352231010008459
+#https://www.sciencedirect.com/science/article/pii/S0187623613710622
 function configure_aerosol(time_hour, temp, RH, reactants_initial_dict, io)
     file="../data/MCM_mixed_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txtMCM_BCARY.eqn.txt
-    hour_of_day=12.0 # Define a start time  24 hr format
+    hour_of_day=6.0 # Define a start time  24 hr format
     start_time=hour_of_day*60*60 # seconds, used as t0 in solver
     simulation_time= time_hour*3600.0 # seconds
     batch_step=300.0 # seconds
@@ -11,7 +14,10 @@ function configure_aerosol(time_hour, temp, RH, reactants_initial_dict, io)
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
-    constantdict=Dict([(:temp,temp)])
+    constant_dict=Dict([(:temp,temp)])
+    dec=23.79 #Summer Solstice
+    lat=39.466667 #Valencia, Spain
+    photolysis_config=JlBox.DiurnalPhotolysisConfig(dec, lat)
     num_bins=16
 
     #Lognormal Distribution
@@ -32,7 +38,7 @@ function configure_aerosol(time_hour, temp, RH, reactants_initial_dict, io)
     sigma=72.0e-3 # Assume surface tension of water (mN/m) ???
     property_methods=Dict("bp"=>"joback_and_reid","vp"=>"nannoolal","critical"=>"nannoolal","density"=>"girolami")
     config=JlBox.AerosolConfig(file,temp,RH,start_time,simulation_time,batch_step,
-                           H2O,Cfactor,reactants_initial_dict,constantdict,num_bins,
+                           H2O,Cfactor,reactants_initial_dict,constant_dict,photolysis_config,num_bins,
                            total_conc,size_std,lowersize,uppersize,meansize,y_core_init,
                            core_density_array,core_mw,core_dissociation,vp_cutoff,
                            sigma,property_methods, io)
