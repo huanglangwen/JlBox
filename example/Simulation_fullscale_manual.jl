@@ -22,6 +22,9 @@ function parse_cmd()
             help = "Simulation period in hours"
             arg_type = Float64
             default = 1.0
+        "--RH", "-r"
+            help = "Specify relative humidity (out of 100 percent)"
+            arg_type = Float64
         "--verbose-output"
             help = "Specify verbose output path, default to stdout"
             arg_type = String
@@ -53,12 +56,12 @@ elseif ~(parsed_args["experiment-a"] isa Nothing)
     time_hour = parsed_args["time"]
     name_pre = "Experiment_A"
     i = parsed_args["experiment-a"]
-    config = experiment_a(time_hour, i, io)
+    config = experiment_a(time_hour, i, io, parsed_args["RH"]/100.0)
 elseif ~(parsed_args["experiment-b"] isa Nothing)
     time_hour = parsed_args["time"]
     i = parsed_args["experiment-b"]
     name_pre = "Experiment_B"
-    config = experiment_b(time_hour, i, io)
+    config = experiment_b(time_hour, i, io, parsed_args["RH"]/100.0)
 end
 println("Running Simulations for $i -th setting of $name_pre")
 

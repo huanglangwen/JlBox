@@ -45,7 +45,7 @@ function configure_aerosol(time_hour, temp, RH, reactants_initial_dict, io)
     config
 end
 
-function experiment_b(time_hour, i, io::Base.IO = open("results/log_Experiment_B_rank"*string(i)*".log", "w"))
+function experiment_b(time_hour, i, io::Base.IO = open("results/log_Experiment_B_rank"*string(i)*".log", "w"), RH::Union{Nothing,Float64} = nothing)
     isoprene = [107, 92, 122, 0, 99, 87, 55] #C5H8
     apinene = [66, 50, 71, 63, 59, 50, 79] #APINENE
     limonene = [58, 50, 40, 65, 53, 51, 76] #LIMONENE
@@ -57,7 +57,8 @@ function experiment_b(time_hour, i, io::Base.IO = open("results/log_Experiment_B
     Thi = [307, 300, 300, 298, 297, 300, 305]
     RHlo = [0.5, 26, 19, 8, 8, 15, 20] ./ 100.0
     RHhi = [3, 30, 22, 13, 11, 19, 30] ./ 100.0
-    configure_aerosol(time_hour, (Tlo[i]+Thi[i])/2, (RHlo[i]+RHhi[i])/2, 
+    RHval = RH isa Nothing ? (RHlo[i]+RHhi[i])/2 : RH
+    configure_aerosol(time_hour, (Tlo[i]+Thi[i])/2, RHval, 
         Dict("C5H8"=>isoprene[i], "APINENE"=>apinene[i],
             "LIMONENE"=>limonene[i], "NO"=>NO[i],
             "NO2"=>NO2[i], "HONO"=>HONO[i], "SO2"=>SO2[i]),
@@ -67,7 +68,7 @@ function experiment_b(time_hour)
     [experiment_b(time_hour, i) for i in 1:7]
 end
 
-function experiment_a(time_hour, i, io::Base.IO = open("results/log_Experiment_A_rank$(i).log", "w"))
+function experiment_a(time_hour, i, io::Base.IO = open("results/log_Experiment_A_rank$(i).log", "w"), RH::Union{Nothing,Float64} = nothing)
     toluene = [102, 200, 48, 98, 97, 93, 107, 116, 81] #TOLUENE
     oxylene = [22, 49, 11, 24, 21, 22, 26, 29, 21] #OXYL
     TMB = [153, 300, 106, 160, 146, 146, 160, 19, 118] #TM135B
@@ -79,7 +80,8 @@ function experiment_a(time_hour, i, io::Base.IO = open("results/log_Experiment_A
     Thi = [305, 305, 307, 307, 308, 308, 309, 305, 303]
     RHlo = [10, 9, 6, 6, 7, 0.4, 7, 15, 28] ./ 100.0
     RHhi = [16, 18, 14, 13, 14, 0.4, 10, 18, 37] ./ 100.0
-    configure_aerosol(time_hour, (Tlo[i]+Thi[i])/2, (RHlo[i]+RHhi[i])/2, 
+    RHval = RH isa Nothing ? (RHlo[i]+RHhi[i])/2 : RH
+    configure_aerosol(time_hour, (Tlo[i]+Thi[i])/2, RHval, 
         Dict("TOLUENE"=>toluene[i], "OXYL"=>oxylene[i],
             "TM135B"=>TMB[i], "NO"=>NO[i],
             "NO2"=>NO2[i], "HONO"=>HONO[i], "NC8H18"=>Octane[i]),
