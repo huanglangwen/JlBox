@@ -39,15 +39,15 @@ macro partition_kernel()
     end)
 end
 
-function Partition!(y::Array{FT1,1},dy_dt::Array{FT1,1},dy_dt_gas_matrix::Array{FT2,2},C_g_i_t::Array{FT1,1},
+function Partition!(y::Array{FT_DUAL1,1},dy_dt::Array{FT_DUAL2,1},dy_dt_gas_matrix::Array{FT2,2},C_g_i_t::Array{FT_DUAL1,1},
                     num_bins::Integer,num_reactants::Integer,num_reactants_condensed::Integer,include_inds::Array{Integer,1},
-                    mw_array,density_input,gamma_gas::Array{FT2,1},alpha_d_org::Array{FT2,1},DStar_org::Array{FT2,1},
+                    mw_array,density_input::Array{FT3,1},gamma_gas::Array{FT2,1},alpha_d_org::Array{FT2,1},DStar_org::Array{FT2,1},
                     Psat::Array{FT3,1},N_perbin::Array{FT3,1},core_diss,y_core::Array{FT3,1},core_mass_array::Array{FT3,1},
-                    core_density_array::Array{FT3,1},sigma,Model_temp) where {FT1<:Real,FT2<:Real,FT3<:Real}
+                    core_density_array::Array{FT3,1},sigma,Model_temp) where {FT_DUAL1<:Real,FT_DUAL2<:Real,FT2<:Real,FT3<:Real}
     size_array=zeros(eltype(y),num_bins)
     total_SOA_mass_array=zeros(eltype(y),num_bins)
     mass_array=zeros(eltype(y),num_reactants_condensed+1)
-    density_array=zeros(FT1,num_reactants_condensed+1)
+    density_array=zeros(FT3,num_reactants_condensed+1)
     fill!(dy_dt_gas_matrix,0.)
     #dy_dt_gas_matrix_sum=zeros(Real,num_reactants)
     for size_step=1:num_bins
