@@ -52,10 +52,10 @@ function run_simulation_aerosol_adjoint(aerosolconfig::AerosolConfig,aerosolsolv
     io = adjointconfig.io
     if isfile("../data/aerosol_sol.store") && adjointconfig.use_cache
         println(io, "Found cached aerosol simulation result")
-        param_dict,_,_=prepare(aerosolconfig, aerosolsolverconfig)
+        param_dict,_,y_init=prepare(aerosolconfig, aerosolsolverconfig)
         dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],aerosolconfig.num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
-        odefun=ODEFunction(dydt_aerosol!; jac=aerosol_jac_fine_seeding!)
+        make_odefun(aerosolconfig, aerosolsolverconfig, length(y_init), param_dict["sparsity"])
         println(io, "Loading cache")
         sol=deserialize("../data/aerosol_sol.store")
     else
@@ -73,7 +73,7 @@ function run_simulation_aerosol_adjoint(aerosolconfig::AerosolConfig,aerosolsolv
     lambda_init=zeros(Float64,(1,len_y))#DiffEq.jl version seems incorrect
     SOA_mass_jac!(lambda_init,mw_array,num_reactants,num_reactants_condensed,aerosolconfig.num_bins)#adopting KPP paper I
     param_dict["sol"]=sol
-    param_dict["jac_mtx"]=zeros(Float64,(len_y,len_y))
+    param_dict["jac_mtx"]= aerosolsolverconfig.sparse ? spzeros(len_y, len_y) : zeros(Float64,(len_y,len_y))
     param_dict["Current_iter"]=0
     param_dict["ShowIterPeriod"]=5
     param_dict["Simulation_type"]="adjoint"

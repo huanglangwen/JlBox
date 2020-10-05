@@ -462,7 +462,8 @@ function aerosol_jac_coarse_seeding!(jac_mtx,y::Array{Float64,1},p::Dict,t::Real
     
     partition_dydt_fun=function (dy_dt,y)
         C_g_i_t=y[include_inds]
-        Partition!(y,dy_dt,dy_dt_gas_matrix,C_g_i_t,
+        Partition!(convert(Array{ForwardDiff.Dual{Float64},1},y),convert(Array{ForwardDiff.Dual{Float64},1},dy_dt),
+        dy_dt_gas_matrix,convert(Array{ForwardDiff.Dual{Float64},1},C_g_i_t),
         config.num_bins,num_reactants,num_reactants_condensed,include_inds,
         mw_array,density_array,gamma_gas,alpha_d_org,DStar_org,Psat,N_perbin,
         config.core_dissociation,y_core,core_mass_array,config.core_density_array,
