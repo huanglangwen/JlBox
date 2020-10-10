@@ -1,5 +1,7 @@
 # JlBox
 
+[![DOI](https://zenodo.org/badge/140199713.svg)](https://zenodo.org/badge/latestdoi/140199713)
+
 The `JlBox` is a julia package that simulates the evolution of chemicals in the atmosphere using
 box model where advection effect is ignored. It is heavily inspired by Dr. David Topping's [PyBox]
 and the two models could produce identical results, but JlBox is ~10x faster
