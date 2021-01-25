@@ -28,6 +28,6 @@ IncompleteLU = "40713840-3770-5561-ab4c-a76e7d0d7895"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [compat]
-julia = ">= 1.4"
+julia = "1.5"
 Sundials = ">= 4.2.5"
 OrdinaryDiffEq = ">= 5.36.0"
