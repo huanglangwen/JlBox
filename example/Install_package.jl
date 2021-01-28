@@ -1,5 +1,5 @@
 using Pkg
-pkgs = ["Sundials", "DataFrames", "CSV", "ArgParse", "OrdinaryDiffEq"]
+pkgs = ["DataFrames", "CSV", "ArgParse"]
 for pkg in pkgs
     Pkg.add(pkg)
 end
