@@ -3,7 +3,7 @@
 #https://www.sciencedirect.com/science/article/pii/S1352231010008459
 #https://www.sciencedirect.com/science/article/pii/S0187623613710622
 function configure_aerosol(time_hour, temp, RH, reactants_initial_dict, io)
-    file="../data/MCM_mixed_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txtMCM_BCARY.eqn.txt
+    file=joinpath(@__DIR__,"../data/MCM_mixed_test.eqn.txt")#"MCM_test.eqn.txt"MCM_APINENE.eqn.txtMCM_BCARY.eqn.txt
     hour_of_day=6.0 # Define a start time  24 hr format
     start_time=hour_of_day*60*60 # seconds, used as t0 in solver
     simulation_time= time_hour*3600.0 # seconds
