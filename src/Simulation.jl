@@ -50,19 +50,19 @@ end
 
 function run_simulation_aerosol_adjoint(aerosolconfig::AerosolConfig,aerosolsolverconfig::SolverConfig,adjointconfig::AdjointConfig)
     io = adjointconfig.io
-    if isfile("../data/aerosol_sol.store") && adjointconfig.use_cache
+    if isfile(joinpath(@__DIR__,"../data/aerosol_sol.store")) && adjointconfig.use_cache
         println(io, "Found cached aerosol simulation result")
         param_dict,_,y_init=prepare(aerosolconfig, aerosolsolverconfig)
         dy_dt_gas_matrix=zeros(Real,(param_dict["num_reactants"],aerosolconfig.num_bins))
         param_dict["dy_dt_gas_matrix"]=dy_dt_gas_matrix
         make_odefun(aerosolconfig, aerosolsolverconfig, length(y_init), param_dict["sparsity"])
         println(io, "Loading cache")
-        sol=deserialize("../data/aerosol_sol.store")
+        sol=deserialize(joinpath(@__DIR__,"../data/aerosol_sol.store"))
     else
         println(io, "No caching, start aerosol simulation")
         sol,_,param_dict=run_simulation(aerosolconfig, aerosolsolverconfig)
         println(io, "Caching solution")
-        serialize("../data/aerosol_sol.store",sol)
+        serialize(joinpath(@__DIR__,"../data/aerosol_sol.store"),sol)
     end
     num_reactants,num_reactants_condensed,num_eqns=[param_dict[i] for i in ["num_reactants","num_reactants_condensed","num_eqns"]]
     println(io, "Preparing Adjoint Problem")

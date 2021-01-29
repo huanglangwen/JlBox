@@ -3,7 +3,7 @@
 
 function readSMILESdict()
     species2SMILESdict=Dict{String,String}()
-    mcmdoc=LightXML.parse_file("../data/MCM.xml")
+    mcmdoc=LightXML.parse_file(joinpath(@__DIR__,"../data/MCM.xml"))
     spnode=LightXML.find_element(LightXML.root(mcmdoc),"species_defs")
     for species in LightXML.child_nodes(spnode)
         if LightXML.is_elementnode(species)

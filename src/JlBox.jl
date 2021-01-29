@@ -16,7 +16,7 @@ using DiffEqOperators
 using Logging
 using Requires
 
-include("../deps/deps.jl")
+include(joinpath(@__DIR__,"../deps/deps.jl"))
 
 function __init__()
     check_deps()
