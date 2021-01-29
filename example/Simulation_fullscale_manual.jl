@@ -71,7 +71,7 @@ if config.io != Base.stdout
     close(config.io)
 end
 df = JlBox.postprocess_gas(sol, reactants2ind)
-df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config.simulation_time)
+df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
 df_size = JlBox.postprocess_aerosol_size_dist(sol, param_dict, config)
 CSV.write("$(path_pre)$(name_pre)_$(i)_results.csv",df)
 CSV.write("$(path_pre)$(name_pre)_$(i)_SOA.csv",df_SOA)

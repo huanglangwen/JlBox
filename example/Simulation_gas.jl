@@ -5,7 +5,7 @@ using Sundials
 using CuArrays
 
 function configure_gas()
-    file="../data/MCM_test.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test.eqn.txt"MCM_ISOPRENE.eqn.txt
+    file="../data/MCM_APINENE.eqn.txt"#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test.eqn.txt"MCM_ISOPRENE.eqn.txt
     temp=298.15 # Kelvin
     RH=0.5 # RH/100% [0 - 0.99]
     hour_of_day=12.0 # Define a start time  24 hr format
@@ -18,13 +18,13 @@ function configure_gas()
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     Cfactor=2.55e+10 #ppb-to-molecules/cc
-    reactants_initial_dict=Dict(["O3"=>18.0,"BUT1ENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE"C5H8
+    reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0])#ppm ["O3"=>18.0,"APINENE"=>30.0])BUT1ENE"C5H8
     constant_dict=Dict([(:temp,temp),(:H2O,H2O)])
     dec=23.79
     lat=50.0
     photolysis_config=JlBox.DiurnalPhotolysisConfig(dec, lat)
-    solver=TRBDF2(autodiff=false, linsolve=LinSolveGPUFactorize())#TRBDF2(autodiff=false)
-    #solver=Sundials.CVODE_BDF()#:FGMRES
+    solver=TRBDF2(autodiff=false)#TRBDF2(autodiff=false, linsolve=LinSolveGPUFactorize())#TRBDF2(autodiff=false)
+    #solver=Sundials.CVODE_BDF()
     reltol=1e-6
     abstol=1.0e-4
     dtinit=1e-6

@@ -24,7 +24,7 @@ using Conda
 #end
 root = Conda.ROOTENV
 condaPath = Sys.iswindows() ? joinpath(root, "Scripts", "conda.exe") : joinpath(root, "bin", "conda")
-run(`$(condaPath) install Werkzeug=0.16.0`)
+run(`$(condaPath) install -y Werkzeug=0.16.0`)
 Conda.add("flask")
 Conda.add("flask-wtf")
 Conda.add("xlsxwriter")

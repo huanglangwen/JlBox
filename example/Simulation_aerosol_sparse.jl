@@ -17,7 +17,9 @@ function configure_aerosol()
     Wconc=0.002166*(Pw/(temp_celsius+273.16))*1.0e-6 #kg/cm3
     H2O=Wconc*(1.0/(18.0e-3))*6.0221409e+23#Convert from kg to molecules/cc
     Cfactor= 2.55e+10 #ppb-to-molecules/cc
-    reactants_initial_dict=Dict(["O3"=>30.0,"APINENE"=>30.0,"BPINENE"=>8.0,"LIMONENE"=>11.0,"BCARY"=>7.0,"BUT1ENE"=>5.0,"H2O"=>H2O/Cfactor])#ppb BUT1ENE APINENE
+    #reactants_initial_dict=Dict(["O3"=>30.0,"APINENE"=>30.0,"BPINENE"=>8.0,"LIMONENE"=>11.0,"BCARY"=>7.0,"BUT1ENE"=>5.0,"H2O"=>H2O/Cfactor])#ppb
+    #BUT1ENE APINENE
+    reactants_initial_dict=Dict(["O3"=>18.0,"APINENE"=>30.0,"H2O"=>H2O/Cfactor])
     constant_dict=Dict([(:temp,temp)])
     dec=23.79
     lat=50.0
@@ -69,7 +71,7 @@ config = configure_aerosol()
 solverconfig = configure_aerosol_solver_sparse()
 @time sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
 df = JlBox.postprocess_gas(sol, reactants2ind)
-df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config.simulation_time)
+df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
 #CSV.write("/data/jlbox_results.csv",df)
 #CSV.write("/data/jlbox_SOA.csv",df_SOA)
 df_SOA

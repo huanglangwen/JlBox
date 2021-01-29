@@ -1,5 +1,6 @@
 using JlBox
 using Sundials
+using OrdinaryDiffEq
 #using CuArrays
 #using CSV
 
@@ -50,14 +51,14 @@ function configure_aerosol()
 end
 
 function configure_aerosol_solver_dense()
-    solver=Sundials.CVODE_BDF()
+    solver=Sundials.CVODE_BDF()#OrdinaryDiffEq.TRBDF2(autodiff=false)
     sparse=false
     reltol=1e-4
     abstol=1.0e-2
     dtinit=1e-6
     dtmax=100.0
     positiveness=false
-    diff_method="fine_seeding"
+    diff_method="fine_analytical"
     solverconfig=JlBox.SolverConfig(solver,sparse,reltol,abstol,dtinit,dtmax,positiveness,diff_method)
     solverconfig
 end
@@ -66,7 +67,9 @@ config = configure_aerosol()
 solverconfig = configure_aerosol_solver_dense()
 @time sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
 df = JlBox.postprocess_gas(sol, reactants2ind)
-df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config.simulation_time)
-#CSV.write("/data/jlbox_results.csv",df)
-#CSV.write("/data/jlbox_SOA.csv",df_SOA)
+df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
+df_size = JlBox.postprocess_aerosol_size_dist(sol, param_dict, config)
+#CSV.write("../data/jlbox_results.csv",df)
+#CSV.write("../data/jlbox_SOA.csv",df_SOA)
+#CSV.write("../data/jlbox_size.csv", df_size)
 df_SOA

@@ -8,19 +8,28 @@ function postprocess_gas(sol, reactants2ind)
     return df
 end
 
-function postprocess_aerosol(sol, param_dict, simulation_time)
+function postprocess_aerosol(sol, param_dict, config::JlBoxConfig)
     sol_mtx = transpose(sol)
     num_reactants = param_dict["num_reactants"]
     num_reactants_condensed = param_dict["num_reactants_condensed"]
     num_bins = convert(Int, (size(sol_mtx)[2] - num_reactants)/num_reactants_condensed)
     aerosol_mtx = sol_mtx[1:end,num_reactants+1:num_reactants+num_bins*num_reactants_condensed]
     t_length = size(aerosol_mtx)[1]
-    t_index = range(0, stop = simulation_time, length = t_length)
+    t_index = range(0, stop = config.simulation_time, length = t_length)
     mw_array = param_dict["y_mw"]
+    core_mass_array = param_dict["core_mass_array"]
     SOA_array = [sum((sum(reshape(aerosol_mtx[i,1:end],(num_reactants_condensed,num_bins))
                                ,dims=2).*mw_array./NA)[1:end-1]#exclude H2O at the end
                   ) for i in 1:t_length]*1E12
-    df_SOA = DataFrames.DataFrame(Time=t_index,SOA=SOA_array)[:,[:Time,:SOA]]
+    mass_mtx = zeros((t_length, num_bins))
+    for i in 1:t_length
+        mass_mtx[i,:] = transpose(mw_array)*reshape(aerosol_mtx[i,1:end],(num_reactants_condensed,num_bins))./NA
+        mass_mtx[i,:] += core_mass_array
+        mass_mtx[i,:] .*= 1E12 #ug/m3
+    end
+    df_SOA = DataFrames.DataFrame(mass_mtx)
+    DataFrames.rename!(df_SOA,["Bin_$(i)" for i in 1:num_bins])
+    DataFrames.insertcols!(df_SOA, 1, :Time => t_index, :SOA => SOA_array)
     return df_SOA
 end
 
