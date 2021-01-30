@@ -20,6 +20,6 @@ RUN chown -R ${NB_UID} ${HOME}
 USER ${NB_USER}
 
 WORKDIR ${HOME}/JlBox
-RUN julia --eval 'using Pkg;Pkg.develop(PackageSpec(path="${HOME}/JlBox"));Pkg.build("JlBox")'
+RUN julia --eval 'using Pkg;Pkg.develop(PackageSpec(path="."));Pkg.build("JlBox")'
 RUN julia example/Install_package.jl
 RUN julia --eval 'using Pkg;Pkg.add("IJulia")'
