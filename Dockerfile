@@ -11,7 +11,8 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     ${NB_USER}
 
-RUN apt-get update && apt-get install -y git jupyter-client jupyter-notebook && apt-get clean 
+RUN apt-get update && apt-get install -y git jupyter-client jupyter-notebook && apt-get clean
+RUN pip3 install --upgrade tornado jupyter jupyter_client notebook jupyterlab nbconvert
 
 RUN mkdir -p ${HOME}/JlBox
 COPY . ${HOME}/JlBox
@@ -23,3 +24,9 @@ WORKDIR ${HOME}/JlBox
 RUN julia --eval 'using Pkg;Pkg.develop(PackageSpec(path="."));Pkg.build("JlBox")'
 RUN julia example/Install_package.jl
 RUN julia --eval 'using Pkg;Pkg.add("IJulia")'
+
+# docker build . -t jlbox
+# docker run --rm -p 8888:8888 jlbox jupyter notebook --ip=0.0.0.0 --no-browser
+# using Pkg
+# Pkg.activate(".")
+# Pkg.instantiate()
