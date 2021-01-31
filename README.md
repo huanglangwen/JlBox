@@ -2,14 +2,31 @@
 
 [![DOI](https://zenodo.org/badge/140199713.svg)](https://zenodo.org/badge/latestdoi/140199713)
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/huanglangwen/JlBox/HEAD?urlpath=lab/tree/example/Demo.ipynb)
+
 The `JlBox` is a julia package that simulates the evolution of chemicals in the atmosphere using
 box model where advection effect is ignored. It is heavily inspired by Dr. David Topping's [PyBox]
 and the two models could produce identical results, but JlBox is ~10x faster
 than PyBox. It could handle *full MCM* mechanism (>10k eqns, 5k species) for both gas and mixed phase simulation.
 
-This package works on Julia v1.4 .
+This package works on Julia v1.5 .
 
 ## Get Started
+
+### Running on Binder snapshot
+Click this button to try JlBox on Binder:
+
+- evelopment: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/huanglangwen/JlBox/HEAD?urlpath=lab/tree/example/Demo.ipynb)
+- Stable:
+  [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/huanglangwen/JlBox/v1.1?urlpath=lab/tree/example/Demo.ipynb)
+
+### Running on Docker container
+In the root directory, execute `docker build . -t jlbox` to build a docker image
+for jlbox, and then 
+```
+docker run --rm -p 8888:8888 jlbox jupyter lab example/Demo.ipynb --ip=0.0.0.0 --no-browser
+```
+to open a jupyter notebook with examples of JlBox in it.
 
 ### Running on an existing julia environment
 Work on Windows, MacOS and Linux.
