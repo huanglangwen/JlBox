@@ -1,10 +1,13 @@
 using DataFrames
-function postprocess_gas(sol, reactants2ind)
+function postprocess_gas(sol, reactants2ind, config::JlBoxConfig)
     num_reactants = length(reactants2ind)
     ind2reactants = Dict(reactants2ind[key]=>key for key in keys(reactants2ind))
     reactants = [ind2reactants[ind] for ind in 1:num_reactants]
-    df = DataFrames.DataFrame(transpose(sol)[1:end,1:num_reactants])
+    df = DataFrames.DataFrame(transpose(sol)[1:end,1:num_reactants], :auto)
+    t_length = size(df, 1)
+    t_index = range(0, stop = config.simulation_time, length = t_length)
     DataFrames.rename!(df,[Symbol(reac) for reac in reactants])
+    DataFrames.insertcols!(df, 1, :Time => t_index)
     return df
 end
 
@@ -27,7 +30,7 @@ function postprocess_aerosol(sol, param_dict, config::JlBoxConfig)
         mass_mtx[i,:] += core_mass_array
         mass_mtx[i,:] .*= 1E12 #ug/m3
     end
-    df_SOA = DataFrames.DataFrame(mass_mtx)
+    df_SOA = DataFrames.DataFrame(mass_mtx, :auto)
     DataFrames.rename!(df_SOA,["Bin_$(i)" for i in 1:num_bins])
     DataFrames.insertcols!(df_SOA, 1, :Time => t_index, :SOA => SOA_array)
     return df_SOA

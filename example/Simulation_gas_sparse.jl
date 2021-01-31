@@ -46,7 +46,7 @@ end
 config = configure_gas()
 solverconfig = configure_gas_solver_sparse()
 sol, reactants2ind, _ = JlBox.run_simulation(config, solverconfig)
-df = JlBox.postprocess_gas(sol, reactants2ind)
+df = JlBox.postprocess_gas(sol, reactants2ind, config)
 #CSV.write("data/results_gas_jac.csv",df)
 df
 #@profile run_simulation()

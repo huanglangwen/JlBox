@@ -30,7 +30,7 @@ config = configs[rank]
 solverconfig = configure_aerosol_solver_sparse()
 #rets = [remotecall((i-1)%nranks, JlBox.run_simulation, configs[i], solverconfig) for i in 1:16]
 sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
-df = JlBox.postprocess_gas(sol, reactants2ind)
+df = JlBox.postprocess_gas(sol, reactants2ind, config)
 df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
 CSV.write("result/"*name*"_results.csv",df)
 CSV.write("result/"*name*"_SOA.csv",df_SOA)

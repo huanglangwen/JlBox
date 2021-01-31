@@ -66,7 +66,7 @@ end
 config = configure_aerosol()
 solverconfig = configure_aerosol_solver_dense()
 @time sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
-df = JlBox.postprocess_gas(sol, reactants2ind)
+df = JlBox.postprocess_gas(sol, reactants2ind, config)
 df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
 df_size = JlBox.postprocess_aerosol_size_dist(sol, param_dict, config)
 #CSV.write("../data/jlbox_results.csv",df)

@@ -12,7 +12,7 @@ include("Generate_config.jl")
     if config.io != Base.stdout
         close(config.io)
     end
-    df = JlBox.postprocess_gas(sol, reactants2ind)
+    df = JlBox.postprocess_gas(sol, reactants2ind, config)
     df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
     CSV.write("results/$(name_pre)$(rank)_results.csv",df)
     CSV.write("results/$(name_pre)$(rank)_SOA.csv",df_SOA)

@@ -2,7 +2,7 @@ using JlBox
 using DataFrames
 using OrdinaryDiffEq
 using Sundials
-using CuArrays
+#using CuArrays
 
 function configure_gas()
     file=joinpath(@__DIR__,"../data/MCM_APINENE.eqn.txt")#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test.eqn.txt"MCM_ISOPRENE.eqn.txt
@@ -41,7 +41,7 @@ end
 #Profile.init(n = 10^7, delay = 5.)
 config, solverconfig = configure_gas()
 sol, reactants2ind, _ = JlBox.run_simulation(config, solverconfig)
-df = JlBox.postprocess_gas(sol, reactants2ind)
+df = JlBox.postprocess_gas(sol, reactants2ind, config)
 df
 #CSV.write("data/results_gas_jac.csv",df)
 #@profile run_simulation()

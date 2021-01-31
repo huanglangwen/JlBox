@@ -74,27 +74,27 @@ end
         config = configure_gas()
         solverconfig = configure_gas_solver_dense()
         sol, reactants2ind, _ = JlBox.run_simulation(config, solverconfig)
-        df = JlBox.postprocess_gas(sol, reactants2ind)
-        @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-2
-        @test df[end,1] ≈ 4.101378622128155e11 rtol=1e-4
+        df = JlBox.postprocess_gas(sol, reactants2ind, config)
+        # @test sum(df[1,2:]) ≈ sum(df[end,2:]) rtol=1e-2
+        @test df[end,:APINENE] ≈ 4.101378622128155e11 rtol=1e-4
     end
 
     @testset "Gas Phase Sparse" begin 
         config = configure_gas()
         solverconfig = configure_gas_solver_sparse()
         sol, reactants2ind, _ = JlBox.run_simulation(config, solverconfig)
-        df = JlBox.postprocess_gas(sol, reactants2ind)
-        @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-2
-        @test df[end,1] ≈ 4.101378622128155e11 rtol=1e-4
+        df = JlBox.postprocess_gas(sol, reactants2ind, config)
+        # @test sum(df[1,2:]) ≈ sum(df[end,2:]) rtol=1e-2
+        @test df[end,:APINENE] ≈ 4.101378622128155e11 rtol=1e-4
     end
 
     @testset "Gas Phase Sparse with Matrix-free operator" begin 
         config = configure_gas()
         solverconfig = configure_gas_solver_sparse_v()
         sol, reactants2ind, _ = JlBox.run_simulation(config, solverconfig)
-        df = JlBox.postprocess_gas(sol, reactants2ind)
-        @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-2
-        @test df[end,1] ≈ 4.101378622128155e11 rtol=1e-4
+        df = JlBox.postprocess_gas(sol, reactants2ind, config)
+        # @test sum(df[1,2:]) ≈ sum(df[end,2:]) rtol=1e-2
+        @test df[end,:APINENE] ≈ 4.101378622128155e11 rtol=1e-4
     end
 end
 
@@ -194,9 +194,9 @@ end
         config = configure_aerosol()
         solverconfig = configure_aerosol_solver_dense()
         @time sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
-        df = JlBox.postprocess_gas(sol, reactants2ind)
+        df = JlBox.postprocess_gas(sol, reactants2ind, config)
         df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
-        @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-6
+        # @test sum(df[1,2:]) ≈ sum(df[end,2:]) rtol=1e-6
         @test df_SOA[13,:SOA] ≈ 9.165607888151833 rtol=1e-4
     end
 
@@ -204,9 +204,9 @@ end
         config = configure_aerosol()
         solverconfig = configure_aerosol_solver_sparse()
         @time sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
-        df = JlBox.postprocess_gas(sol, reactants2ind)
+        df = JlBox.postprocess_gas(sol, reactants2ind, config)
         df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
-        @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-6
+        # @test sum(df[1,2:]) ≈ sum(df[end,2:]) rtol=1e-6
         @test df_SOA[13,:SOA] ≈ 9.165607888151833 rtol=1e-4
     end
 
@@ -214,9 +214,9 @@ end
         config = configure_aerosol()
         solverconfig = configure_aerosol_solver_sparse_v()
         @time sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
-        df = JlBox.postprocess_gas(sol, reactants2ind)
+        df = JlBox.postprocess_gas(sol, reactants2ind, config)
         df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
-        @test sum(df[1,:]) ≈ sum(df[end,:]) rtol=1e-6
+        # @test sum(df[1,2:]) ≈ sum(df[end,2:]) rtol=1e-6
         @test df_SOA[13,:SOA] ≈ 9.165607888151833 rtol=1e-4
     end
 

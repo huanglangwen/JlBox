@@ -359,7 +359,7 @@ version = "1.2.0"
 
 [[JlBox]]
 deps = ["BinaryProvider", "Conda", "DataFrames", "DiffEqBase", "DiffEqCallbacks", "DiffEqOperators", "FiniteDiff", "ForwardDiff", "IncompleteLU", "LightXML", "LinearAlgebra", "Logging", "OrdinaryDiffEq", "Pkg", "PyCall", "QuadGK", "Requires", "Serialization", "SparseArrays", "StaticArrays", "Sundials", "Test"]
-path = "D:\\julia\\julia1.5pkg\\dev\\JlBox"
+path = "."
 uuid = "45866e21-5370-5359-bc32-feafc3cfdcac"
 version = "1.1.0"
 

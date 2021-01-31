@@ -70,7 +70,7 @@ sol, reactants2ind, param_dict = JlBox.run_simulation(config, solverconfig)
 if config.io != Base.stdout
     close(config.io)
 end
-df = JlBox.postprocess_gas(sol, reactants2ind)
+df = JlBox.postprocess_gas(sol, reactants2ind, config)
 df_SOA = JlBox.postprocess_aerosol(sol, param_dict, config)
 df_size = JlBox.postprocess_aerosol_size_dist(sol, param_dict, config)
 CSV.write("$(path_pre)$(name_pre)_$(i)_results.csv",df)
