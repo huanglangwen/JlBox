@@ -2,8 +2,6 @@
 
 [![DOI](https://zenodo.org/badge/140199713.svg)](https://zenodo.org/badge/latestdoi/140199713)
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/huanglangwen/JlBox/HEAD?urlpath=lab/tree/example/Demo.ipynb)
-
 The `JlBox` is a julia package that simulates the evolution of chemicals in the atmosphere using
 box model where advection effect is ignored. It is heavily inspired by Dr. David Topping's [PyBox]
 and the two models could produce identical results, but JlBox is ~10x faster
@@ -16,7 +14,7 @@ This package works on Julia v1.5 .
 ### Running on Binder snapshot
 Click this button to try JlBox on Binder:
 
-- evelopment: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/huanglangwen/JlBox/HEAD?urlpath=lab/tree/example/Demo.ipynb)
+- Dvelopment: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/huanglangwen/JlBox/HEAD?urlpath=lab/tree/example/Demo.ipynb)
 - Stable:
   [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/huanglangwen/JlBox/v1.1?urlpath=lab/tree/example/Demo.ipynb)
 
