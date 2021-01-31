@@ -24,7 +24,7 @@ WORKDIR ${HOME}/JlBox
 RUN julia --eval 'using Pkg;Pkg.develop(PackageSpec(path="."));Pkg.build("JlBox")'
 RUN julia example/Install_package.jl
 RUN julia --eval 'using Pkg;Pkg.add("IJulia")'
-
+RUN julia --eval 'using Pkg;Pkg.activate(".");Pkg.instantiate();using JlBox'
 # docker build . -t jlbox
 # docker run --rm -p 8888:8888 jlbox jupyter notebook --ip=0.0.0.0 --no-browser
 # using Pkg

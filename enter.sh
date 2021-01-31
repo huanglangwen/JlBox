@@ -1,1 +1,0 @@
-docker run -it --mount type=bind,source=`pwd`,target=/Code/julia/JlBox --memory=3500m --name=jlbox_container jlbox_image
