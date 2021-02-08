@@ -6,7 +6,7 @@ using OrdinaryDiffEq
 
 function configure_aerosol()
     file=joinpath(@__DIR__,"../data/MCM_mixed_test.eqn.txt")#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test
-    temp=298.15 # Kelvin
+    temp=288.15 # Kelvin
     RH=0.5 # RH/100% [0 - 0.99]
     hour_of_day=12.0 # Define a start time  24 hr format
     start_time=hour_of_day*60*60 # seconds, used as t0 in solver
@@ -49,31 +49,26 @@ function configure_aerosol()
                            core_density_array,core_mw,core_dissociation,vp_cutoff,
                            sigma,property_methods)
     prec = JlBox.default_prec()
+    default_psetup = JlBox.default_psetup("fine_seeding","fine_analytical", 200)
     jac1 = JlBox.select_jacobian("fine_seeding", nothing)
     jac2 = JlBox.select_jacobian("fine_analytical", nothing)
     psetup = function (p,t,u,du,jok,jcurPtr,gamma)#factorize(I-gamma*J)
-        if p["Current_iter"] < 200
-            spmat = p["jac_mtx"] # "sparsity" -> "jac_mtx"
-            jac1(spmat,u,p,t)
-            J2M!(spmat,gamma)
-            p["preconditioner"]=IncompleteLU.ilu(spmat;τ=1e-5)
-            @debug "PSETUP CALLED AS INIT"
-        elseif !(p["preconditioner"] isa TridiagonalLUCache)
+        if !haskey(p, "preconditioner")
             n,_ = size(p["jac_mtx"])
             jac2(p["jac_mtx"],u,p,t)
-            p["trimat"]=sp2tridiag(p["jac_mtx"],gamma)
-            p["preconditioner"]=TridiagonalLUCache(p["trimat"],zeros(n))
-            factorize!(p["preconditioner"],p["trimat"])
+            p["trimat"]=JlBox.sp2tridiag(p["jac_mtx"],gamma)
+            p["preconditioner"]=JlBox.TridiagonalLUCache(p["trimat"],zeros(n))
+            JlBox.factorize!(p["preconditioner"],p["trimat"])
         else
             jac2(p["jac_mtx"],u,p,t)
-            sp2tridiag!(p["trimat"],p["jac_mtx"],gamma)
-            factorize!(p["preconditioner"],p["trimat"])
+            JlBox.sp2tridiag!(p["trimat"],p["jac_mtx"],gamma)
+            JlBox.factorize!(p["preconditioner"],p["trimat"])
             @debug "PSETUP CALLED"
         end
         jcurPtr[]=false
     end
     ndim=5000
-    solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=psetup,prec_side=2,krylov_dim=ndim)
+    solver=Sundials.CVODE_BDF(linear_solver=:FGMRES,prec=prec,psetup=default_psetup,prec_side=2,krylov_dim=ndim)
     sparse=true
     reltol=1e-6
     abstol=1.0e-3

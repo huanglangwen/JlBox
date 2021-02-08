@@ -6,7 +6,7 @@ using Sundials
 
 function configure_gas()
     file=joinpath(@__DIR__,"../data/MCM_APINENE.eqn.txt")#"MCM_test.eqn.txt"MCM_APINENE.eqn.txt"MCM_mixed_test.eqn.txt"MCM_ISOPRENE.eqn.txt
-    temp=298.15 # Kelvin
+    temp=288.15 # Kelvin
     RH=0.5 # RH/100% [0 - 0.99]
     hour_of_day=12.0 # Define a start time  24 hr format
     start_time=hour_of_day*60*60 # seconds, used as t0 in solver
@@ -23,10 +23,10 @@ function configure_gas()
     dec=23.79
     lat=50.0
     photolysis_config=JlBox.DiurnalPhotolysisConfig(dec, lat)
-    solver=TRBDF2(autodiff=false)#TRBDF2(autodiff=false, linsolve=LinSolveGPUFactorize())#TRBDF2(autodiff=false)
-    #solver=Sundials.CVODE_BDF()
+    #solver=TRBDF2(autodiff=false)#TRBDF2(autodiff=false, linsolve=LinSolveGPUFactorize())#TRBDF2(autodiff=false)
+    solver=Sundials.CVODE_BDF()
     reltol=1e-6
-    abstol=1.0e-4
+    abstol=1.0e-3
     dtinit=1e-6
     dtmax=100.0
     positiveness=false
