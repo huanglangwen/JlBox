@@ -11,7 +11,7 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     ${NB_USER}
 
-RUN apt-get update && apt-get install -y git jupyter-client jupyter-notebook && apt-get clean
+RUN apt-get update && apt-get install -y git jupyter-client jupyter-notebook libffi-dev && apt-get clean
 RUN pip3 install --upgrade tornado jupyter jupyter_client notebook jupyterlab nbconvert
 
 RUN mkdir -p ${HOME}/JlBox
