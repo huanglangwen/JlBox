@@ -11,11 +11,11 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     ${NB_USER}
 
-RUN apt-get update && apt-get install -y git jupyter-client jupyter-notebook libffi-dev && apt-get clean
-RUN pip3 install markupsafe==2.0.1 && pip3 install --upgrade tornado jupyter jupyter_client notebook jupyterlab nbconvert
+RUN apt-get update && apt-get install -y git libffi-dev && apt-get clean
 
-RUN mkdir -p ${HOME}/JlBox
-COPY . ${HOME}/JlBox
+#RUN mkdir -p ${HOME}/JlBox
+#COPY . ${HOME}/JlBox
+RUN git clone https://github.com/huanglangwen/JlBox.git ${HOME}/JlBox
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 USER ${NB_USER}
@@ -23,9 +23,10 @@ USER ${NB_USER}
 WORKDIR ${HOME}/JlBox
 RUN julia --eval 'using Pkg;Pkg.develop(PackageSpec(path="."));Pkg.build("JlBox")'
 RUN julia example/Install_package.jl
-RUN julia --eval 'using Pkg;Pkg.add("IJulia")'
 RUN julia --eval 'using Pkg;Pkg.activate(".");Pkg.instantiate();using JlBox;using Plots'
+RUN julia --eval 'using Pkg;Pkg.activate(".");Pkg.instantiate();using Conda;Conda.pip_interop(true);Conda.pip("install","jupyterlab");Pkg.activate();ENV["JUPYTER"]=joinpath(Conda.BINDIR,"jupyter");Pkg.add("IJulia")'
 # docker build . -t jlbox
+# docker run --rm -it jlbox /bin/bash
 # docker run --rm -p 8888:8888 jlbox jupyter notebook --ip=0.0.0.0 --no-browser
 # using Pkg
 # Pkg.activate(".")
