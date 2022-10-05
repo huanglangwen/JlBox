@@ -12,7 +12,7 @@ RUN adduser --disabled-password \
     ${NB_USER}
 
 RUN apt-get update && apt-get install -y git jupyter-client jupyter-notebook libffi-dev && apt-get clean
-RUN pip3 install --upgrade tornado jupyter jupyter_client notebook jupyterlab nbconvert
+RUN pip3 install markupsafe==2.0.1 && pip3 install --upgrade tornado jupyter jupyter_client notebook jupyterlab nbconvert
 
 RUN mkdir -p ${HOME}/JlBox
 COPY . ${HOME}/JlBox
