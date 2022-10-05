@@ -21,7 +21,7 @@ using Conda
 root = Conda.ROOTENV
 condaPath = Sys.iswindows() ? joinpath(root, "Scripts", "conda.exe") : joinpath(root, "bin", "conda")
 
-run(`$(condaPath) conda create -n jlbox_env python=3.6 conda`)
+run(`$(condaPath) create -n jlbox_env python=3.6 conda`)
 ENV["CONDA_JL_HOME"] = "$(Conda.ROOTENV)/envs/jlbox_env"
 
 run(`$(condaPath) install -n jlbox_env -y -c conda-forge openbabel=3.0.0`)
